@@ -1,29 +1,29 @@
 # SRAF World Model Specification v1.2
 
-**项目：** Sales Resource Allocation Framework  
-**简称：** SRAF  
-**文档：** `01_WORLD_MODEL_SPEC.md`  
-**状态：** Implementation Baseline v1.2  
-**上位规范：** `00_PROJECT_CHARTER.md`
+**Project:** Sales Resource Allocation Framework
+**Abbreviation:** SRAF
+**Document:** `01_WORLD_MODEL_SPEC.md`
+**Status:** Implementation Baseline v1.2
+**Parent Specification:** `00_PROJECT_CHARTER.md`
 
 ---
 
-## 1. 文档目标
+## 1. Document Objectives
 
-Sales World Model 负责表达：
+Sales World Model is responsible for expressing:
 
-> **在某一个时间点，销售市场、客户、机会、服务需求、销售资源、责任关系和业务政策究竟处于什么状态。**
+> **At a certain point in time, what is the state of the sales market, customers, opportunities, service requirements, sales resources, responsibility relationships, and business policies.**
 
-World Model 不负责回答：
+World Model is not responsible for answering:
 
-> 应该怎么办。
+> What should be done.
 
-后者属于 Decision Layer。
+The latter belongs to the Decision Layer.
 
 
 ### 1.1 Normative Ownership Boundary
 
-`01_WORLD_MODEL_SPEC.md` 只正式拥有：
+`01_WORLD_MODEL_SPEC.md` formally owns only:
 
 ```text
 Canonical World Entities
@@ -36,7 +36,7 @@ Derived World State
 WorldSnapshot
 ```
 
-下列概念可以在本文件中被引用以说明边界，但其 canonical schema **不由 01 拥有**：
+The following concepts can be referenced in this file to illustrate boundaries, but their canonical schema **is not owned by 01**:
 
 ```text
 Baseline               → 02 Decision Ontology
@@ -49,9 +49,9 @@ ExternalIdentifier     → 08 Canonical Identity & Entity Resolution
 IdentityResolutionRecord → 08 Canonical Identity & Entity Resolution
 ```
 
-因此 World Model 不应复制这些对象的独立 schema。
+Therefore, World Model should not replicate independent schemas of these objects.
 
-因此必须严格保持：
+Therefore, strict adherence must be maintained:
 
 ```text
 WORLD
@@ -63,7 +63,7 @@ DECISION PROBLEM
 DECISION
 ```
 
-而不是：
+rather than:
 
 ```text
 Solver Model
@@ -73,9 +73,9 @@ World
 
 ---
 
-## 2. World Model 的正式定义
+## 2. Formal Definition of World Model
 
-SRAF 中：
+In SRAF:
 
 \[
 WorldModel_t
@@ -95,7 +95,7 @@ Events_{\le t}
 DerivedStates_t
 \]
 
-同时每个重要状态必须具备：
+At the same time, each important state must have:
 
 ```text
 identity
@@ -103,32 +103,32 @@ time
 source
 semantic status
 provenance
-confidence（如适用）
+confidence (where applicable)
 ```
 
-所以 SRAF World Model 本质上是一个：
+Therefore, SRAF World Model is essentially a:
 
 # **Temporal, Evidence-aware Business World Model**
 
-即：
+that is:
 
-> 带时间、带来源、带证据的销售业务世界模型。
+> Sales business world model with time, source, and evidence.
 
 ---
 
-## 3. World Model 不等于数据库
+## 3. World Model Is Not Equal to Database
 
-这是工程实现必须明确的一点。
+This is a point that engineering implementation must clarify.
 
-逻辑上：
+Logically:
 
 ```text
 Sales World Model
 ```
 
-是 Canonical Semantic Model。
+is Canonical Semantic Model.
 
-物理上可以由多个存储组成：
+Physically, it can consist of multiple storage:
 
 ```text
 ┌───────────────────────────────┐
@@ -143,23 +143,23 @@ Sales World Model
 └───────────────────────────────┘
 ```
 
-因此禁止形成：
+Therefore, forming is prohibited:
 
-> “World Model = Neo4j”
+> "World Model = Neo4j"
 
-或者：
+or:
 
-> “World Model = PostgreSQL”。
+> "World Model = PostgreSQL"。
 
-数据库是实现。
+Database is implementation.
 
-World Model 是语义。
+World Model is semantics.
 
 ---
 
-## 4. v1.2 的物理架构原则
+## 4. Physical Architecture Principles for v1.2
 
-建议第一版采用：
+It is recommended that the first version adopt:
 
 ```text
                 Source Systems
@@ -190,9 +190,9 @@ Spatial Index   Graph Projection
 
 ---
 
-## 5. 为什么 Canonical State 以关系模型为主
+## 5. Why Canonical State Primarily Uses Relational Model
 
-SRAF 最重要的对象，例如：
+The most important objects in SRAF, for example:
 
 ```text
 Account
@@ -204,46 +204,46 @@ Policy
 WorldSnapshot
 ```
 
-具有明显：
+have obvious:
 
-- stable schema；
-- temporal validity；
-- uniqueness；
-- referential integrity；
-- lifecycle；
+- stable schema; 
+- temporal validity; 
+- uniqueness; 
+- referential integrity; 
+- lifecycle; 
 - transactional consistency。
 
-例如：
+for example:
 
 ```text
 ResponsibilityAssignment
 ```
 
-不能因为图查询方便就允许同一个 Primary Responsibility 出现两个互相冲突的 active relation。
+Graph query convenience cannot be used as justification to allow two mutually conflicting active relations for the same Primary Responsibility.
 
-这类约束关系型模型更适合承担。
+Relational models are more suitable for bearing such constraints.
 
-因此：
+Therefore:
 
-> **Canonical State Store 是 Source of Truth。**
+> **Canonical State Store is Source of Truth.**
 
-Graph 是 Projection。
+Graph is Projection.
 
-不是反过来。
+Not the other way around.
 
 ---
 
-## 6. 为什么不能“全部 Event Sourcing”
+## 6. Why "All Event Sourcing" Is Not Possible
 
-Event Sourcing 对历史恢复非常有价值。
+Event Sourcing is very valuable for historical recovery.
 
-但如果要求：
+But if requiring:
 
-> 所有当前世界状态只能通过完整 replay event 得到，
+> All current world state can only be obtained through complete replay of events,
 
-对 SRAF 并没有必要。
+it is not necessary for SRAF.
 
-大量数据其实来自：
+A large amount of data actually comes from:
 
 ```text
 ERP Master Data
@@ -254,23 +254,23 @@ Market Model
 Road Network
 ```
 
-这些本来就是外部系统当前状态。
+These are already the current state of external systems.
 
-因此 SRAF 使用：
+Therefore, SRAF uses:
 
 # State + Event Hybrid
 
-而不是 Pure Event Sourcing。
+rather than Pure Event Sourcing.
 
 ---
 
-## 7. Event Store 的职责
+## 7. Responsibilities of Event Store
 
-Event Store 主要用于记录：
+Event Store is mainly used to record:
 
-> **世界发生了什么重要变化。**
+> **What important changes occurred in the world.**
 
-例如：
+For example:
 
 ```text
 AccountCreated
@@ -297,7 +297,7 @@ TransitionStarted
 VisitCompleted
 ```
 
-Event 主要支持：
+Event mainly supports:
 
 ```text
 history
@@ -310,17 +310,17 @@ decision validation
 
 ---
 
-## 8. Observation 与 Event 必须分开
+## 8. Observation and Event Must Be Separated
 
-这是一个重要语义边界。
+This is an important semantic boundary.
 
 ### Observation
 
-表示：
+Represents:
 
-> 我们观察到了什么。
+> What we observed.
 
-例如：
+For example:
 
 ```text
 ActualVisit
@@ -331,35 +331,35 @@ StoreClosedSignal
 GPS Visit Evidence
 ```
 
-Observation 不一定意味着世界状态立即变化。
+Observation does not necessarily mean the world state changes immediately.
 
 ### Event
 
-表示：
+Represents:
 
-> 系统确认某个世界状态发生了变化。
+> The system confirms that a certain world state has changed.
 
-例如：
+For example:
 
 ```text
 StoreClosedSignal
 ```
 
-可能只是 Observation。
+It may only be an Observation.
 
-只有经过：
+Only after:
 
 ```text
 verification
 ```
 
-以后，才产生：
+does it generate:
 
 ```text
 AccountClosed
 ```
 
-所以：
+Therefore:
 
 ```text
 Observation
@@ -371,27 +371,27 @@ Event
 State Transition
 ```
 
-不能合并。
+Cannot be merged.
 
 ---
 
 ## 9. Canonical Identity Model
 
-所有 Canonical Entity 必须有系统稳定 ID。
+All Canonical Entity must have a system-stable ID.
 
-建议：
+It is recommended:
 
 ```text
 entity_id
 ```
 
-采用：
+Adopt:
 
 ```text
 <entity_type>:<UUID>
 ```
 
-例如：
+For example:
 
 ```text
 account:4de8...
@@ -399,9 +399,9 @@ resource:82ff...
 territory:a38c...
 ```
 
-但 UUID 只是内部 identity。
+But UUID is only internal identity.
 
-不能使用：
+Cannot use:
 
 ```text
 CRM customer code
@@ -410,35 +410,35 @@ POI ID
 ERP ID
 ```
 
-作为 Canonical ID。
+as Canonical ID.
 
-因为同一个真实实体可能来自多个系统。
-> **Schema 归属说明**：以上是不可违反的**原则**。
-> Canonical ID 生命周期、identity_domain、永不复用/重建规则、
-> 以及「多源记录凭什么算同一个对象」的判定与治理规则，
-> 由 `08_CANONICAL_IDENTITY_AND_ENTITY_RESOLUTION.md` 拥有，
-> 本文件不重复定义其 schema（Charter P21）。
+Because the same real entity may come from multiple systems.
+> **Schema Ownership Description**: The above is an unbreakable **principle**.
+> Canonical ID lifecycle, identity_domain, never reuse/rebuild rules,
+> and the decision and governance rules for "how multi-source records are considered the same object",
+> owned by `08_CANONICAL_IDENTITY_AND_ENTITY_RESOLUTION.md`,
+> This file does not redefine its schema (Charter P21).
 
 ---
 
 ## 10. External Identifier
 
-因此必须有统一的：
+Therefore there must be a unified:
 
 ```text
 ExternalIdentifier
 ```
 
-它承载一个真实对象在各个外部系统中的编号，
-并至少满足以下事实要求：
+It carries the number of a real object in each external system,
+and satisfies at least the following factual requirements:
 
 ```text
-必须能表达「哪个系统的哪种编号」
-必须带有效期
-编号变化不得覆盖历史
+It must be able to express "which system's which ID"
+It must include a validity period
+ID changes must not overwrite history
 ```
 
-例如：
+For example:
 
 ```text
 entity:
@@ -451,7 +451,7 @@ external_id:
 CUS_99821
 ```
 
-同一个 Account 可以同时存在：
+The same Account can simultaneously have:
 
 ```text
 SAP ID
@@ -460,18 +460,18 @@ Tencent POI ID
 Internal MDM ID
 ```
 
-> 上例只说明「多编号可共存」这一事实要求。
-> `ExternalIdentifier` 的 canonical schema、identifier_type 强度分级、
-> 编号迁移（旧 ID → 新 ID）与退役规则，
-> 见 `08_CANONICAL_IDENTITY_AND_ENTITY_RESOLUTION.md` §6。
+> The above example only illustrates the factual requirement that "multiple IDs can coexist".
+> `ExternalIdentifier`'s canonical schema, identifier_type strength classification,
+> ID migration (old ID -> new ID) and retirement rules,
+> See `08_CANONICAL_IDENTITY_AND_ENTITY_RESOLUTION.md` §6.
 
 ---
 
 ## 11. Canonical Entity Categories
 
-v1.2 不要求所有对象直接放进同一张 Entity 表。
+v1.2 does not require all objects to be placed directly in the same Entity table.
 
-但逻辑上必须属于以下六类：
+However, logically they must belong to the following six categories:
 
 ```text
 WORLD OBJECT
@@ -488,9 +488,9 @@ WORLD OBJECT
 
 ## 12. Actor
 
-表示具有行为或责任能力的主体。
+Represents a subject that has behavior or responsibility capability.
 
-例如：
+For example:
 
 ```text
 Person
@@ -500,27 +500,27 @@ Distributor
 Partner
 ```
 
-注意：
+Note:
 
 ```text
 Person
 ```
 
-与：
+and:
 
 ```text
 SalesResource
 ```
 
-不是同一个对象。
+are not the same object.
 
 ---
 
 ## 13. Person
 
-Person 表示真实人员。
+Person represents a real person.
 
-它可以具有：
+It can have:
 
 ```text
 employee relationship
@@ -530,17 +530,17 @@ skills
 employment state
 ```
 
-但：
+but:
 
-> Person 不天然等于 Sales Resource。
+> Person is not naturally equal to Sales Resource.
 
-例如一个销售经理可能：
+For example, a sales manager may:
 
 ```text
 Person = active
 ```
 
-但暂时没有：
+but currently does not have:
 
 ```text
 allocatable field capacity
@@ -550,11 +550,11 @@ allocatable field capacity
 
 ## 14. SalesResource
 
-SalesResource 表示：
+SalesResource represents:
 
-> **可以被分配用于完成 Sales Responsibility 的能力单元。**
+> **a capability unit that can be allocated to fulfill a Sales Responsibility.**
 
-它可以由：
+It can be realized by:
 
 ```text
 Person
@@ -564,9 +564,9 @@ External Partner
 Digital Agent
 ```
 
-实现。
+implementation.
 
-因此：
+Therefore:
 
 ```text
 Person
@@ -574,16 +574,16 @@ Person
 SalesResource
 ```
 
-而不是继承关系。
+rather than an inheritance relationship.
 
 ---
 
 
 ## 14A. Capability
 
-`Capability` 是受控的销售能力语义，而不是任意字符串标签。
+`Capability` is a controlled sales capability semantics, not an arbitrary string tag.
 
-例如：
+For example:
 
 ```text
 GeneralSelling
@@ -594,7 +594,7 @@ Audit
 Training
 ```
 
-结构至少包括：
+The structure includes at least:
 
 ```text
 capability_id
@@ -604,7 +604,7 @@ eligibility_semantics
 version
 ```
 
-`Capability` 可用于：
+`Capability` can be used for:
 
 ```text
 ResourceArchetype
@@ -614,15 +614,15 @@ CoverageNeed
 DecisionProblem
 ```
 
-但不得从历史销售额自动推导成事实。
+but must not be automatically inferred as a fact from historical sales amounts.
 
 ---
 
 ## 14B. SalesActivity
 
-`SalesActivity` 表示销售责任中实际需要完成的活动类型。
+`SalesActivity` represents the type of activity that actually needs to be completed within a sales responsibility.
 
-例如：
+For example:
 
 ```text
 Sell
@@ -633,15 +633,15 @@ Audit
 Training
 ```
 
-它是 `CoverageNeed`、`CoverageCommitment`、`WorkloadDemand` 与 `Responsibility` 的共同语义锚点。
+It is the common semantic anchor of `CoverageNeed`, `CoverageCommitment`, `WorkloadDemand` and `Responsibility`.
 
 ---
 
 ## 14C. ServiceChannel
 
-`ServiceChannel` 表示服务通过何种资源/接触方式完成。
+`ServiceChannel` represents the resource/contact method through which a service is delivered.
 
-第一版至少支持：
+The first version supports at least:
 
 ```text
 Field
@@ -652,15 +652,15 @@ Agent
 Hybrid
 ```
 
-`ServiceChannel` 与 `ResourceArchetype` 相关，但二者不是同义词。
+`ServiceChannel` is related to `ResourceArchetype`, but they are not synonyms.
 
 ---
 
 ## 15. ResourceArchetype
 
-表示标准资源能力模板。
+Represents a standard resource capability template.
 
-例如：
+For example:
 
 ```text
 FieldRep.TT
@@ -669,7 +669,7 @@ Merchandiser
 InsideSales
 ```
 
-结构至少包括：
+The structure includes at least:
 
 ```text
 resource_type
@@ -680,7 +680,7 @@ cost_model
 service_channel
 ```
 
-它主要用于：
+It is primarily used for:
 
 ```text
 Greenfield
@@ -694,11 +694,11 @@ Resource Requirement
 
 ## 15A. ResourceRequirement
 
-`ResourceRequirement` 表示在某一 Market / Scope / Period 下，经资源规划后形成的**计划能力需求**。
+`ResourceRequirement` represents the **planned capability demand** formed after resource planning for a given Market / Scope / Period.
 
-它不是员工，也不是已实际部署的 SalesResource。
+It is not an employee, nor is it a SalesResource that has been actually deployed.
 
-结构至少包括：
+The structure includes at least:
 
 ```text
 requirement_id
@@ -717,7 +717,7 @@ confidence
 originating_decision_id
 ```
 
-典型来源：
+Typical sources:
 
 ```text
 DP01 Resource Sizing
@@ -729,9 +729,9 @@ Expansion Workflow
 
 ## 16. ResourcePool
 
-表示可共享资源集合。
+Represents a sharable resource collection.
 
-例如：
+For example:
 
 ```text
 East China KA Team
@@ -739,7 +739,7 @@ Changsha Merchandising Pool
 National Inside Sales Pool
 ```
 
-ResourcePool 可以有：
+ResourcePool can have:
 
 ```text
 capacity
@@ -748,19 +748,19 @@ capability
 sharing_policy
 ```
 
-这样一些责任无需立即绑定具体 Person。
+Thus some responsibilities need not be immediately bound to a specific Person.
 
 ---
 
 ## 17. ResourceDeployment
 
-这一对象是 SRAF World Model 中的核心。
+This object is the core of the SRAF World Model.
 
-定义：
+Definition:
 
-> **在某个空间、组织或市场范围内，被计划或激活的一项销售能力部署位（resource position）。**
+> **A sales capability deployment position (resource position) that is planned or activated within a certain space, organization, or market scope.**
 
-`ResourceDeployment` 可以处于：
+`ResourceDeployment` can be in:
 
 ```text
 planned
@@ -769,9 +769,9 @@ filled
 inactive
 ```
 
-因此它在 Greenfield / Expansion 场景中可以先于具体人员存在。
+Therefore it can exist before a specific person in Greenfield / Expansion scenarios.
 
-结构至少包括：
+The structure includes at least:
 
 ```text
 deployment_id
@@ -791,23 +791,23 @@ effective_to
 originating_decision_id
 ```
 
-注意：
+Note:
 
 ```text
 Person.home_location
 ```
 
-是人员事实。
+is personnel fact.
 
 ```text
 ResourceDeployment.base_location
 ```
 
-是业务部署位置。
+is a business deployment location.
 
-二者必须分开。
+The two must be separated.
 
-也必须区分：
+Must also be distinguished:
 
 ```text
 ResourceDeployment
@@ -815,15 +815,15 @@ ResourceDeployment
 SalesResource
 ```
 
-“部署位在哪里、需要什么能力”与“当前由哪个实际资源填充”是两个不同事实。
+"Where is the deployment position, what capabilities are needed" and "which actual resource currently fills it" are two different facts.
 
 ---
 
 ## 17A. DeploymentAssignment
 
-`DeploymentAssignment` 表示某个实际 `SalesResource` 在某段时间填充某个 `ResourceDeployment`。
+`DeploymentAssignment` indicates that a specific actual `SalesResource` fills a specific `ResourceDeployment` over a period of time.
 
-结构至少包括：
+Structure at least includes:
 
 ```text
 deployment_assignment_id
@@ -837,35 +837,35 @@ status
 source_approved_decision_id
 ```
 
-因此：
+Therefore:
 
 ```text
 DP02 Resource Location
 ```
 
-主要改变 `ResourceDeployment`；
+Main change `ResourceDeployment`;
 
-而：
+And:
 
 ```text
 DP04 Personnel Matching
 ```
 
-主要改变 `DeploymentAssignment`。
+Main change `DeploymentAssignment`.
 
 ---
 
 ## 18. Capacity Model
 
-Capacity 必须是时间相关对象，而不是 SalesResource 的一个数字。
+Capacity must be a time-related object, not a number on SalesResource.
 
-定义：
+Definition:
 
 ```text
 CapacitySupply
 ```
 
-例如：
+Example:
 
 ```text
 resource
@@ -878,7 +878,7 @@ capacity_unit
 source
 ```
 
-允许：
+Allow:
 
 ```text
 hour
@@ -887,27 +887,27 @@ visit-equivalent
 activity-unit
 ```
 
-但同一 Decision Problem 必须声明单位体系。
+But the same Decision Problem must declare a unit system.
 
 ---
 
 ## 19. Market
 
-Market 表示：
+Market represents:
 
-> 某一销售决策语境下定义的市场。
+> A market defined in a certain sales decision context.
 
-例如：
+Example:
 
 ```text
-长沙饮料餐饮渠道
-中国现代渠道
-华东医院市场
+Changsha beverage and food service channel
+China modern channel
+East China hospital market
 ```
 
-它不是简单行政区。
+It is not a simple administrative region.
 
-Market 可以由：
+Market can be defined by:
 
 ```text
 geography
@@ -917,15 +917,15 @@ customer segment
 business context
 ```
 
-共同定义。
+Jointly defined.
 
 ---
 
 ## 20. GeoUnit
 
-GeoUnit 是基础空间计算单位。
+GeoUnit is the basic spatial computation unit.
 
-例如：
+Example:
 
 ```text
 H3 Cell
@@ -935,7 +935,7 @@ Trade Area
 Postal Zone
 ```
 
-GeoUnit 用于：
+GeoUnit is used for:
 
 ```text
 aggregation
@@ -944,7 +944,7 @@ spatial index
 territory projection
 ```
 
-但：
+But:
 
 \[
 GeoUnit \neq Territory
@@ -954,9 +954,9 @@ GeoUnit \neq Territory
 
 ## 21. ServiceLocation
 
-表示实际发生销售活动的物理位置。
+Indicates the physical location where actual sales activity occurs.
 
-例如：
+Example:
 
 ```text
 Store
@@ -966,7 +966,7 @@ Warehouse
 Office
 ```
 
-结构至少包括：
+Structure at least includes:
 
 ```text
 geometry
@@ -976,74 +976,74 @@ opening status
 valid time
 ```
 
-Account 和 ServiceLocation 是多对多可能关系。
+Account and ServiceLocation have a many-to-many possible relationship.
 
 ---
 
 ## 22. Account
 
-Account 是：
+Account is:
 
-> **商业责任对象。**
+> **Commercial responsibility object.**
 
-例如：
+Example:
 
 ```text
-单店客户
-连锁总部
-经销商
-医院
-企业客户
+Single-store customer
+Chain headquarters
+Dealer
+Hospital
+Enterprise customer
 ```
 
-因此：
+Therefore:
 
 ```text
 Account
 ```
 
-与：
+with:
 
 ```text
 ServiceLocation
 ```
 
-不能混为一个对象。
+Cannot be mixed into one object.
 
 ---
 
 ## 23. Prospect
 
-Prospect 可以与 Account 共用上位类：
+Prospect can share a parent class with Account:
 
 ```text
 CommercialEntity
 ```
 
-但在 v1.2 中，我建议保持状态区别：
+But in v1.2, I suggest keeping status distinction:
 
 ```text
 Prospect
 Account
 ```
 
-而不是：
+instead of:
 
 ```text
 is_customer = false
 ```
 
-因为 Prospect 在 Coverage 和 Ownership 上经常有不同业务规则。
+Because Prospect often has different business rules on Coverage and Ownership.
 
 ---
 
 ## 24. MarketSignal
 
-MarketSignal 表示：
+MarketSignal represents:
 
-> 用于理解市场状态的观测或指标。
+> Observation or indicator used to understand market status.
 
-例如：
+Example:
 
 ```text
 POI density
@@ -1054,25 +1054,25 @@ historical sales
 footfall
 ```
 
-MarketSignal 不是 Opportunity。
+MarketSignal is not Opportunity.
 
-它只是 Evidence。
+It is just Evidence.
 
 ---
 
 ## 25. OpportunityEstimate
 
-这是 World Model 最关键对象之一。
+This is one of the most critical objects in the World Model.
 
-Opportunity 不允许作为：
+Opportunity is not allowed as:
 
 ```text
 account.potential_score
 ```
 
-这种裸字段存在。
+This bare field cannot exist.
 
-必须有独立 Estimate 语义：
+It must have independent Estimate semantics:
 
 ```text
 OpportunityEstimate
@@ -1102,7 +1102,7 @@ evidence_set_id
 
 ## 26. OpportunityType
 
-至少允许：
+At least allow:
 
 ```text
 CurrentValue
@@ -1113,23 +1113,23 @@ WhitespaceOpportunity
 RiskAdjustedOpportunity
 ```
 
-框架不得假设：
+The framework must not assume:
 
 ```text
 potential
 ```
 
-只有一个统一含义。
+Only one unified meaning.
 
-具体项目必须声明 Opportunity Metric Contract。
+Specific projects must declare Opportunity Metric Contract.
 
 ---
 
 ## 27. Assertion Model
 
-这是 Evidence-aware World Model 的基础抽象。
+This is the basic abstraction of the Evidence-aware World Model.
 
-统一结构：
+Unified structure:
 
 ```text
 Assertion
@@ -1149,7 +1149,7 @@ confidence
 evidence
 ```
 
-例如：
+Example:
 
 ```text
 Account A
@@ -1157,13 +1157,13 @@ HAS_CHANNEL
 Restaurant
 ```
 
-可以来自：
+Can come from:
 
 ```text
 HumanJudgment
 ```
 
-而：
+And:
 
 ```text
 Account A
@@ -1171,7 +1171,7 @@ BELONGS_TO_DISTRIBUTOR
 Distributor X
 ```
 
-可能来自：
+May come from:
 
 ```text
 MasterDataFact
@@ -1181,7 +1181,7 @@ MasterDataFact
 
 ## 28. Semantic Status
 
-v1.2 固定：
+v1.2 fixes:
 
 ```text
 ObservedFact
@@ -1195,15 +1195,15 @@ DecisionOutput
 ScenarioAssumption
 ```
 
-任何非简单主数据对象原则上都应该能够追踪其 Semantic Status。
+Any non-simple master data object should in principle be able to track its Semantic Status.
 
 ---
 
 ## 29. Evidence
 
-Evidence 不是一个字符串备注。
+Evidence is not a string note.
 
-应该独立表达：
+Should be expressed independently:
 
 ```text
 Evidence
@@ -1216,7 +1216,7 @@ timestamp
 quality
 ```
 
-例如：
+Example:
 
 ```text
 ERP Record
@@ -1229,13 +1229,13 @@ Human Review
 External Dataset
 ```
 
-一个 Assertion 可以关联多个 Evidence。
+One Assertion can be associated with multiple Evidence.
 
 ---
 
 ## 30. Provenance
 
-所有重要 Estimate / Derived State 至少需要知道：
+All important Estimate / Derived State must at least know:
 
 ```text
 created_by
@@ -1246,78 +1246,78 @@ calculation_version
 timestamp
 ```
 
-这样例如：
+So for example:
 
 ```text
 Potential = 82
 ```
 
-才能回答：
+can only be answered:
 
-> 82 是怎么来的？
+> How is 82 derived?
 
 ---
 
 ## 31. Temporal Model
 
-SRAF 必须至少支持：
+SRAF must at least support:
 
 # Bitemporal Semantics
 
-即区分：
+i.e., differentiate between:
 
 ```text
 Valid Time
 ```
 
-与：
+and:
 
 ```text
 System / Knowledge Time
 ```
 
-例如：
+Example:
 
 ```text
-门店实际上 8月1日已经关闭
+The store actually closed on August 1
 ```
 
-但是系统：
+but the system:
 
 ```text
-8月12日才知道
+did not know until August 12
 ```
 
-应该表示：
+should be expressed as:
 
 ```text
 valid_from = Aug 1
 known_from = Aug 12
 ```
 
-否则历史 Baseline 会被未来信息污染。
+Otherwise the historical Baseline will be polluted by future information.
 
 ---
 
-## 32. 为什么 Bitemporal 很重要
+## 32. Why Bitemporal is important
 
-假设我们要回测：
+Suppose we want to backtest:
 
-> 7 月 31 日 SRAF 当时做出的 Territory Decision 是否合理。
+> Whether the Territory Decision made by SRAF on July 31 was reasonable.
 
-就只能使用：
+can only use:
 
 ```text
 known_at <= July 31
 ```
 
-的数据。
+the data.
 
-不能用：
+cannot use:
 
-> 8 月后来才知道的事实。
+> Facts that were only known later in August.
 
-否则 Benchmark 会出现：
+Otherwise the Benchmark will show:
 
 # Look-ahead Bias
 
@@ -1325,11 +1325,11 @@ known_at <= July 31
 
 ## 33. CoverageNeed
 
-CoverageNeed 表示：
+CoverageNeed represents:
 
-> **基于客户状态、机会、业务目标与政策产生的销售服务需求。**
+> **Sales service demand generated based on customer status, opportunities, business objectives, and policies.**
 
-例如：
+Example:
 
 ```text
 subject
@@ -1353,7 +1353,7 @@ valid_period
 policy_source
 ```
 
-注意：
+Note:
 
 \[
 CoverageNeed \neq Commitment
@@ -1363,11 +1363,11 @@ CoverageNeed \neq Commitment
 
 ## 34. CoverageCommitment
 
-表示：
+represents:
 
-> **经过资源配置决策后，组织正式决定实际承担的 Coverage。**
+> **Coverage that the organization formally decides to actually bear after resource allocation decisions.**
 
-例如：
+Example:
 
 ```text
 Account A
@@ -1375,23 +1375,23 @@ SalesVisit
 3 / month
 ```
 
-CoverageCommitment 必须能引用：
+CoverageCommitment must be able to reference:
 
 ```text
 originating_decision_id
 ```
 
-这样可以知道：
+This makes it possible to know:
 
-> 为什么原来 2 访现在变成 3 访。
+> Why originally 2 visits now become 3 visits.
 
 ---
 
 ## 35. WorkloadDemand
 
-WorkloadDemand 必须是 Derived State。
+WorkloadDemand must be a Derived State.
 
-至少区分：
+At least differentiate:
 
 ```text
 IntrinsicWorkload
@@ -1399,7 +1399,7 @@ NetworkWorkload
 TotalWorkload
 ```
 
-其中：
+among which:
 
 \[
 IntrinsicWorkload
@@ -1410,17 +1410,17 @@ CoverageCommitment_{activity}
 ExpectedServiceTime_{activity}
 \]
 
-因此 Workload 的最小合理粒度是：
+Therefore the smallest reasonable granularity of Workload is:
 
 ```text
 subject × activity × period
 ```
 
-而不是把一个固定 `workload_hours` 写在 Account 上。
+rather than writing a fixed `workload_hours` on Account.
 
-NetworkWorkload 不能简单固定在 Account 上。
+NetworkWorkload cannot be simply fixed on Account.
 
-它依赖：
+It depends on:
 
 ```text
 ResourceDeployment
@@ -1433,11 +1433,11 @@ TravelNetwork
 
 ## 36. DemandSurface
 
-DemandSurface 是空间聚合 Derived State。
+DemandSurface is a spatially aggregated Derived State.
 
-它不能替代原始 Account / Coverage 数据。
+It cannot replace the original Account / Coverage data.
 
-例如：
+Example:
 
 ```text
 DemandSurfaceCell
@@ -1455,7 +1455,7 @@ source_snapshot
 calculation_version
 ```
 
-它主要供：
+It is mainly used by:
 
 ```text
 Sizing
@@ -1464,31 +1464,31 @@ Macro Territory
 Scenario
 ```
 
-使用。
+Use.
 
 ---
 
 ## 37. Responsibility
 
-v1.2 中建议把：
+v1.2 recommends distinguishing:
 
 ```text
 Responsibility
 ```
 
-和：
+and:
 
 ```text
 ResponsibilityAssignment
 ```
 
-区分。
+distinguish.
 
-Responsibility 表示：
+Responsibility represents:
 
-> 什么销售责任需要被承担。
+> What sales responsibility needs to be undertaken.
 
-例如：
+Example:
 
 ```text
 Account A
@@ -1497,15 +1497,15 @@ Activity Sell
 Role Primary
 ```
 
-这是一种待分配责任。
+This is a responsibility awaiting assignment.
 
 ---
 
 ## 38. ResponsibilityScope
 
-用于定义责任范围。
+Used to define the scope of responsibility.
 
-至少允许：
+At least allow:
 
 ```text
 Account
@@ -1517,14 +1517,14 @@ Activity
 CustomerSegment
 ```
 
-例如：
+Example:
 
 ```text
 scope:
 AccountGroup = Walmart China
 ```
 
-或：
+or:
 
 ```text
 scope:
@@ -1536,11 +1536,11 @@ Activity = Merchandising
 
 ## 39. ResponsibilityAssignment
 
-表示：
+represents:
 
-> 谁在什么时间承担什么责任。
+> Who bears which responsibility at what time.
 
-核心结构：
+Core structure:
 
 ```text
 assignment_id
@@ -1561,19 +1561,19 @@ source_approved_decision_id
 relationship_state
 ```
 
-Assignment 必须是 temporal。
+Assignment must be temporal.
 
 ---
 
 ## 40. Assignment Cardinality
 
-不能假设：
+Cannot assume:
 
 ```text
 Account → 1 salesperson
 ```
 
-真正关系是：
+The true relationship is:
 
 \[
 Responsibility
@@ -1581,7 +1581,7 @@ Responsibility
 Resource
 \]
 
-因此同一个 Account 可以同时有：
+Therefore the same Account can simultaneously have:
 
 ```text
 Primary Selling
@@ -1590,59 +1590,59 @@ KA Negotiation
 Product Support
 ```
 
-多个 Assignment。
+multiple Assignments.
 
 ---
 
 ## 41. Assignment Conflict
 
-Ontology 必须允许定义：
+Ontology must allow defining:
 
 ```text
 exclusive responsibility
 ```
 
-例如：
+Example:
 
 ```text
 Primary Territory Selling
 ```
 
-可能禁止：
+may prohibit:
 
 ```text
 2 active primary owners
 ```
 
-但：
+but:
 
 ```text
 Merchandising
 ```
 
-可以与：
+can with:
 
 ```text
 Selling
 ```
 
-同时存在。
+coexist.
 
-这类规则属于：
+Such rules belong to:
 
 ```text
 Responsibility Policy
 ```
 
-而不是数据库字段语义。
+rather than database field semantics.
 
 ---
 
 ## 42. RelationshipState
 
-用于表达 Assignment 的关系连续性。
+Used to express the continuity of Assignment relationships.
 
-例如：
+Example:
 
 ```text
 relationship_age
@@ -1651,33 +1651,33 @@ handover_complexity
 change_sensitivity
 ```
 
-其中 Estimate 类型必须带 Evidence 和 confidence。
+Where Estimate type must carry Evidence and confidence.
 
-不能把：
+Cannot treat:
 
 ```text
 relationship_strength = 0.9
 ```
 
-当绝对事实。
+as absolute fact.
 
 ---
 
 ## 43. Territory
 
-v1.2 正式定义：
+v1.2 formally defines:
 
-> **Territory 是在给定时间与业务语境下，为形成一致销售资源部署而组织的一组 Responsibility 的逻辑集合。**
+> **Territory is a logical collection of a set of Responsibilities organized to form a consistent sales resource deployment within a given time and business context.**
 
-`ResponsibilityAssignment` 表示这些 Responsibility 当前由哪个 Resource / Deployment 承担，但 Assignment 变化不应自动改变 Territory 的业务 identity。
+`ResponsibilityAssignment` indicates which Resource/Deployment currently bears these Responsibilities, but changes in Assignment should not automatically alter the business identity of the Territory.
 
-因此：
+Therefore:
 
 ```text
 Territory
 ```
 
-必须能够存在：
+Must be able to exist:
 
 ```text
 zero polygon
@@ -1690,7 +1690,7 @@ nationwide account list
 
 ## 44. TerritoryType
 
-第一版至少允许：
+At least the first version allows:
 
 ```text
 GeographicFieldTerritory
@@ -1702,21 +1702,21 @@ SpecialistTerritory
 HybridTerritory
 ```
 
-不要为每一种建不同核心模型。
+Do not build a different core model for each type.
 
 ---
 
 ## 45. TerritoryMembership
 
-Territory 与 Responsibility 之间使用：
+Territory and Responsibility use:
 
 ```text
 TerritoryMembership
 ```
 
-作为 canonical membership relation。
+Used as canonical membership relation.
 
-最小结构：
+Minimum structure:
 
 ```text
 territory_membership_id
@@ -1728,37 +1728,37 @@ effective_to
 status
 ```
 
-禁止把：
+Prohibit using:
 
 ```text
 ResponsibilityAssignment
 ```
 
-作为 Territory 的 canonical membership。
+as Territory's canonical membership.
 
-原因是：
+The reason is:
 
-> Resource / Personnel 发生替换时，Territory 不应因此被错误地重建为一个新 Territory。
+> When Resource/Personnel is replaced, Territory should not be mistakenly rebuilt as a new Territory.
 
-同样禁止把：
+Similarly, prohibit using:
 
 ```text
 territory_id
 ```
 
-直接塞进 Account 作为唯一责任语义。
+directly stuffing into Account as the sole responsibility semantics.
 
 ---
 
 ## 46. TerritoryProjection
 
-Territory 的地图表达必须是独立派生对象：
+Territory's map representation must be an independently derived object:
 
 ```text
 TerritoryProjection
 ```
 
-例如：
+For example:
 
 ```text
 projection_type = polygon
@@ -1767,38 +1767,38 @@ source_assignments = ...
 generated_at = ...
 ```
 
-所以：
+Therefore:
 
 ```text
 Territory.geometry
 ```
 
-原则上不是 canonical responsibility truth。
+In principle, not a canonical responsibility truth.
 
 ---
 
-## 47. 为什么这么设计
+## 47. Why this design
 
-假设：
+Assume:
 
 ```text
 Walmart China KA Territory
 ```
 
-覆盖：
+Coverage:
 
 ```text
-北京
-上海
-广州
-成都
+Beijing
+Shanghai
+Guangzhou
+Chengdu
 ```
 
-没有任何合理单一 Polygon。
+There is no reasonable single Polygon.
 
-但它仍然是合法 Territory。
+But it is still a legitimate Territory.
 
-这证明：
+This proves:
 
 \[
 Territory \neq Geometry
@@ -1808,9 +1808,9 @@ Territory \neq Geometry
 
 ## 48. Policy Model
 
-Policy 必须是一等对象。
+Policy must be a first‑class object.
 
-结构：
+Structure:
 
 ```text
 Policy
@@ -1835,7 +1835,7 @@ exception_policy
 
 ## 49. PolicyType
 
-第一版至少：
+At least in the first version:
 
 ```text
 EligibilityPolicy
@@ -1849,15 +1849,15 @@ SchedulingPolicy
 
 ---
 
-## 50. Policy 不直接存 Solver Expression
+## 50. Policy does not directly store Solver Expression
 
-例如 Policy：
+For example, Policy:
 
 ```text
-A类门店原则上每月2访
+Class A stores in principle have 2 visits per month
 ```
 
-Canonical Model 应表达：
+Canonical Model should express:
 
 ```text
 minimum = 2
@@ -1865,13 +1865,13 @@ preferred = 2
 scope = segment A
 ```
 
-而不是：
+rather than:
 
 ```text
 x[i,d] >= 2
 ```
 
-数学表达只属于：
+Mathematical expressions only belong to:
 
 ```text
 Problem Projection / Compiler
@@ -1881,11 +1881,11 @@ Problem Projection / Compiler
 
 ## 51. DerivedState
 
-SRAF 必须明确：
+SRAF must clarify:
 
-> 派生状态不是原始事实。
+> Derived state is not an original fact.
 
-例如：
+For example:
 
 ```text
 CapacityUtilization
@@ -1896,13 +1896,13 @@ LocalAllocationBalanceMetric
 TravelBurden
 ```
 
-都属于：
+both belong to:
 
 ```text
 DerivedState
 ```
 
-必须带：
+must include:
 
 ```text
 calculation_version
@@ -1914,17 +1914,17 @@ calculated_at
 
 ## 52. State Snapshot
 
-为了 Decision 和 Benchmark，必须支持：
+To support Decision and Benchmark, must support:
 
 ```text
 WorldSnapshot
 ```
 
-定义：
+Definition:
 
-> 在一个明确 Knowledge Time 下，对所需 World State 的不可变引用。
+> An immutable reference to the required World State under a clear Knowledge Time.
 
-例如：
+For example:
 
 ```text
 snapshot_id
@@ -1937,17 +1937,17 @@ data_version
 
 ---
 
-## 53. Baseline（Boundary Reference）
+## 53. Baseline(Boundary Reference)
 
-`Baseline` 的 canonical schema 由 `02_DECISION_ONTOLOGY.md` 拥有。
+`Baseline`'s canonical schema is owned by `02_DECISION_ONTOLOGY.md`.
 
-World Model 只提供：
+World Model only provides:
 
 ```text
 WorldSnapshot
 ```
 
-DecisionCase 将其中一个 WorldSnapshot 选为 Baseline：
+DecisionCase selects one WorldSnapshot as Baseline:
 
 ```text
 Baseline
@@ -1955,19 +1955,19 @@ Baseline
 WorldSnapshot
 ```
 
-本文件不再定义独立 Baseline schema。
+This document no longer defines an independent Baseline schema.
 
 ---
 
-## 54. Scenario（Boundary Reference）
+## 54. Scenario(Boundary Reference)
 
-`Scenario` 的 workflow / lifecycle schema 由 `05_DECISION_ORCHESTRATION.md` 拥有。
+`Scenario`'s workflow/lifecycle schema is owned by `05_DECISION_ORCHESTRATION.md`.
 
-World Model 只定义以下语义约束：
+World Model only defines the following semantic constraints:
 
-> Scenario 必须建立在 Baseline / WorldSnapshot 之上，通过 `ScenarioAssumption` 形成虚拟 World View，并且不得修改 Observed World。
+> Scenario must be built on Baseline / WorldSnapshot, forming a virtual World View via `ScenarioAssumption`, and must not modify Observed World.
 
-示例：
+Example:
 
 ```text
 +6 Field Rep
@@ -1978,9 +1978,9 @@ Coverage Policy Changed
 
 ---
 
-## 55. Scenario 不允许修改真实 World State
+## 55. Scenario is not allowed to modify the real World State
 
-必须：
+Must:
 
 ```text
 Observed World
@@ -1992,47 +1992,47 @@ Scenario Overlay
 Scenario World View
 ```
 
-场景失败以后直接丢弃。
+Discard directly after scenario failure.
 
-不能：
+Must not:
 
-> 先写 World Model，再回滚。
+> Write to World Model first, then roll back.
 
 ---
 
 ## 56. ScenarioAssumption
 
-所有 Scenario 修改都必须具有：
+All Scenario modifications must have:
 
 ```text
 ScenarioAssumption
 ```
 
-例如：
+For example:
 
 ```text
 ResourceCount = 48
 ```
 
-并明确：
+and explicitly:
 
 ```text
 semantic_status = ScenarioAssumption
 ```
 
-从而 Agent 永远不会把：
+so that the Agent never interprets:
 
-> 假设增加 6 人
+> Assume +6 people
 
-误读成：
+as misreading:
 
-> 现在已经有 48 人。
+> There are already 48 people.
 
 ---
 
 ## 57. World Event
 
-统一 Event schema 至少：
+Unified Event schema at least:
 
 ```text
 event_id
@@ -2052,15 +2052,15 @@ causation_id
 correlation_id
 ```
 
-其中：
+among which:
 
 ```text
 causation_id
 ```
 
-非常重要。
+Very important.
 
-例如：
+For example:
 
 ```text
 DecisionApproved
@@ -2068,15 +2068,15 @@ DecisionApproved
 ResponsibilityTransferred
 ```
 
-未来可以追踪：
+In the future can track:
 
-> 这个变化到底是哪一个 Decision 导致的。
+> Which Decision caused this change.
 
 ---
 
 ## 58. Observation
 
-统一：
+Unify:
 
 ```text
 Observation
@@ -2094,13 +2094,13 @@ evidence
 quality
 ```
 
-Observation 可以不产生 Event。
+Observation may not generate an Event.
 
 ---
 
 ## 59. Decision Origin Tracking
 
-所有由 SRAF 决策产生的结构变化必须能够追踪：
+All structural changes caused by SRAF decisions must be traceable:
 
 ```text
 Decision
@@ -2112,21 +2112,21 @@ Event
 WorldState
 ```
 
-因此例如：
+Therefore, for example:
 
 ```text
 ResponsibilityAssignment.source_approved_decision_id
 ```
 
-原则上不能为空，除非来自 Legacy Import 或 External System。
+In principle cannot be empty, unless from Legacy Import or External System.
 
 ---
 
-## 60. HumanOverride（Boundary Reference）
+## 60. HumanOverride(Boundary Reference)
 
-`HumanOverride` 的 canonical schema 由 `02_DECISION_ONTOLOGY.md` 拥有。
+`HumanOverride`'s canonical schema is owned by `02_DECISION_ONTOLOGY.md`.
 
-World Model 只承认它可能作为：
+World Model only acknowledges it may serve as:
 
 ```text
 Decision Evidence
@@ -2134,21 +2134,21 @@ World Event causation context
 future learning evidence
 ```
 
-被引用。
+is referenced.
 
-HumanOverride 不能直接修改 Canonical World；它只能先形成新的 `CandidateDecision`，再经过 Evaluation / Approval / Transition。
+HumanOverride cannot directly modify Canonical World; it must first form a new `CandidateDecision`, then go through Evaluation / Approval / Transition.
 
 ---
 
 ## 61. Graph Projection
 
-Canonical State Store 之外，可以维护：
+Outside the Canonical State Store, can maintain:
 
 ```text
 Knowledge Graph Projection
 ```
 
-用于：
+used for:
 
 ```text
 Agent reasoning
@@ -2158,7 +2158,7 @@ responsibility exploration
 causal exploration
 ```
 
-例如：
+For example:
 
 ```text
 Rep17
@@ -2174,21 +2174,21 @@ Account882
 
 ---
 
-## 62. Graph 不是事实源
+## 62. Graph is not a source of truth
 
-如果 Graph Projection 与 Canonical State 不一致：
+If Graph Projection is inconsistent with Canonical State:
 
-> **Canonical State 胜出。**
+> **Canonical State wins.**
 
-Graph 必须可以重建。
+Graph must be rebuildable.
 
-因此：
+Therefore:
 
 ```text
 Graph Node ID
 ```
 
-必须引用：
+must reference:
 
 ```text
 Canonical Entity ID
@@ -2198,9 +2198,9 @@ Canonical Entity ID
 
 ## 63. Spatial Store
 
-空间数据可以采用专门 Spatial Store / index。
+Spatial data can adopt a dedicated Spatial Store / index.
 
-但必须遵守同样原则：
+But must follow the same principles:
 
 ```text
 Geometry
@@ -2208,29 +2208,29 @@ Geometry
 Entity Identity
 ```
 
-例如同一个 Account 移址：
+For example, when the same Account changes address:
 
 ```text
 Account ID
 ```
 
-不应该变化。
+should not change.
 
-只是：
+just:
 
 ```text
 ServiceLocation
 ```
 
-产生新的 temporal geometry。
+produces a new temporal geometry.
 
 ---
 
 ## 64. Travel Network
 
-TravelNetwork 不建议存成 World Model 里的巨大 edge graph 本体关系。
+TravelNetwork is not recommended to be stored as a huge edge graph ontology relationship in World Model.
 
-Canonical Model 只记录：
+Canonical Model only records:
 
 ```text
 network_version
@@ -2240,33 +2240,33 @@ valid_period
 calibration_version
 ```
 
-真实 graph / matrix 属于：
+Real graph / matrix belongs to:
 
 ```text
 Spatial / Routing Infrastructure
 ```
 
-World Model 引用版本。
+World Model references version.
 
 ---
 
 ## 65. Travel Estimate
 
-如果产生：
+If it generates:
 
 ```text
 TravelTime(A,B)=27min
 ```
 
-它属于：
+it belongs to:
 
 ```text
 DerivedEstimate
 ```
 
-而不是永久事实。
+rather than a permanent fact.
 
-必须至少知道：
+Must at least know:
 
 ```text
 network_version
@@ -2279,19 +2279,19 @@ calculation_version
 
 ## 66. ProblemProjection
 
-这是 World Model 与 Decision Engine 之间最重要的边界对象。
+This is the most important boundary object between World Model and Decision Engine.
 
-定义：
+Definition:
 
-> **某个 Decision Problem 对 World State 的只读、目的限定的计算视图。**
+> **A read‑only, purpose‑limited computational view of a certain Decision Problem on World State.**
 
-例如：
+For example:
 
 ```text
 TerritoryAlignmentProjection
 ```
 
-可以只有：
+can have only:
 
 ```text
 responsibility unit
@@ -2305,9 +2305,9 @@ capacity
 
 ---
 
-## 67. ProblemProjection 的原则
+## 67. Principles of ProblemProjection
 
-Solver 需要的所有：
+All that the Solver needs:
 
 ```text
 x[i,j]
@@ -2317,9 +2317,9 @@ penalty
 encoded constraint
 ```
 
-都不允许回写 World Model。
+are not allowed to write back to World Model.
 
-所以：
+Therefore:
 
 ```text
 WORLD MODEL
@@ -2329,13 +2329,13 @@ ProblemProjection
 MathematicalModel
 ```
 
-这个方向是单向的。
+This direction is one‑way.
 
 ---
 
-## 68. Solver Solution 的回流
+## 68. Backflow of Solver Solution
 
-只能：
+Can only:
 
 ```text
 Mathematical Solution
@@ -2345,7 +2345,7 @@ Decision Interpreter
 CandidateDecision
 ```
 
-不能：
+Must not:
 
 ```text
 Mathematical Solution
@@ -2353,7 +2353,7 @@ Mathematical Solution
 World State
 ```
 
-这正式落实 Charter 的：
+This formally implements the Charter's:
 
 # Solver State Never Becomes World Truth Directly
 
@@ -2361,39 +2361,39 @@ World State
 
 ## 69. World Model Read Patterns
 
-SRAF 至少要支持四类读取：
+SRAF must support at least four types of reads:
 
 ### Current State Query
 
-回答：
+Answer:
 
-> 现在是什么情况？
+> What is the current situation?
 
 ### Historical State Query
 
-回答：
+Answer:
 
-> 2026-Q1 当时是什么情况？
+> What was the situation in 2026‑Q1?
 
 ### Decision Baseline Query
 
-回答：
+Answer:
 
-> 这个 Decision 当时基于什么状态？
+> On what state was this Decision based?
 
 ### Scenario Query
 
-回答：
+Answer:
 
-> 如果 Resource +6，会是什么样？
+> What would it look like if Resource +6?
 
-这四种 Query 必须语义明确。
+These four Query types must be semantically clear.
 
 ---
 
 ## 69A. v1.2 Canonical World Core Set
 
-v1.2 冻结以下 World Core：
+v1.2 freezes the following World Core:
 
 ```text
 Market
@@ -2441,7 +2441,7 @@ WorldSnapshot
 ExternalIdentifier
 ```
 
-以下不是 01 的 canonical class：
+The following are not canonical class of 01:
 
 ```text
 Baseline
@@ -2454,13 +2454,13 @@ AllocationGap
 ResourceEquivalent
 ```
 
-它们分别由 Decision / Orchestration / Problem Contract / Metric 层拥有。
+They are owned by Decision / Orchestration / Problem Contract / Metric layers respectively.
 
 ---
 
 ## 70. World Model Write Patterns
 
-原则上只有四类合法写入：
+In principle only four types of legal writes:
 
 ```text
 External State Synchronization
@@ -2469,13 +2469,13 @@ Confirmed Event / State Transition
 Approved Decision Transition
 ```
 
-Solver、Agent、Simulation 不直接写 Canonical World State。
+Solver, Agent, Simulation do not directly write Canonical World State.
 
 ---
 
-## 71. Data Quality 状态必须进入 World Model
+## 71. Data Quality status must enter World Model
 
-不能假设所有数据都是干净的。
+Cannot assume all data is clean.
 
 ```text
 EntityQuality
@@ -2484,68 +2484,68 @@ LocationQuality
 OpportunityQuality
 TravelQuality
 CoverageQuality
-IdentityConfidence      LOW / MEDIUM / HIGH 或连续值+组成
+IdentityConfidence      LOW / MEDIUM / HIGH or continuous value + composition
 IdentityStatus          RESOLVED / PROVISIONAL / CONTESTED / UNRESOLVED
 ```
 
-后两项语义由 `08_CANONICAL_IDENTITY_AND_ENTITY_RESOLUTION.md` §16
-定义；其值必须可随 Derived State 向下传播
-（08 §16.3 IC-4）。
+The latter two semantics are defined by `08_CANONICAL_IDENTITY_AND_ENTITY_RESOLUTION.md` §16
+definition; its values must be propagatable down with Derived State
+(08 §16.3 IC-4)。
 
-例如：
+For example:
 
 ```text
 Account A
 location_confidence = LOW
 ```
 
-这样 Allocation Intelligence 发现异常时可以判断：
+Thus, when Allocation Intelligence finds anomalies it can determine:
 
-> 是业务问题还是数据问题。
+> Whether it is a business problem or a data problem.
 
 ---
 
 ## 72. Conflict
 
-当不同来源互相矛盾：
+When different sources conflict:
 
 ```text
 CRM:
-店铺营业
+store is open
 
 External:
-店铺关闭
+store is closed
 ```
 
-不能强行静默覆盖。
+Cannot forcibly silently overwrite.
 
-应该生成：
+Should generate:
 
 ```text
 AssertionConflict
 ```
 
-并允许：
+and allow:
 
 ```text
 resolved
 unresolved
 ```
 
-Decision Problem 可以声明：
+Decision Problem can declare:
 
-> unresolved critical conflict 是否允许进入求解。
+> Whether unresolved critical conflict is allowed to enter solving.
 
-`AssertionConflict` 的一类具体形态是**身份冲突**
-（同一坐标下两个不同结算主体 / 同期双活记录 / 簇内强信号矛盾），
-其检测条件、解决路径与人工权限由
-`08_CANONICAL_IDENTITY_AND_ENTITY_RESOLUTION.md` §10 TC-3、§19 规定。
+`AssertionConflict` a specific form is **identity conflict**
+(two different settlement entities under the same coordinates / dual active records in the same period / strong signal contradictions within a cluster),
+its detection conditions, resolution path, and human authority are specified by
+`08_CANONICAL_IDENTITY_AND_ENTITY_RESOLUTION.md` §10 TC-3, §19
 
 ---
 
 ## 73. World Model Consistency Levels
 
-我建议定义：
+I suggest defining:
 
 ```text
 Verified
@@ -2554,25 +2554,25 @@ Estimated
 Experimental
 ```
 
-例如：
+For example:
 
 ### Verified
 
-关键主数据和事实已验证。
+Key master data and facts have been verified.
 
 ### Operational
 
-足够支持生产决策。
+Sufficient to support production decisions.
 
 ### Estimated
 
-包含较多模型估计。
+Contains many model estimates.
 
 ### Experimental
 
-适合 Scenario / Benchmark，不适合直接生产决策。
+Suitable for Scenario / Benchmark, not suitable for direct production decisions.
 
-这样一个 Scenario 可以明确：
+Such a Scenario can be clarified:
 
 ```text
 WorldConfidence = Experimental
@@ -2580,9 +2580,9 @@ WorldConfidence = Experimental
 
 ---
 
-## 74. Canonical 主链最终固定
+## 74. Canonical Main Chain Final Fixed
 
-在 World Model 层，我们现在可以正式冻结：
+In the World Model layer, we can now formally freeze:
 
 ```text
 Market
@@ -2627,37 +2627,37 @@ World State Update
 
 ## 75. Canonical vs Derived vs Decision Object
 
-这是 v1.2 必须明确的三层。
+This is the three layers that v1.2 must clarify.
 
-| 类型 | 例子 | 是否属于世界事实 |
+| Type | Example | Whether it belongs to World Fact |
 |---|---|---|
-| Canonical State | Account、ResourceDeployment、Assignment | 是 |
-| Estimate / Derived State | Opportunity、Workload、Gap | 有来源的计算状态 |
-| Decision State | Candidate Territory、Scenario | 否，除非批准实施 |
+| Canonical State | Account, ResourceDeployment, Assignment | Yes |
+| Estimate / Derived State | Opportunity, Workload, Gap | Computed state with source |
+| Decision State | Candidate Territory, Scenario | No, unless approved for implementation |
 
-这里特别重要：
+This is especially important:
 
 ```text
 Candidate Territory
 ```
 
-在 Approved 之前：
+Before Approved:
 
-> 不是 Territory World State。
+> Not a Territory World State.
 
 ---
 
-## 76. Reference Implementation 建议
+## 76. Reference Implementation Recommendation
 
-v1.2 工程上我建议保持简单，不要过早建设复杂的知识图谱平台。
+On the engineering side of v1.2, I recommend keeping it simple and not building a complex Knowledge Graph platform prematurely.
 
-可以先用：
+You can start with:
 
 ```text
 PostgreSQL + PostGIS
 ```
 
-承担：
+Take on:
 
 ```text
 Canonical State
@@ -2668,47 +2668,47 @@ Policy
 Snapshot Metadata
 ```
 
-再使用：
+Then use:
 
 ```text
 append-only event / observation tables
 ```
 
-实现第一版 Event Store。
+Implement the first version of the Event Store.
 
-Graph Projection 第一阶段甚至可以：
+Graph Projection in the first phase can even:
 
 ```text
 PostgreSQL materialized graph view
 ```
 
-或者轻量 graph engine。
+or a lightweight graph engine.
 
-只有 Agent / complex relation traversal 明确证明需要以后，再引入专门图数据库。
+Only after Agent / complex relation traversal clearly proves the need should a specialized graph database be introduced.
 
-这个非常符合：
+This is very much in line with:
 
 > **Reuse Before Reinvent + Minimum Necessary Infrastructure。**
 
 ---
 
-## 77. 不建议 v1.2 一开始做的事情
+## 77. Things Not Recommended at the Start of v1.2
 
-第一阶段不要：
+In the first phase, do not:
 
 ```text
-全量 RDF / OWL
-复杂 semantic reasoner
-全事件溯源数据库
-自建时间序列数据库
-自建图数据库
-自建 MDM
-自建 GIS Engine
+Full-scale RDF / OWL
+Complex semantic reasoner
+Full event sourcing database
+Self-built time-series database
+Self-built graph database
+Self-built MDM
+Self-built GIS Engine
 ```
 
-这些都不是当前 SRAF 的核心创新。
+None of these are core innovations of the current SRAF.
 
-SRAF 真正应该先证明：
+What SRAF truly should first prove:
 
 ```text
 World semantics
@@ -2717,59 +2717,59 @@ World semantics
 → Evaluation
 ```
 
-能够跑通。
+Is able to run through.
 
 ---
 
 ## 78. World Model Architecture Gate
 
-以后开发评审中，出现下面情况应直接视为架构问题：
+In later development reviews, the following situations should be directly considered architecture issues:
 
 ```text
-直接用外部业务 ID 作为 Canonical ID
+Directly using external business IDs as Canonical IDs
 
-Account 与物理门店完全等同
+Equating Account with a physical store completely
 
-Potential 直接成为 Account 字段且无来源
+Potential directly becoming an Account field without a source
 
-CoverageNeed 和 Commitment 合并
+Merging CoverageNeed and Commitment
 
-Salesperson 与 Resource 合并
+Merging Salesperson and Resource
 
-home location 与 deployment location 合并
+Merging home location and deployment location
 
-Territory 强制要求 Polygon
+Territory requiring Polygon mandatorily
 
-Account 只能有一个 owner
+Account can have only one owner
 
-Assignment 没有时间有效期
+Assignment has no time validity period
 
-Solver 字段进入 Canonical Entity
+Solver field entering Canonical Entity
 
-Scenario 直接修改生产 World State
+Scenario directly modifying production World State
 
-未来获得的数据被用于过去 Baseline
+Future obtained data being used for a past Baseline
 
-模型 Estimate 没有 model_version
+Model Estimate lacks model_version
 
-Derived State 没有 calculation_version
+Derived State lacks calculation_version
 
-Graph 被当作唯一 Source of Truth
+Graph is treated as the sole Source of Truth
 
-Solver Solution 直接更新 Territory
+Solver Solution directly updates Territory
 ```
 
-这组可以直接成为 CI / Architecture Review Checklist 的基础。
+This set can directly become the basis for the CI / Architecture Review Checklist.
 
 ---
 
-## 79. 一个具体例子
+## 79. A Specific Example
 
-假设系统现在看到：
+Assume the system now sees:
 
-> 长沙河西市场新增 800 家高潜餐饮门店。
+> In the Changsha Hexi market, 800 high-potential restaurant stores have been newly added.
 
-正确世界更新应该是：
+The correct World update should be:
 
 ```text
 External POI / O2O
@@ -2789,18 +2789,18 @@ Demand Surface Recalculation
 Allocation Gap Recalculation
 ```
 
-此时：
+At this point:
 
-> **Territory 不发生任何自动变化。**
+> **Territory does not undergo any automatic changes.**
 
-Allocation Intelligence 发现：
+Allocation Intelligence discovers:
 
 ```text
 Opportunity Gap ↑
 Capacity Gap ↑
 ```
 
-以后才：
+Only later:
 
 ```text
 DecisionTrigger
@@ -2808,13 +2808,13 @@ DecisionTrigger
 Expansion / Rebalancing Decision Case
 ```
 
-这就是 World Model 与 Decision Model 的边界。
+This is the boundary between the World Model and the Decision Model.
 
 ---
 
-## 80. 再举一个 Assignment 例子
+## 80. Another Assignment Example
 
-当前：
+Current:
 
 ```text
 Account A
@@ -2823,13 +2823,13 @@ Merchandising → Merch05
 KA → KAM02
 ```
 
-系统不应该表示成：
+The system should not represent it as:
 
 ```text
 account.owner = Rep17
 ```
 
-而是：
+But as:
 
 ```text
 Responsibility R1
@@ -2851,27 +2851,27 @@ Assignment A3
 R3 → KAM02
 ```
 
-于是所谓：
+Thus the so-called:
 
 ```text
 Field Territory T17
 ```
 
-只聚合：
+only aggregates:
 
 ```text
 Selling Primary
 ```
 
-那一类 Assignment。
+that class of Assignment.
 
-这时 Overlay Territory 天然成立。
+At this point, Overlay Territory naturally holds.
 
 ---
 
-## 81. World Model 最小可用版本
+## 81. World Model Minimum Viable Version
 
-为了避免 Agent 一上来把 v1.2 做成大工程，我建议 **MVP World Model 只实现 14 个核心对象**：
+To prevent Agent from turning v1.2 into a large project from the start, I recommend **MVP World Model implements only 14 core objects**:
 
 ```text
 Market
@@ -2890,7 +2890,7 @@ Policy
 WorldSnapshot
 ```
 
-另外四个 supporting model：
+Additionally, four supporting models:
 
 ```text
 Assertion
@@ -2899,27 +2899,27 @@ Observation
 Event
 ```
 
-Territory 可以先作为：
+Territory can initially be as:
 
 ```text
 Assignment Group + Projection
 ```
 
-实现。
+implemented.
 
-等第一个 Territory Decision Engine 开始以后再扩展完整 Territory lifecycle。
+Wait until the first Territory Decision Engine starts before expanding the full Territory lifecycle.
 
 ---
 
 ## 82. Definition of Done
 
-`01_WORLD_MODEL_SPEC` 的实现不能以：
+The implementation of `01_WORLD_MODEL_SPEC` cannot use:
 
-> “表建好了”
+> "Table created"
 
-作为 Done。
+as Done.
 
-至少必须验证以下链路真的可运行：
+At least the following chain must be verified to be runnable:
 
 ```text
 Source Data
@@ -2937,7 +2937,7 @@ Resource Deployment
 Responsibility Assignment
 ```
 
-然后能够：
+Then be able to:
 
 ```text
 Create World Snapshot
@@ -2951,19 +2951,19 @@ Run Decision Engine
 Create Candidate Decision
 ```
 
-且 Candidate 不污染真实世界。
+and Candidate does not pollute the real world.
 
-做到这一点，World Model v1 才算成立。
+Only by doing this is the World Model v1 considered valid.
 
 ---
 
-## 83. v1.2 工程架构结论
+## 83. v1.2 Engineering Architecture Conclusion
 
-关于：
+Regarding:
 
-> **World Model 到底采用 Event Sourcing、Knowledge Graph 还是关系模型？**
+> **Which does the World Model actually adopt—Event Sourcing, Knowledge Graph, or relational model?**
 
-v1.2 正式采用：
+v1.2 officially adopts:
 
 ```text
                     SRAF WORLD MODEL
@@ -2988,6 +2988,6 @@ v1.2 正式采用：
                 Decision Engine
 ```
 
-**Relational Canonical State 负责“是什么”；Event/Observation 负责“发生过什么”；Graph 负责“关系如何连接”；Spatial 负责“在哪里”；Evidence 负责“为什么相信”；Problem Projection 负责“这一次优化器需要看到什么”。**
+**Relational Canonical State is responsible for "what it is"; Event/Observation is responsible for "what has happened"; Graph is responsible for "how relations are connected"; Spatial is responsible for "where it is"; Evidence is responsible for "why we believe"; Problem Projection is responsible for "what the optimizer needs to see this time".**
 
-这一边界作为 SRAF v1.2 World Model 的工程基线。
+This boundary serves as the engineering baseline for SRAF v1.2 World Model.

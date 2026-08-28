@@ -3,149 +3,149 @@
     "name": "dealer_territory_knowledge_base",
     "version": "0.3.0",
     "date": "2026-08-28",
-    "description": "经销商区域管理知识库 v0 种子版——从本轮工作结晶的知识条目（书/论文/真实数据/业务对话），供 04 分配智能层生成人类建议时检索",
+    "description": "Distributor regional management knowledge base v0 seed version — Knowledge items crystallized from this round of work (books/papers/real data/business dialogues), for the 04 allocation intelligence layer to retrieve when generating human recommendations.",
     "schema": {
-      "id": "K-<类别缩写>-<序号>",
+      "id": "K-<category abbreviation>-<sequence number>",
       "type": "principle|rule|fact|case|constraint|benchmark",
-      "statement": "知识内容（可直接进入建议的推理链）",
-      "conditions": "适用条件/边界",
-      "source": "知识来源（书章节/论文/数据文件/对话）",
+      "statement": "Knowledge content (can be directly entered into the recommendation's reasoning chain)",
+      "conditions": "Applicable conditions / boundaries",
+      "source": "Knowledge source (book chapter/paper/data file/dialogue)",
       "confidence": "HIGH|MEDIUM|LOW",
-      "maps_to": "对应世界模型层级/实体/事件"
+      "maps_to": "Corresponding world model level/entity/event"
     }
   },
   "items": [
     {
       "id": "K-PRIN-001",
       "type": "principle",
-      "statement": "区域排他性是保护经销商投入的制度安排，不是优化问题的解。经销商敢投入（业务员、车辆、客情）的前提是投入不会被隔壁经销商收割。",
-      "conditions": "卖断式销售模式下尤其成立",
+      "statement": "Regional exclusivity is a system arrangement that protects dealer investment, not a solution to an optimization problem. Dealers dare to invest (salespeople, vehicles, customer relationships) only if the investment will not be harvested by a neighboring dealer.",
+      "conditions": "This is especially true under a buy‑out sales model.",
       "source": "Zoltners《Sales Territory Design》+ CN_MARKET_distributor_territory_reality.md",
       "confidence": "HIGH",
-      "maps_to": "L2:Contract 排他义务"
+      "maps_to": "L2:Contract – exclusivity obligation."
     },
     {
       "id": "K-PRIN-002",
       "type": "principle",
-      "statement": "Carryover：去年拜访努力今年才出结果。评估区域调整必须声明影响周期（impact_horizon），否则会把「调整后短期销量下滑」误判为「调整失败」。",
-      "conditions": "快消品客情驱动型品类",
-      "source": "Zoltners 书 + SRAF 06 Carryover Gate",
+      "statement": "Carryover: last year's visit effort yields results this year. When evaluating territory changes, impact_horizon must be declared; otherwise, a short‑term sales dip after adjustment will be misread as adjustment failure.",
+      "conditions": "Fast‑moving consumer goods (FMCG) categories driven by customer relationships.",
+      "source": "Zoltners book + SRAF 06 Carryover Gate.",
       "confidence": "HIGH",
-      "maps_to": "L3:E9 季节性/时间效应"
+      "maps_to": "L3:E9 – seasonal/time effect."
     },
     {
       "id": "K-PRIN-003",
       "type": "principle",
-      "statement": "调整冲击（disruption）对中等体量门店伤害最大：小店靠客情，大店靠体系，中等店两者都靠但不稳固。",
-      "conditions": "经销商更换场景",
-      "source": "Zoltners 书 Table 8.3",
+      "statement": "Adjustment disruption hurts mid‑size stores most: small stores rely on relationships, large stores rely on systems, mid‑size stores rely on both but are less stable.",
+      "conditions": "Dealer replacement scenario.",
+      "source": "Zoltners book Table 8.3.",
       "confidence": "HIGH",
       "maps_to": "L1:ServiceLocation"
     },
     {
       "id": "K-PRIN-004",
       "type": "principle",
-      "statement": "经典三步设计法：①账号级设计（哪些店归我）→ ②地理整合（相邻店打包）→ ③对齐调整（负荷/潜力平衡）。围栏是第二步的产物，不是起点。",
-      "conditions": "通用方法论",
-      "source": "Zoltners 书 + FENCE_TOWNSHIP_DESCRIPTIONS 分析",
+      "statement": "Classic three‑step design method: (1) account‑level design (which stores belong to me) → (2) geographic consolidation (bundle adjacent stores) → (3) alignment adjustment (balance workload/potential). The fence is an output of step two, not a starting point.",
+      "conditions": "General methodology.",
+      "source": "Zoltners book + FENCE_TOWNSHIP_DESCRIPTIONS analysis.",
       "confidence": "HIGH",
       "maps_to": "L2:TerritoryDesign"
     },
     {
       "id": "K-RULE-001",
       "type": "rule",
-      "statement": "围栏边界沿主干道或河流走，双方业务员都认得，不扯皮。切割线永远选「肉眼可见」的地理要素。",
-      "conditions": "城区切割",
-      "source": "FENCE_CHARACTERISTICS_understanding.md（38 围栏几何验证：边界长直线段与 OSM 主干道重合）",
+      "statement": "Fence boundaries should follow main roads or rivers, recognizable by both sales teams, avoiding disputes. Cutting lines should always use visually obvious geographic features.",
+      "conditions": "Urban area division.",
+      "source": "FENCE_CHARACTERISTICS_understanding.md (38 fence geometry verification: boundary long straight segments coincide with OSM main roads).",
       "confidence": "HIGH",
       "maps_to": "L1:MarketFeature; L3:E6 FenceChangeEvent"
     },
     {
       "id": "K-RULE-002",
       "type": "rule",
-      "statement": "行政区划是打底框架：远郊整区承包（区县纯度≈100%），老城区一个区切 3~6 块。",
-      "conditions": "广州市场验证；其他城市需重验",
-      "source": "FENCE_CHARACTERISTICS_understanding.md（72% 围栏区县纯度≥95%）",
+      "statement": "Administrative boundaries are the base framework: outer suburbs are fully contracted (district/county purity ≈100%), older urban districts are split into 3–6 blocks.",
+      "conditions": "Validated in Guangzhou market; other cities need re‑validation.",
+      "source": "FENCE_CHARACTERISTICS_understanding.md (72% of fences have district/county purity ≥95%).",
       "confidence": "HIGH",
-      "maps_to": "L1:MarketFeature 行政边界"
+      "maps_to": "L1:MarketFeature – administrative boundary."
     },
     {
       "id": "K-RULE-003",
       "type": "rule",
-      "statement": "连锁直供店不算覆盖缺口：DIRECT_IN/DIRECT 门店的供货不经围栏经销商，是品牌方结构性安排。",
-      "conditions": "有 direct 标志的门店",
-      "source": "gz_data.json（美宜佳系 2,127 家，占直供店 97%）",
+      "statement": "Chain direct‑supply stores are not coverage gaps: supply to DIRECT_IN/DIRECT stores does not pass through the fenced dealer; it is a brand structural arrangement.",
+      "conditions": "Stores with the direct flag.",
+      "source": "gz_data.json (Meiyijia chain 2,127 stores, 97% of direct‑supply stores).",
       "confidence": "HIGH",
-      "maps_to": "L4:kind=DIRECT_IN/DIRECT; 事件E7"
+      "maps_to": "L4:kind=DIRECT_IN/DIRECT; event E7."
     },
     {
       "id": "K-RULE-004",
       "type": "rule",
-      "statement": "上游一致率 85% 是正常值：围栏内门店约 12% 跨界供货（OOF）、6% 直供，100% 一致不可达也不应追求。",
-      "conditions": "广州现状基准",
-      "source": "gz_data.json kind 分布（OK 79% + OOF 12% + 直供 6%）",
+      "statement": "Upstream consistency of 85% is normal: within the fence, about 12% of stores have cross‑boundary supply (OOF) and 6% are direct supply; 100% consistency is unattainable and should not be pursued.",
+      "conditions": "Guangzhou current baseline.",
+      "source": "gz_data.json kind distribution (OK 79% + OOF 12% + direct 6%).",
       "confidence": "HIGH",
       "maps_to": "L4:AlignmentMeasure"
     },
     {
       "id": "K-RULE-005",
       "type": "rule",
-      "statement": "身份先行：任何分配/诊断动作前，相关门店身份必须经 08 规则解析。身份未解析（identity_confidence 低）的门店产生的「缺口」可能是假缺口。",
-      "conditions": "无条件",
-      "source": "SRAF 08 身份规范",
+      "statement": "Identity first: before any allocation or diagnostic action, store identity must be resolved by rule 08. Gaps generated by stores with low identity_confidence may be false gaps.",
+      "conditions": "Unconditional.",
+      "source": "SRAF 08 identity specification.",
       "confidence": "HIGH",
-      "maps_to": "L3:IdentityEvent; 事件E8"
+      "maps_to": "L3:IdentityEvent; event E8."
     },
     {
       "id": "K-RULE-006",
       "type": "rule",
-      "statement": "换经销商必须评估客情依赖：业务员长期拜访形成的私人关系是门店续约的隐性黏合剂。行业共识过渡方案：联合拜访背书（老带新 1-3 个月）+ 三方沟通群 + VIP 客户高层站台。依赖度量可用「同一经销商持续服务年限+拜访稳定性」作代理指标（业务口径待确认）。",
-      "conditions": "经销商更换/大范围调整",
-      "source": "本轮对话（大石案例 40% 依赖）+ 行业交接实践检索 2026-08-28（联合拜访为共识最佳实践）",
+      "statement": "Dealer change must assess relationship reliance: long‑term personal ties formed by reps are implicit glue for store renewal. Industry consensus transition: joint visit endorsement (old rep leads new 1–3 months) + three‑party chat group + VIP customer executive support. Reliance can be proxied by “same dealer continuous service years + visit stability” (sales metric to be confirmed).",
+      "conditions": "Dealer replacement / large‑scale adjustment.",
+      "source": "This round of dialogue (Dashi case 40% reliance) + industry handover practice search 2026‑08‑28 (joint visit is consensus best practice).",
       "confidence": "HIGH",
       "maps_to": "L1:ServiceLocation; L2:DealerRole"
     },
     {
       "id": "K-RULE-007",
       "type": "rule",
-      "statement": "低密度市场缺口是结构性缺口：行业实践为「批发/二批模式（极低密度）+ 中心仓线路化直配（乡镇）+ 访销配送分离 + 线上订货补足」，而非加人。服务频率按门店分级（A 类周 1-2 访 / B-C 类两周+线上补足）。",
-      "conditions": "门店密度低 且 交通半径大",
-      "source": "gz_conghua_gap 分析 + 行业低密度覆盖实践检索 2026-08-28",
+      "statement": "Low‑density market gaps are structural: industry practice is “wholesale/secondary distributor model (ultra‑low density) + central warehouse routed direct delivery (township) + separate visit‑sales delivery + online order supplement”, not adding staff. Service frequency by store tier (A: 1–2 visits/week, B‑C: bi‑weekly + online supplement).",
+      "conditions": "Low store density and large travel radius",
+      "source": "gz_conghua_gap analysis + industry low-density coverage practice search 2026-08-28",
       "confidence": "HIGH",
-      "maps_to": "诊断四分类: 缺资源 vs 结构性"
+      "maps_to": "Four-category diagnosis: resource shortage vs structural"
     },
     {
       "id": "K-FACT-001",
       "type": "fact",
-      "statement": "合同为填空式文本：授权区域是文字描述（「某某路以东」），不是几何多边形。围栏的几何化本质是对合同的人工伤释。",
-      "conditions": "中国市场现状",
-      "source": "CN_MARKET_distributor_territory_reality.md + 合同包分析",
+      "statement": "Contract is fill‑in text: authorized area is a textual description ('east of X road'), not a geometric polygon. Geometricizing the fence is essentially a manual interpretation of the contract.",
+      "conditions": "China market status",
+      "source": "CN_MARKET_distributor_territory_reality.md + contract package analysis",
       "confidence": "HIGH",
-      "maps_to": "L2:Contract; F1 合同围栏"
+      "maps_to": "L2:Contract; F1 contract fence"
     },
     {
       "id": "K-FACT-002",
       "type": "fact",
-      "statement": "卖断式销售 + 无理由不退换：库存风险和滞销风险由经销商承担。这是区域排他性存在的经济根源。",
-      "conditions": "本品条欸",
-      "source": "合同条款 + CN_MARKET 分析",
+      "statement": "Buy‑out sales + no‑reason no‑return: inventory and unsold risk borne by distributor. This is the economic root of territorial exclusivity.",
+      "conditions": "This brand",
+      "source": "Contract terms + CN_MARKET analysis",
       "confidence": "HIGH",
       "maps_to": "L2:Contract commitment"
     },
     {
       "id": "K-FACT-003",
       "type": "fact",
-      "statement": "广州现状：38 围栏 / 33,109 门店 / OK 79% / OOF 12% / 直供 6% / GAP 1% / MULTI 7 家。",
-      "conditions": "2026-08 快照",
+      "statement": "Guangzhou status: 38 fences / 33,109 stores / OK 79% / OOF 12% / direct 6% / GAP 1% / MULTI 7 entities",
+      "conditions": "2026-08 snapshot",
       "source": "/tmp/gz_data.json",
       "confidence": "HIGH",
-      "maps_to": "L4 全部"
+      "maps_to": "L4 all"
     },
     {
       "id": "K-CASE-001",
       "type": "case",
-      "statement": "从化整区承包：围栏与区界几乎重合，单一经销商覆盖全区。体现「远郊承包制」画法。",
-      "conditions": "参考案例",
+      "statement": "Conghua whole‑area contract: fence nearly coincides with district boundary, single distributor covers whole area. Reflects 'suburban contracting' approach.",
+      "conditions": "Reference case",
       "source": "FENCE_CHARACTERISTICS + gz_dealer_fences_map.html",
       "confidence": "HIGH",
       "maps_to": "L2:TerritoryDesign"
@@ -153,156 +153,156 @@
     {
       "id": "K-CASE-002",
       "type": "case",
-      "statement": "番禺河边切割：以陈村水道为界，两侧分属不同经销商，无扯皮。体现「自然边界优先」画法。",
-      "conditions": "参考案例",
-      "source": "本轮对话 + 地图验证",
+      "statement": "Panyu riverside cut: using the Chen Village waterway as boundary, each side belongs to different distributors, no dispute. Reflects 'natural boundary priority' approach.",
+      "conditions": "Reference case",
+      "source": "This round of dialogue + map verification",
       "confidence": "HIGH",
-      "maps_to": "L1:MarketFeature 河流"
+      "maps_to": "L1:MarketFeature river"
     },
     {
       "id": "K-CASE-003",
       "type": "case",
-      "statement": "大石街道调整评估：整体换经销商时 40% 门店存在客情依赖，需要过渡方案（老业务员带访 1-2 个月）。",
-      "conditions": "经销商更换",
-      "source": "本轮对话（用户业务知识）",
+      "statement": "Dashi street adjustment assessment: when overall distributor is changed, 40% of stores have customer‑relationship dependency, requiring a transition plan (old rep visits 1‑2 months).",
+      "conditions": "Distributor replacement",
+      "source": "This round of dialogue (user business knowledge)",
       "confidence": "MEDIUM",
-      "maps_to": "L3:E4 经销商退出"
+      "maps_to": "L3:E4 distributor exit"
     },
     {
       "id": "K-CONST-001",
       "type": "constraint",
-      "statement": "visit 排班引擎为只读依赖（别人维护）：SRAF 通过 adapter 调用其公开 API，不修改其代码。上游升级需兼容哨兵检测。",
-      "conditions": "集成架构约束",
-      "source": "本轮对话（用户拍板）",
+      "statement": "Visit scheduling engine is read‑only (maintained by others): SRAF calls its public API via adapter, does not modify its code. Upstream upgrades need sentinel‑compatible detection.",
+      "conditions": "Integration architecture constraints",
+      "source": "This round of dialogue (user decision)",
       "confidence": "HIGH",
-      "maps_to": "SRAF↔visit 集成层"
+      "maps_to": "SRAF↔visit integration layer"
     },
     {
       "id": "K-CONST-002",
       "type": "constraint",
-      "statement": "调整需要稳定性预算：每轮变更的门店数/拜访数受预算约束，已确认拜访冻结。大范围调整需要审批链。",
-      "conditions": "滚动重排场景",
-      "source": "visit phase3 设计 + SRAF 02 审批流",
+      "statement": "Adjustment requires stability budget: number of stores/visits per round of changes is constrained by budget, confirmed visits are frozen. Large‑scale adjustments require approval chain.",
+      "conditions": "Rolling rescheduling scenario",
+      "source": "visit phase3 design + SRAF 02 approval flow",
       "confidence": "HIGH",
-      "maps_to": "L3:E6; 事件E6 触发审批"
+      "maps_to": "L3:E6; event E6 triggers approval"
     },
     {
       "id": "K-BENCH-001",
       "type": "benchmark",
-      "statement": "区域健康基准（广州 v0）：对齐度≥79% 健康；OOF 比例>20% 需调查；GAP 需四分类诊断；MULTI 必须登记矛盾簿。",
-      "conditions": "v0 临时基准，随 ValidationPlan 修订",
-      "source": "gz_data.json 分布 + 本设计",
+      "statement": "Regional health benchmark (Guangzhou v0): alignment ≥79% healthy; OOF rate >20% requires investigation; GAP needs four‑category diagnosis; MULTI must register conflict log.",
+      "conditions": "v0 temporary benchmark, will be revised with ValidationPlan",
+      "source": "gz_data.json distribution + this design",
       "confidence": "MEDIUM",
       "maps_to": "L4:AlignmentMeasure; SRAF 06"
     },
     {
       "id": "K-BENCH-002",
       "type": "benchmark",
-      "statement": "图划分（METIS/Spectral）+ H3 层次索引是现代解法：H3 查表 O(1) 替代逐点 PIP；图划分解决跨行政对齐。",
-      "conditions": "技术选型知识",
-      "source": "THREE_ROUND_REVIEW.md 论文对比（TPD 2024-2025 survey）",
+      "statement": "Graph partitioning (METIS/Spectral) + H3 hierarchical indexing is the modern solution: H3 lookup O(1) replaces point‑by‑point PIP; graph partitioning solves cross‑administrative alignment.",
+      "conditions": "Technology selection knowledge",
+      "source": "THREE_ROUND_REVIEW.md Paper comparison (TPD 2024-2025 survey)",
       "confidence": "HIGH",
-      "maps_to": "工具层"
+      "maps_to": "Tool layer"
     },
     {
       "id": "K-BENCH-003",
       "type": "benchmark",
-      "statement": "业务员承载力（中国快消口径）：常规 20-30 家/天；高密度城区 30-40；低密度县乡 15-20。门店分级频率：A 类周 1-2 访、B 类两周 1 访、C 类月 1 访。有效拜访 = 订单 + 标准动作（陈列/库存/客情），只签到不做事无效。",
-      "conditions": "快消深度分销模式",
-      "source": "行业拜访实践检索 2026-08-28",
+      "statement": "Sales rep capacity (China FMCG standard): normal 20‑30 stores/day; high‑density urban 30‑40; low‑density county/rural 15‑20. Store classification frequency: A class weekly 1‑2 visits, B class biweekly 1 visit, C class monthly 1 visit. Effective visit = order + standard actions (display/inventory/relationship), only check‑in without actions invalid.",
+      "conditions": "FMCG deep distribution model",
+      "source": "Industry visit practice search 2026‑08‑28",
       "confidence": "HIGH",
-      "maps_to": "L3:Capacity; 诊断四分类:缺资源标尺"
+      "maps_to": "L3:Capacity; Diagnosis four categories: resource shortage benchmark"
     },
     {
       "id": "K-BENCH-004",
       "type": "benchmark",
-      "statement": "国际口径交叉验证：General Trade 40-45 拜访/天，Strike Rate 60-75%（MT 80%+），旅行时间 <30-40% 工作日。旅行时间超标 = 线路规划差，非人力不足。",
-      "conditions": "与 K-BENCH-003 冲突时以本公司实测为准（口径差异：有效拜访定义不同）",
-      "source": "行业 benchmark 检索 2026-08-28",
+      "statement": "International standard cross‑validation: General Trade 40‑45 visits/day, Strike Rate 60‑75% (MT 80%+), travel time <30‑40% of workday. Travel time overrun = poor route planning, not insufficient manpower.",
+      "conditions": "In case of conflict with K‑BENCH‑003, use our company’s measured data (standard difference: effective visit definition differs).",
+      "source": "Industry benchmark search 2026‑08‑28",
       "confidence": "MEDIUM",
-      "maps_to": "诊断四分类:缺资源标尺"
+      "maps_to": "Diagnosis four categories: resource shortage benchmark"
     },
     {
       "id": "K-RULE-008",
       "type": "rule",
-      "statement": "返利结构决定经销商对调整的行为反应：阶梯销量返利→压货/窜货冲动（伪增量）；过程返利（陈列/专销/价格信誉）→执行合规。行业做法：约 20% 返利与合规挂钩。预测经销商反应先看其返利结构。",
-      "conditions": "预测/建议场景",
-      "source": "行业返利实践检索 2026-08-28",
+      "statement": "Rebate structure determines dealer reaction to adjustments: tiered volume rebate → push/stockpiling impulse (pseudo growth); process rebate (display/exclusive‑sale/price credibility) → compliance execution. Industry practice: ~20% rebate tied to compliance. Predict dealer reaction by analyzing rebate structure first.",
+      "conditions": "Prediction/recommendation scenarios",
+      "source": "Industry rebate practice search 2026‑08‑28",
       "confidence": "HIGH",
-      "maps_to": "L2:Contract; 预测引擎输入"
+      "maps_to": "L2:Contract; Prediction engine input"
     },
     {
       "id": "K-RULE-009",
       "type": "rule",
-      "statement": "经销商更换标准 SOP：审批链「区域经理→大区总监→销售总经理→财务（账款核对）→法务（合同合规）」；过渡三件套：库存清退/账款结清/客户移交清单；交接期 1-3 个月联合拜访。严禁断崖式更换。",
-      "conditions": "经销商更换场景",
-      "source": "行业交接 SOP 检索 2026-08-28",
+      "statement": "Dealer replacement standard SOP: approval chain Region Manager → Zone Director → Sales GM → Finance (account verification) → Legal (contract compliance); transition triple set: inventory clearance / payment settlement / customer handover list; transition period 1‑3 months joint visits. Strictly prohibit abrupt replacement.",
+      "conditions": "Dealer replacement scenario",
+      "source": "Industry handover SOP search 2026‑08‑28",
       "confidence": "HIGH",
-      "maps_to": "L3:E4 经销商退出; 建议路由"
+      "maps_to": "L3:E4 Dealer exit; recommendation routing"
     },
     {
       "id": "K-RULE-010",
       "type": "rule",
-      "statement": "低密度区服务模式选型：极低密度→批发/二批（数字化武装为配送服务商）；乡镇级→中心仓+线路化直配；物理拜访与线上订货（云店/小程序）结合，覆盖深度重于广度，不铺人海。",
-      "conditions": "低密度市场资源配置",
-      "source": "行业农村覆盖实践检索 2026-08-28",
+      "statement": "Low‑density area service model selection: ultra‑low density → wholesale/secondary distribution (digitally equipped as delivery service provider); township level → central warehouse + route‑based direct delivery; combine physical visits with online ordering (cloud store/mini program), prioritize coverage depth over breadth, avoid large staffing.",
+      "conditions": "Low‑density market resource allocation",
+      "source": "Industry rural coverage practice search 2026‑08‑28",
       "confidence": "HIGH",
-      "maps_to": "诊断四分类:缺意愿/结构性; 建议引擎选项"
+      "maps_to": "Diagnosis four categories: lack of willingness / structural; recommendation engine options"
     },
     {
       "id": "K-PRIN-005",
       "type": "principle",
-      "statement": "层级镜像组织原则：决策层级=组织层级。三级分配各自独立（Layer-D 经销商区域/Layer-B 业代线路/Layer-V 拜访排程），上游输出=下游给定值，禁止跨层干预；每层独立评估独立审批；防重叠+防白区在每层都成立。",
-      "conditions": "分销管理体系设计通则",
-      "source": "行业组织架构检索 2026-08-28 + 用户拍板「每一层独立，不要干扰」",
+      "statement": "Layer mirroring organization principle: decision level = organization level. Three‑level allocation independent (Layer‑D dealer region / Layer‑B rep route / Layer‑V visit schedule), upstream output = downstream given value, cross‑layer intervention prohibited; each layer independently evaluated and approved; overlap prevention + white‑zone prevention apply at each layer.",
+      "conditions": "Distribution management system design general principles",
+      "source": "Industry organization structure search 2026‑08‑28 + user decision “Each layer independent, do not interfere”",
       "confidence": "HIGH",
-      "maps_to": "世界模型 §2A 三级层; 诊断先定位层再归因"
+      "maps_to": "World model §2A three levels; diagnosis first identifies level then attributes cause"
     },
     {
       "id": "K-RULE-011",
       "type": "rule",
-      "statement": "线路设计五步法（Layer-B）：定点（门店盘点分级）→定片（地理划片）→定人（片区归业代）→定频（按 ABC 定频率）→定线（路径排序）。",
-      "conditions": "业代线路设计",
-      "source": "行业线路设计检索 2026-08-28",
+      "statement": "Route design five‑step method (Layer‑B): fix points (store inventory classification) → define area (geographic zoning) → assign rep (area to rep) → define frequency (per ABC) → define route (path ordering).",
+      "conditions": "Rep route design",
+      "source": "Industry route design search 2026‑08‑28",
       "confidence": "HIGH",
-      "maps_to": "L2:Beat; Layer-B 方法论"
+      "maps_to": "L2:Beat; Layer‑B methodology"
     },
     {
       "id": "K-RULE-012",
       "type": "rule",
-      "statement": "线路四原则：①片区化（地理邻近防折返跑，先密集后分散）②分级频率（ABC：A 周访/B 两周/C 月访）③负荷均衡（Σ店数×频率 各线相当）④固定化（线路固定培养客情）。线路=对门店的拜访承诺（PJP），GPS 核验兑现。",
-      "conditions": "Layer-B 评估标准",
-      "source": "行业 beat 设计检索 2026-08-28",
+      "statement": "Route four principles: ① area‑based (geographic proximity to avoid backtracking, start dense then sparse) ② classification‑based frequency (ABC: A weekly / B biweekly / C monthly) ③ load balancing (Σ stores × frequency equal across routes) ④ fixed routes to cultivate relationships. Route = commitment to store visits (PJP), GPS verification of fulfillment.",
+      "conditions": "Layer‑B evaluation criteria",
+      "source": "Industry beat design search 2026‑08‑28",
       "confidence": "HIGH",
-      "maps_to": "L2:Beat; L2:CoveragePolicy; Layer-B 评估"
+      "maps_to": "L2:Beat; L2:CoveragePolicy; Layer‑B evaluation"
     },
     {
       "id": "K-BENCH-005",
       "type": "benchmark",
-      "statement": "Layer-B/V 过程基准：拜访达成率红线 90%（低于扣绩效高于 95% 奖）；主管协访占 50-70% 工时；业代考核权重参考 过程 40% + 结果 40% + 赋能 20%。",
-      "conditions": "经销商团队管理",
-      "source": "行业考核实践检索 2026-08-28",
+      "statement": "Layer‑B/V process baseline: visit achievement redline 90% (below → performance deduction; above 95% → reward); supervisor co‑visit 50‑70% of work hours; sales rep evaluation weight reference: process 40% + result 40% + enablement 20%.",
+      "conditions": "Dealer team management.",
+      "source": "Industry assessment practice retrieval 2026‑08‑28.",
       "confidence": "HIGH",
-      "maps_to": "Layer-B/V 评估; 建议 KPI 依据"
+      "maps_to": "Layer‑B/V assessment; recommended KPI basis."
     },
     {
       "id": "K-PRIN-006",
       "type": "principle",
-      "statement": "区域调整的决策对象是【区域/片区】（territory），门店归属是派生效果（F3 足迹随 F2 围栏走）。把「门店」当决策对象是 CRM 数据同步视角的错位——区域才是可干预的一等实体。",
-      "conditions": "FMCG 卖断式销售；区域内门店自动跟随区域归属",
-      "source": "业务方 2026-08-28 修正（『不应该表述成门店，如果是门店直接在CRM改就行；实际上是区域，店是附加效果』）",
+      "statement": "Decision object for territory adjustment is [region/zone] (territory); store attribution is a derived effect (F3 footprint follows F2 fence). Treating “store” as the decision object is a misalignment from the CRM data‑sync perspective—region is the primary actionable entity.",
+      "conditions": "FMCG sell‑out model; stores within region automatically follow region assignment.",
+      "source": "Business‑side correction 2026‑08‑28 (“Should not be phrased as store; if it were a store you could directly modify it in CRM; in reality it is a region, store is an added effect”).",
       "confidence": "HIGH",
-      "maps_to": "世界模型 F2 围栏=决策对象 / F3 门店=派生效果；adjust.py 区域优先引擎"
+      "maps_to": "World model F2 fence = decision object / F3 store = derived effect; adjust.py region‑priority engine."
     }
   ],
   "knowledge_gaps_needing_business_input": [
-    "客情依赖量化口径：行业无标准指标，建议「同一经销商持续服务年限+拜访稳定性」作代理，需业务确认计算方式（影响 K-CASE-003 的 40% 复现）",
-    "审批链本地化：K-RULE-009 为行业默认五级，需按本公司实际组织架构确认"
+    "Customer‑relationship dependency quantification: industry has no standard metric; propose using “continuous service years with same dealer + visit stability” as proxy; business must confirm calculation method (impacts K‑CASE‑003 40% reproducibility).",
+    "Approval chain localization: K‑RULE‑009 is industry default five‑level; must verify against our company’s actual org structure."
   ],
   "knowledge_resolved_from_research": [
-    "承载力口径 ✓ K-BENCH-003/004",
-    "返利/考核结构 ✓ K-RULE-008",
-    "审批链与过渡 SOP ✓ K-RULE-009",
-    "低密度服务模式 ✓ K-RULE-010（K-RULE-007 升级 HIGH）"
+    "Capacity metric ✓ K‑BENCH‑003/004.",
+    "Rebate/assessment structure ✓ K‑RULE‑008.",
+    "Approval chain and transition SOP ✓ K‑RULE‑009.",
+    "Low‑density service model ✓ K‑RULE‑010 (K‑RULE‑007 upgraded to HIGH)."
   ]
 }

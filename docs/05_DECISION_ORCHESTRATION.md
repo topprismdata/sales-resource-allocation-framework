@@ -1,19 +1,19 @@
 # SRAF Decision Orchestration Specification v1.2
 
-**项目：** Sales Resource Allocation Framework  
-**文档：** `05_DECISION_ORCHESTRATION.md`  
-**状态：** Implementation Baseline v1.2  
+**Project:** Sales Resource Allocation Framework
+**Document:** `05_DECISION_ORCHESTRATION.md`
+**Status:** Implementation Baseline v1.2
 
-**上位规范：**
-`00_PROJECT_CHARTER.md`、`01_WORLD_MODEL_SPEC.md`、`02_DECISION_ONTOLOGY.md`、`03_DECISION_PROBLEM_CONTRACTS.md`、`04_ALLOCATION_INTELLIGENCE.md`
+**Upper-level Specification:**
+`00_PROJECT_CHARTER.md`, `01_WORLD_MODEL_SPEC.md`, `02_DECISION_ONTOLOGY.md`, `03_DECISION_PROBLEM_CONTRACTS.md`, `04_ALLOCATION_INTELLIGENCE.md`
 
 ---
 
-## 1. 文档目标
+## 1. Document Objective
 
-Decision Orchestration 回答：
+Decision Orchestration answers:
 
-> 当 DecisionCase 被确认后，以什么顺序、耦合方式调用哪些 Decision Problem、Solver、Oracle、Scenario 与 Human Review，最终形成可治理 Decision。
+> When a DecisionCase is confirmed, in what order and coupling manner are which Decision Problems, Solvers, Oracles, Scenarios, and Human Reviews invoked, ultimately forming a governable Decision.
 
 ```text
 DecisionCase
@@ -47,7 +47,7 @@ Transition
 
 ## 1A. Normative Ownership
 
-本文件唯一拥有：
+This file uniquely has:
 
 ```text
 Scenario
@@ -64,19 +64,19 @@ AutomationLevel
 OrchestrationRun
 ```
 
-`ScenarioAssumption` 的 Semantic Status 由 01 定义；其 workflow lifecycle 由 05 定义。
+`ScenarioAssumption`'s Semantic Status is defined by 01; its workflow lifecycle is defined by 05.
 
 ---
 
-## 2. 为什么需要 Orchestrator
+## 2. Why Orchestrator is Needed
 
-没有 Orchestrator，Sizing/Location/Territory/Scheduling/Routing 会退化成一组孤立 API，Composite Problem 与流程逻辑散落在 Controller，导致依赖、迭代、Oracle、Human Checkpoint、版本、Fallback 无法统一治理。
+Without an Orchestrator, Sizing/Location/Territory/Scheduling/Routing will degrade into a set of isolated APIs; Composite Problems and process logic are scattered in the Controller, resulting in dependencies, iterations, Oracles, Human Checkpoints, versioning, and Fallback unable to be governed uniformly.
 
-Decision Workflow 是 Framework 一级对象。
+Decision Workflow is a first-level object of the Framework.
 
 ---
 
-## 3. 三个概念分离
+## 3. Three Concept Separation
 
 ```text
 Business Scenario
@@ -84,15 +84,15 @@ Decision Workflow
 Decision Problem
 ```
 
-Scenario 回答业务情境；Workflow 回答需要编排哪些步骤；Decision Problem 回答某一步允许改变什么业务变量。
+Scenario answers the business context; Workflow answers which steps need to be orchestrated; Decision Problem answers what business variables are allowed to change at a given step.
 
-同一 Expansion Scenario 可以因 Headcount 是否已由总部固定而走不同 Workflow。
+The same Expansion Scenario may follow different Workflows depending on whether the Headcount has been fixed by headquarters.
 
 ---
 
 ## 4. WorkflowTemplate / WorkflowInstance
 
-WorkflowTemplate：
+WorkflowTemplate: 
 
 ```text
 workflow_template_id
@@ -108,7 +108,7 @@ exit_conditions
 failure_routes
 ```
 
-WorkflowInstance：
+WorkflowInstance: 
 
 ```text
 workflow_instance_id
@@ -126,7 +126,7 @@ updated_at
 
 ## 5. WorkflowStep
 
-标准类型：
+Standard types:
 
 ```text
 DiagnosisStep
@@ -139,9 +139,9 @@ ApprovalStep
 TransitionPlanningStep
 ```
 
-Step 通过标准 Artifact 交换，不通过隐式临时表耦合。
+Step exchanges via standard Artifacts, not via implicit temporary table coupling.
 
-Artifact 包括：
+Artifacts include:
 
 ```text
 WorldSnapshot
@@ -158,7 +158,7 @@ HumanReview
 
 ## 6. Dependency
 
-Step 应表达：
+Step should express:
 
 ```text
 requires
@@ -167,13 +167,13 @@ blocks
 invalidates
 ```
 
-上游 Artifact 变化后，下游 Candidate 可被标记 STALE。
+After an upstream Artifact changes, downstream Candidate can be marked STALE.
 
 ---
 
 ## 7. Composite Problem / DecompositionPlanner
 
-Composite Problems：
+Composite Problems: 
 
 ```text
 CP01 DeploymentDesign
@@ -182,7 +182,7 @@ CP03 StructuralRebalancing
 CP04 CoverageExecutionDesign
 ```
 
-DecompositionPlanner 输入：
+DecompositionPlanner input:
 
 ```text
 CompositeProblem
@@ -195,7 +195,7 @@ DecisionHorizon
 OptimalityRequirement
 ```
 
-输出 SolutionStrategy：
+Output SolutionStrategy:
 
 ```text
 problem_ids
@@ -220,21 +220,21 @@ Iterative
 Joint
 ```
 
-Independent 可并行。
+Independent can be parallelized.
 
-Sequential 如 Coverage → Scheduling。
+Sequential such as Coverage → Scheduling.
 
-Iterative 如 Territory ↔ Travel、Coverage ↔ SchedulingFeasibility。
+Iterative such as Territory ↔ Travel, Coverage ↔ SchedulingFeasibility.
 
-Joint 如 Greenfield Sizing + Location + Territory，但求解后必须 Semantic Decomposition 回 ResourceRequirement、ResourceDeployment、ResponsibilityAssignment。
+Joint such as Greenfield Sizing + Location + Territory, but after solving it must Semantic Decomposition back to ResourceRequirement, ResourceDeployment, ResponsibilityAssignment.
 
-Joint 不是默认模式，需考虑 scale、runtime、data quality、explainability、optimality requirement。
+Joint is not the default mode; scale, runtime, data quality, explainability, and optimality requirement must be considered.
 
 ---
 
 ## 9. Multi-stage Decomposition / Multi-fidelity
 
-大规模问题可：
+Large-scale problems can:
 
 ```text
 Demand Aggregation
@@ -245,9 +245,9 @@ Demand Aggregation
 → Local Improvement
 ```
 
-所有聚合都属于 ProblemProjection，不修改 World。
+All aggregations belong to ProblemProjection and do not modify World.
 
-Evaluation：
+Evaluation: 
 
 ```text
 L1 Fast Proxy
@@ -255,7 +255,7 @@ L2 Network Evaluation
 L3 Full Simulation
 ```
 
-Candidate Funnel：
+Candidate Funnel: 
 
 ```text
 Generate
@@ -271,7 +271,7 @@ Generate
 
 ## 10. Feasibility Oracle Orchestration
 
-Oracle 统一返回：
+Oracle returns uniformly:
 
 ```text
 oracle_type
@@ -285,7 +285,7 @@ runtime
 recommendation
 ```
 
-Status：
+Status: 
 
 ```text
 FEASIBLE
@@ -294,13 +294,13 @@ INFEASIBLE
 UNKNOWN
 ```
 
-Oracle 不得自动修改 Candidate，只提供 Feedback。
+Oracle must not automatically modify Candidate, only provide Feedback.
 
 ---
 
 ## 11. Feedback Contract / Iteration Stop
 
-Iterative Workflow 必须声明：
+Iterative Workflow must declare:
 
 ```text
 feedback_source
@@ -308,7 +308,7 @@ feedback_target
 feedback_variables
 ```
 
-停止条件：
+Stopping condition:
 
 ```text
 FeasibleSolutionFound
@@ -320,15 +320,15 @@ RuntimeBudgetReached
 HumanStop
 ```
 
-不允许无限循环或只追数学 objective。
+Infinite loops or pursuing only mathematical objectives are not allowed.
 
 ---
 
 ## 12. SolverSelector
 
-DecompositionPlanner 决定如何拆，SolverSelector 决定某一步用哪个具体 Solver。
+DecompositionPlanner decides how to decompose, and SolverSelector decides which concrete Solver to use at a given step.
 
-输入：
+Input:
 
 ```text
 ProblemContract
@@ -341,7 +341,7 @@ InteractionMode
 SolverRegistry
 ```
 
-InteractionMode：
+InteractionMode: 
 
 ```text
 BatchPlanning
@@ -351,7 +351,7 @@ BenchmarkResearch
 FeasibilityCheck
 ```
 
-支持 Primary Solver、Fallback Solver、Fallback Heuristic；Fallback 不代表放松 Hard Constraint。
+Supports Primary Solver, Fallback Solver, Fallback Heuristic; Fallback does not imply relaxing Hard Constraints.
 
 ---
 
@@ -364,7 +364,7 @@ H3 Exception / Override Review
 H4 Final Approval
 ```
 
-Human Review 可以提交 HumanEvidence；Override 需要版本化并重新评价。
+Human Review can submit HumanEvidence; Override requires versioning and re-evaluation.
 
 ---
 
@@ -377,72 +377,72 @@ A2 Auto-execute within guardrails
 A3 Autonomous
 ```
 
-Structural Decision 默认 A0/A1；低风险 routing/scheduling 可在严格 Policy 下达到 A2。
+Structural Decision defaults to A0/A1; low-risk routing/scheduling can reach A2 under strict Policy.
 
-WorkflowPolicy 声明 allowed_automation_level、required_human_checkpoints、approval_authority。
+WorkflowPolicy declares allowed_automation_level, required_human_checkpoints, approval_authority.
 
 ---
 
-## 14A. Governance Workflows（GW01–GW03）
+## 14A. Governance Workflows (GW01–GW03) 
 
-`WorldModelRepair`、`ModelGovernance`、`PolicyReview` 由 Problem Router 产出，
-但**不是** DP01–DP07，也不注册进 SolverRegistry。
+`WorldModelRepair`, `ModelGovernance`, `PolicyReview` are produced by Problem Router,
+but **are not** DP01–DP07, nor registered in SolverRegistry.
 
-本文件拥有其最低 Workflow 语义（复用 §4 WorkflowTemplate / §5 WorkflowStep /
-§22 Workflow Status / §14 Automation Level），不新增一套独立引擎。
+This file has its lowest Workflow semantics (reuse §4 WorkflowTemplate / §5 WorkflowStep /
+§22 Workflow Status / §14 Automation Level), without introducing a new independent engine.
 
-统一约束：
+Unified constraints:
 
 ```text
 entry_artifact        AllocationDecisionSignal / DecisionCase
-executor              人工治理角色 + 平台任务（非 Decision Compiler）
-automation_level      默认 A0/A1；禁止 A2/A3
-forbidden             直接修改 Canonical World；静默改 Policy/Requirement
-output                修正提案 + 治理决定 + 影响范围
-post_effect           触发下游 Artifact STALE 标记（§21）
-reintegration         修正完成 → 回到 Diagnosis 重算 Health/Gap
+executor              manual governance role + platform task (non-Decision Compiler)
+automation_level      defaults to A0/A1; prohibits A2/A3
+forbidden             direct modification of Canonical World; silent modification of Policy/Requirement
+output                correction proposal + governance decision + impact scope
+post_effect           triggers downstream Artifact STALE marking (§21)
+reintegration         Correction completed → return to Diagnosis and recalculate Health/Gap
 ```
 
 ### GW01 WorldModelRepair
 
-处理数据缺陷（坐标错误、重复实体、过期 travel、责任冲突）。
+Handle data defects (coordinate errors, duplicate entities, stale travel, responsibility conflicts).
 
 ```text
-DefectTriage          严重度 × 影响范围分级
-RepairAction          Entity Merge/Split/Supersede 见 08；属性更正见本流程
-ImpactAnalysis        受影响 Opportunity / Coverage / Workload 清单
-Verification          修正后 Health 重算，Gap 是否消失
+DefectTriage          Severity × impact scope classification
+RepairAction          Entity Merge/Split/Supersede see 08; attribute corrections see this process
+ImpactAnalysis        Affected Opportunity / Coverage / Workload list
+Verification          After correction, recalculate Health, and whether Gap disappears
 ```
 
-Identity 类修复必须经 `08_CANONICAL_IDENTITY_AND_ENTITY_RESOLUTION.md`
-的 Human Resolution 权限，GW01 不得绕过。
+Identity-type repair must go through `08_CANONICAL_IDENTITY_AND_ENTITY_RESOLUTION.md`
+Human Resolution authority, GW01 must not bypass.
 
 ### GW02 ModelGovernance
 
-处理系统性模型偏差（Opportunity 高估、ServiceTime 失真、Travel 漂移）。
+Handle systematic model bias
 
 ```text
-EvidenceReview        残差 / 分布漂移 / calibration 报告
-VersionDecision       重训 / 换特征 / 降级使用 / 保留
-Reprojection          新 model_version 重算历史 Derived State
+EvidenceReview        Residual / Distribution Drift / calibration report
+VersionDecision       Retrain / Replace Features / Downgrade Usage / Retain
+Reprojection          new model_version recomputes historical Derived State
 ```
 
-GW02 不自动 reweight objective；任何进入 Candidate 的权重变化
-仍走 `02` 的 Objective 治理。
+GW02 does not automatically reweight objective; any weight changes entering Candidate
+Still follows `02` Objective governance.
 
 ### GW03 PolicyReview
 
-处理 `POLICY_INFEASIBLE` 与互斥 Hard Policy。
+Handle `POLICY_INFEASIBLE` and mutually exclusive Hard Policy.
 
 ```text
-ConflictExposition    哪两条 Policy、在哪个 scope、为何不可同真
-AuthorityRouting      按 policy owner 升级（不得由工程侧默认放宽）
-Resolution            改 Policy / 申请例外 / 接受局部不覆盖
+ConflictExposition    Which two Policies, in which scope,
+AuthorityRouting      upgrade per policy owner (must not be relaxed by engineering side by default)
+Resolution            change Policy / apply for exception / accept local non-coverage
 ```
 
-GW03 与 `RequirementExceptionProposal`（02 §43A）的关系：
-Proposal 是**单个 DecisionCase 内**的例外；
-GW03 是**跨 Case 的 Policy 语义本身**的修订入口。两者审批权限不同。
+GW03 and `RequirementExceptionProposal` (02 §43A) relationship:
+Proposal is an exception **within a single DecisionCase**;
+GW03 is the entry point for revising the **Policy semantics across Cases**. Their approval permissions differ.
 
 ---
 
@@ -465,17 +465,17 @@ Market Definition
 → Transition / Launch Plan
 ```
 
-Sizing ↔ Coverage 需要生成 Resource–Coverage Frontier。
+Sizing ↔ Coverage needs to generate a Resource–Coverage Frontier.
 
-Location ↔ Territory 通常 Iterative；大规模可 Macro Joint + Micro Iterative。
+Location ↔ Territory is usually Iterative; large-scale can be Macro Joint + Micro Iterative.
 
-默认 Ideal Deployment → Personnel/Hiring，而不是围绕现有人位置强行设计市场。
+Default Ideal Deployment → Personnel/Hiring, rather than forcibly designing the market around existing personnel positions.
 
 ---
 
 ## 16. SC02 Capacity Expansion
 
-Entry：
+Entry: 
 
 ```text
 Persistent Capacity Gap
@@ -486,7 +486,7 @@ New Channel
 Management-approved envelope
 ```
 
-Workflow：
+Workflow: 
 
 ```text
 Allocation Gap Confirmation
@@ -504,9 +504,9 @@ Allocation Gap Confirmation
       → Transition Planning
 ```
 
-进入 DP01 前至少经过 GlobalCapacity、TravelBenchmark、LocalImbalance、CoveragePolicyStress 等测试。
+Before entering DP01, must pass at least GlobalCapacity, TravelBenchmark, LocalImbalance, CoveragePolicyStress, etc.
 
-必须比较：
+Must compare:
 
 ```text
 Maintain
@@ -517,13 +517,13 @@ Add Incremental Capacity
 Hybrid
 ```
 
-不能只比较加几个人。
+Cannot just compare adding a few people.
 
 ---
 
 ## 17. SC03 Capacity Reduction / Downsizing
 
-Workflow：
+Workflow: 
 
 ```text
 Target Resource Envelope
@@ -539,13 +539,13 @@ Target Resource Envelope
 → Transition
 ```
 
-逻辑是 Market Need → Required Deployment → Required Capability → Personnel Matching，而不是先决定谁留下。
+The logic is Market Need → Required Deployment → Required Capability → Personnel Matching, rather than first deciding who stays.
 
 ---
 
 ## 18. SC04 Structural Rebalancing
 
-先问 Should we change?
+First ask Should we change?
 
 ```text
 Current Baseline
@@ -564,19 +564,19 @@ Current Baseline
 → Transition
 ```
 
-Maintain 强制。
+Maintain is mandatory.
 
-Minor / Major Rebalance 可按 accounts/revenue/resources/territory changed 分类，并影响 approval、transition、validation。
+Minor / Major Rebalance can be categorized by accounts/revenue/resources/territory changes, and affect approval, transition, validation.
 
 ---
 
 ## 19. ChangeBudget / Central Benchmark / Local Adjustment
 
-`ChangeBudget` **不作为新的 canonical Entity**。
+`ChangeBudget` **is not a new canonical Entity**.
 
-它由 `DecisionCase / WorkflowPolicy` 中的一组 `DecisionRequirement / Guardrail` 表达，例如：
+It is expressed by a set of `DecisionRequirement / Guardrail` in `DecisionCase / WorkflowPolicy`, for example:
 
-ChangeBudget 可限制：
+ChangeBudget can restrict:
 
 ```text
 Max reassigned accounts
@@ -585,17 +585,17 @@ Max moved resources
 Max transition cost
 ```
 
-Structural Workflow 建议固定产生 CentralBenchmarkCandidate。
+Structural Workflow recommends consistently generating CentralBenchmarkCandidate.
 
-LocalAdjustedCandidate 必须基于 Central Benchmark 形成 Delta；HumanOverride 后重新计算 Opportunity、Workload、Travel、Capacity、ChangeCost、Constraint Status。
+LocalAdjustedCandidate must form a Delta based on Central Benchmark; after HumanOverride recalculate Opportunity, Workload, Travel, Capacity, ChangeCost, Constraint Status.
 
 ---
 
 ## 20. Scenario Fork / Cross-Problem Evaluation
 
-Baseline 上创建 Scenario Overlay，不复制/修改生产 World。
+Create Scenario Overlay on Baseline, do not copy/modify production World.
 
-不同 Solver Candidate 投影到统一 Business Evaluation Space：
+Different Solver Candidates project into a unified Business Evaluation Space:
 
 ```text
 Opportunity Coverage
@@ -609,25 +609,25 @@ Business Risk
 Implementation Complexity
 ```
 
-v1.2 不默认 Universal Score；可保留 Pareto Candidate Set。
+v1.2 does not default to Universal Score; can retain Pareto Candidate Set.
 
-Recommendation ≠ Decision。
+Recommendation ≠ Decision. 
 
 ---
 
 ## 21. Workflow Restart / Artifact Invalidation
 
-新 Evidence 或上游改变可从指定 Step 重启。
+New Evidence or upstream changes can restart from a specified Step.
 
-依赖变化后旧 Artifact 标记 STALE，禁止继续审批。
+After dependency changes, old Artifacts are marked STALE; further approval is prohibited.
 
-WorkflowTemplate 与 OrchestrationRun 都版本化。
+Both WorkflowTemplate and OrchestrationRun are versioned.
 
 ---
 
 ## 21A. Run Hierarchy
 
-v1.2 统一技术执行记录：
+v1.2 unifies technical execution records:
 
 ```text
 OrchestrationRun
@@ -637,9 +637,9 @@ OrchestrationRun
   └── EvaluationRun
 ```
 
-`ProblemRun` 由 03 定义，`OrchestrationRun` 由 05 定义。
+`ProblemRun` is defined by 03, `OrchestrationRun` is defined by 05.
 
-不再使用一个语义含糊的统一 run 名称覆盖所有层级。
+No longer use a semantically vague unified run name to cover all layers.
 
 ---
 
@@ -656,15 +656,15 @@ FAILED
 CANCELLED
 ```
 
-WAITING_FOR_DATA 不是 failure；POLICY_INFEASIBLE 等可使 Workflow BLOCKED。
+WAITING_FOR_DATA is not a failure; POLICY_INFEASIBLE etc. can cause Workflow to be BLOCKED.
 
-Retry 必须基于 FailureType，禁止 Generic Retry。
+Retry must be based on FailureType; Generic Retry is prohibited.
 
 ---
 
-## 23. Agent 与 Orchestrator 边界
+## 23. Agent and Orchestrator Boundary
 
-Agent：
+Agent: 
 
 ```text
 interpret
@@ -674,7 +674,7 @@ explain candidates
 collect human input
 ```
 
-Orchestrator：
+Orchestrator: 
 
 ```text
 workflow state
@@ -686,7 +686,7 @@ checkpoint
 retry/fallback
 ```
 
-Agent 不靠对话记忆管理复杂 Workflow 状态。
+Agent does not rely on conversational memory to manage complex Workflow state.
 
 ---
 
@@ -703,7 +703,7 @@ failure_policy
 scenario_limit
 ```
 
-Budget：
+Budget: 
 
 ```text
 ComputeBudget
@@ -717,21 +717,21 @@ CandidateBudget
 
 ## 25. Cross-Horizon Escalation / Freeze Window
 
-Operational Failure 持续且 root cause structural 才创建 Structural Review。
+Operational Failure is continuous and root cause structural triggers Structural Review creation.
 
-上层结构变化可触发 Scheduling/ Routing refresh。
+Upper-level structural changes can trigger Scheduling/ Routing refresh.
 
-支持 StructuralFreezeWindow（promotion、quarter close、peak season）。
+Supports StructuralFreezeWindow (promotion, quarter close, peak season).
 
 ---
 
 ## 26. Transition / Validation
 
-Approved Decision → TransitionPlan → Execution → Stabilization → Validation → DecisionOutcome。
+Approved Decision → TransitionPlan → Execution → Stabilization → Validation → DecisionOutcome. 
 
-Structural Workflow 不在 Transition 后直接 Closed。
+Structural Workflow is not directly Closed after Transition.
 
-支持 ShadowWorkflow、Pilot、StagedTransitionPlan。
+Supports ShadowWorkflow, Pilot, StagedTransitionPlan.
 
 ---
 
@@ -744,47 +744,47 @@ High
 Critical
 ```
 
-考虑 BusinessImpact、ChangeScale、Uncertainty、CustomerRelationshipImpact、PersonnelImpact、Reversibility、DataConfidence。
+Consider BusinessImpact, ChangeScale, Uncertainty, CustomerRelationshipImpact, PersonnelImpact, Reversibility, DataConfidence.
 
-高风险/关键结构决策必须更高级 Human Governance。
+High-risk/critical structural decisions must require higher-level Human Governance.
 
 ---
 
 ## 28. Architecture Gates
 
-原则上拒绝：
+In principle, reject:
 
 ```text
-Business Scenario 与 Solver 一一绑定
-Expansion = 一个 Expansion Solver
-Workflow 顺序硬编码在 Controller
-Composite Problem 创造重复业务变量
-Joint Solver 输出无法恢复 Atomic Semantics
-Oracle 自动修改 Candidate
-Iterative Loop 没有停止条件
-所有 Candidate 都跑最高成本 Simulation
-SolverSelector 与 ProblemRouter 合并
-Solver timeout 自动放松 Hard Constraint
-Human Review 后不重新评价
-HumanOverride 静默替换 Candidate
-依赖变化后旧 Candidate 仍有效
-Workflow 无版本
-Scenario 修改生产 World
-Structural Decision 不允许 Maintain
-Expansion 不比较 Rebalance/Coverage alternatives
-Downsizing 先决定人员再决定市场
-一次 Operational Failure 就升级 Territory
+Business Scenario is bound one-to-one with a Solver.
+Expansion = one Expansion Solver.
+Workflow order is hardcoded in Controller.
+Composite Problem creates duplicate business variables.
+Joint Solver output cannot restore Atomic Semantics.
+Oracle automatically modifies Candidate.
+Iterative Loop has no stopping condition.
+All Candidates run the highest-cost Simulation.
+SolverSelector is merged with ProblemRouter.
+Solver timeout automatically relaxes Hard Constraint.
+After Human Review, do not re-evaluate.
+HumanOverride silently replaces Candidate.
+After dependency changes, old Candidate remains valid.
+Workflow has no versioning.
+Scenario modification creates World.
+Structural Decision does not allow Maintain.
+Expansion does not compare Rebalance/Coverage alternatives.
+Downsizing first decides on personnel, then decides on market.
+One Operational Failure escalates Territory.
 Generic Retry
-Agent 自己维护 Workflow State
-Approval 后跳过 Transition
-Transition 后不做 Validation
+Agent self-maintains Workflow State.
+After Approval, skip Transition.
+After Transition, do not perform Validation.
 ```
 
 ---
 
-## 29. MVP 顺序 / DoD
+## 29. MVP Order / DoD
 
-最小 Orchestration：
+Minimum Orchestration:
 
 ```text
 WorkflowTemplate
@@ -799,13 +799,13 @@ Sequential
 Iterative
 ```
 
-第一条 Workflow：DP06 Scheduling Reference Integration。
+First Workflow: DP06 Scheduling Reference Integration.
 
-第二条：Coverage ↔ Scheduling Iterative Loop。
+Second Workflow: Coverage ↔ Scheduling Iterative Loop.
 
-第三条：Structural Rebalancing（Baseline + Maintain + Rebalance + HumanOverride + Re-evaluation）。
+Third Workflow: Structural Rebalancing (Baseline + Maintain + Rebalance + HumanOverride + Re-evaluation).
 
-至少验证：
+At least verify:
 
 ```text
 Sequential
@@ -815,7 +815,7 @@ Human Override
 Scenario Isolation
 ```
 
-完整 Pipeline：
+Complete Pipeline:
 
 ```text
 Sales World Model

@@ -1,85 +1,85 @@
-# 经销商区域知识库（Knowledge Base）
+# Dealer Territory Knowledge Base (Knowledge Base) 
 
-- 状态：v0.3.0（31 条：21 结晶 + 9 行业检索补入 + 1 业务纠正新增；业务缺口 5→2）
-- 日期：2026-08-28
-- 定位：**04 分配智能层的"智商"来源**——世界模型装骨架，知识库装血肉
-- 机器可读：`knowledge_items.json`（本文件为人读索引）
+- Status: v0.3.0 (31 items: 21 crystallized + 9 supplemented by industry research + 1 new from business correction; business gaps 5→2) 
+- Date: 2026-08-28
+- Positioning: **04 Allocation Intelligence layer's "IQ" source**——World Model provides skeleton, Knowledge Base provides flesh
+- Machine-readable: `knowledge_items.json` (This file is human-readable index) 
 
-## 为什么需要它
+## Why is it needed
 
-智能层的产出是**给人的建议**。给人建议 ≠ 求解器输出，而是：
-"建议 X，理由 ①②③，风险 A/B，依据：规则 K-RULE-003 + 案例 K-CASE-002 + 数据 K-FACT-003"。
+The output of the Intelligence layer is **advice for people**. Advice for people ≠ solver output, but rather:
+"Recommendation X, reasons ①②③, risks A/B, based on: rule K-RULE-003 + case K-CASE-002 + data K-FACT-003".
 
-推理链里的每一环都必须来自**有出处的知识条目**——这正是"没有智商"的反面：
-不是功能缺失，是**知识缺失**。
+Every link in the reasoning chain must come from **knowledge items with sources**——this is exactly the opposite of "lacking IQ":
+Not a missing feature, but **missing knowledge**.
 
-## 六类知识 × 31 条
+## Six types of knowledge × 31 items
 
-### 原理（为什么这么设计）——来自 Zoltners 书 + 市场分析
-| ID | 知识 | 出处 |
+### Principles (Why it's designed this way) ——from Zoltners book + market analysis
+| ID | Knowledge | Source |
 |---|---|---|
-| K-PRIN-001 | 区域排他性 = 保护经销商投入的制度，非优化解 | 书 + CN_MARKET |
-| K-PRIN-002 | Carryover：去年努力今年结果，评估须声明影响周期 | 书 + 06 Carryover Gate |
-| K-PRIN-003 | 调整冲击对中等体量门店伤害最大 | 书 Table 8.3 |
-| K-PRIN-004 | 三步设计：账号级→地理整合→对齐调整 | 书 |
-| K-PRIN-005 | 层级镜像组织：决策层级=组织层级，D/B/V 三级独立、仅接口交接、禁止跨层干预 | 行业检索 + 用户拍板 |
-| K-PRIN-006 | 区域调整决策对象=【区域/片区】，门店归属是派生效果（店随区域走，非 CRM 门店级改动） | 业务方 2026-08-28 修正 |
+| K-PRIN-001 | Territory exclusivity = a system that protects dealer investment, not an optimization solution | book + CN_MARKET |
+| K-PRIN-002 | Carryover: last year's effort, this year's results, evaluation must state impact horizon | book + 06 Carryover Gate |
+| K-PRIN-003 | Adjustment impact causes the most harm on medium-sized stores | book Table 8.3 |
+| K-PRIN-004 | Three-step design: account-level→geographic integration→alignment adjustment | book |
+| K-PRIN-005 | Hierarchical mirroring organization: decision-making level = organizational level, D/B/V three levels independent, handovers only via interfaces, cross-level intervention prohibited | industry research + user final decision |
+| K-PRIN-006 | Territory adjustment decision object = 【territory/sub-area】, store assignment is a derived effect (stores follow territory, not CRM store-level changes) | business side 2026-08-28 correction |
 
-### 规则（什么时候怎么做）——数据验证 + 业务对话
-| ID | 知识 | 出处 |
+### Rules (When and how to do it) ——data validation + business dialogue
+| ID | Knowledge | Source |
 |---|---|---|
-| K-RULE-001 | 边界沿主干道/河流走，肉眼可见不扯皮 | 38 围栏几何验证 |
-| K-RULE-002 | 区划打底：远郊整区承包，老城一区切 3~6 块 | 72% 纯度验证 |
-| K-RULE-003 | 直供店不算缺口 | 美宜佳 2,127 家实据 |
-| K-RULE-004 | 上游一致率 85% 正常，100% 不可达 | kind 分布 |
-| K-RULE-005 | 身份先行：未解析身份的缺口可能是假缺口 | 08 规范 |
-| K-RULE-006 | 换经销商先评客情依赖，过渡方案=联合拜访背书 1-3 月（行业共识） | 大石案例+行业检索（HIGH） |
-| K-RULE-007 | 低密度缺口是结构性的：批发/二批+线路化直配，非加人 | 从化案例+行业检索（HIGH） |
-| K-RULE-008 | 返利结构决定经销商行为反应（阶梯→压货冲动；过程→合规） | 行业返利实践检索 |
-| K-RULE-009 | 更换 SOP：五级审批+过渡三件套+1-3 月联合拜访，严禁断崖 | 行业交接 SOP 检索 |
-| K-RULE-010 | 低密度选型：极低密度走二批、乡镇走中心仓直配+线上订货补足 | 行业农村覆盖检索 |
-| K-RULE-011 | 线路设计五步法（Layer-B）：定点→定片→定人→定频→定线 | 行业线路设计检索 |
-| K-RULE-012 | 线路四原则：片区化防折返 · ABC 分级频率 · 负荷均衡 · 稳定压倒最优 | 行业 beat 设计检索 |
+| K-RULE-001 | Boundaries follow main roads/rivers, visible to naked eye, no disputes | 38 fence geometry validation |
+| K-RULE-002 | District zoning as base: outer suburbs whole-territory contracting, old city one area divided into 3~6 blocks | 72% purity validation |
+| K-RULE-003 | Direct supply stores don't count as gaps | Meiyijia 2,127 stores hard evidence |
+| K-RULE-004 | Upstream consistency rate 85% normal, 100% unattainable | kind distribution |
+| K-RULE-005 | Identity first: gaps with unparsed identity may be false gaps | 08 standard |
+| K-RULE-006 | Dealer change: first evaluate customer relationship dependency, transition plan = joint visit endorsement 1-3 months (industry consensus) | Dashi case+industry research (HIGH)  |
+| K-RULE-007 | Low-density gaps are structural: wholesale/sub-distribution + beat route direct delivery, not adding people | Conghua case+industry research (HIGH)  |
+| K-RULE-008 | Rebate structure determines dealer behavioral response (tiered→channel stuffing impulse; process→compliance) | industry rebate practice research |
+| K-RULE-009 | Change SOP: five-level approval+transition toolkit+1-3 months joint visit, strictly prohibit cliff drops | industry handover SOP research |
+| K-RULE-010 | Low-density selection: extremely low density use sub-distribution, townships use central warehouse direct delivery+online ordering supplement | industry rural coverage research |
+| K-RULE-011 | Beat route design five-step method (Layer-B): locate points→define areas→assign people→set frequency→design routes | industry beat route design research |
+| K-RULE-012 | Beat route four principles: sub-area based to prevent backtracking · ABC classified frequency · load balancing · stability over optimization | industry beat design research |
 
-### 事实（市场长什么样）
-K-FACT-001 合同填空式文本 · K-FACT-002 卖断+不退换条款 · K-FACT-003 广州现状快照
+### Facts (What the market looks like) 
+K-FACT-001 Contract fill-in-the-blank text · K-FACT-002 Outright sell-in + no-return terms · K-FACT-003 Guangzhou current snapshot
 
-### 案例（具体怎么发生的）
-K-CASE-001 从化整区承包 · K-CASE-002 番禺河边切割 · K-CASE-003 大石调整过渡
+### Cases (How it specifically happened) 
+K-CASE-001 Conghua whole-territory contracting · K-CASE-002 Panyu riverside division · K-CASE-003 Dashi adjustment transition
 
-### 约束（系统硬边界）
-K-CONST-001 visit 只读依赖 · K-CONST-002 稳定性预算+审批链
+### Constraints (System hard boundaries) 
+K-CONST-001 Visit read-only dependency · K-CONST-002 Stability budget+approval chain
 
-### 基准（什么算好）
-K-BENCH-001 区域健康基准（对齐度 79% 线） · K-BENCH-002 技术选型（H3+图划分） · K-BENCH-003 承载力中国口径（20-30 家/天分级，A周/B两周/C月） · K-BENCH-004 国际口径交叉（40-45 天/Strike Rate 60-75%/旅行<40%） · K-BENCH-005 Layer-B/V 过程基准（拜访达成率红线 90%、协访 50-70%、过程/结果考核权重）
+### Benchmarks (What counts as good) 
+K-BENCH-001 Territory health benchmark (alignment 79% line) · K-BENCH-002 Technology selection (H3+graph partitioning) · K-BENCH-003 Capacity China standard (20-30 stores/day classification, A week/B two weeks/C month) · K-BENCH-004 International standard cross-reference (40-45 days/Strike Rate 60-75%/travel<40%) · K-BENCH-005 Layer-B/V process benchmark (visit achievement rate red line 90%, co-visit 50-70%, process/result evaluation weight)
 
-## 知识治理（每条知识的生命周期）
+## Knowledge governance (Lifecycle of each knowledge item) 
 
 ```text
-获取 → 登记（statement+source+confidence+maps_to） → 使用（进入建议推理链）
+Acquisition → Registration (statement+source+confidence+maps_to)  → Usage (entering recommendation reasoning chain) 
   ↑                                                      ↓
-  └────── 数据刷新/业务纠正 触发版本更新 ←── 建议被采纳/驳回 的反馈
+└────── Data refresh/business correction triggers version update ←── Feedback when recommendation is accepted/rejected
 ```
 
-规则：
-1. 每条知识必须有 `source`——无出处的知识不入库（防"幻觉知识"）
-2. `confidence: MEDIUM/LOW` 的知识只能出现在建议的辅助理由里，不能单独支撑强建议
-3. 数据类知识（FACT/BENCH）随快照更新；原则类知识需业务确认才能修订
+Rules:
+1. Each knowledge item must have `source`——knowledge without source is not stored (to prevent "hallucinated knowledge")
+2. Knowledge with `confidence: MEDIUM/LOW` can only appear in auxiliary reasons of recommendations, cannot independently support strong recommendations
+3. Data-type knowledge (FACT/BENCH) updates with snapshots; principle-type knowledge requires business confirmation to revise
 
-## 业务知识缺口（5 → 2，其余已由行业检索解决）
+## Business knowledge gaps (5 → 2, the rest have been resolved by industry research) 
 
-**已解决**（详见 json `knowledge_resolved_from_research`）：承载力 ✓ K-BENCH-003/004 · 返利结构 ✓ K-RULE-008 · 审批链+过渡 SOP ✓ K-RULE-009 · 低密度服务模式 ✓ K-RULE-010
+**Resolved** (see json `knowledge_resolved_from_research`): Capacity ✓ K-BENCH-003/004 · Rebate structure ✓ K-RULE-008 · Approval chain+transition SOP ✓ K-RULE-009 · Low-density service model ✓ K-RULE-010
 
-| # | 缺口 | 现状 |
+| # | Gap | Current State |
 |---|---|---|
-| 1 | 客情依赖量化口径 | 行业无标准指标；建议用「同一经销商持续服务年限+拜访稳定性」代理，需业务确认算法（影响 K-CASE-003 的 40% 复现） |
-| 2 | 审批链本地化 | K-RULE-009 为行业默认五级（区域经理→大区→销售总经理→财务→法务），需按公司实际架构确认 |
+| 1 | Customer relationship reliance quantification metric | Industry has no standard metric; it is suggested to use the combination of 'continuous service years of the same dealer + visit stability' as a proxy, and the algorithm needs business confirmation (impact on 40% reproducibility of K-CASE-003). |
+| 2 | Approval chain localization | K-RULE-009 is the industry default five-level (regional manager → region → sales general manager → finance → legal), and needs to be verified against the company's actual structure. |
 
-## 建议生成模式（04 设计预告）
+## Suggestion Generation Pattern (04 Design Preview)
 
 ```text
-观察（世界模型 L4）→ 规则匹配（本库 R类） → 推理链组装
-  → 建议动作 + 理由链（知识ID+数据证据） + 风险（PRIN-002/003） + 路由（审批链）
+Observation (World Model L4) → Rule matching (R-type rules) → Reasoning chain assembly
+→ Suggested actions + Reason chain (Knowledge ID + data evidence) + Risk (PRIN-002/003) + Routing (approval chain)
 ```
 
-每条建议自带:证据链 → 人可以追问"为什么" → 每个为什么都落在知识条目上。
+Each suggestion carries its own evidence chain → humans can ask "why" → each "why" lands on a knowledge entry.

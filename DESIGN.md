@@ -1,185 +1,185 @@
-# SRAF 整体设计文档（Living Document）
-- 状态：v0.6（实施阶段总设计，随实施推进更新）
-- 日期：2026-08-28
-- 规范基线：docs/ 00-08 规范集 **v1.2.1 FROZEN**（本文件不改动规范，记录规范之上的实施状态与设计决策）
-- 实施基线更新：docs/CHANGELOG_v1.2.2.md（区域优先语义 + 逻辑围栏合并，2026-08-28）
-- 治理：规范变更走 CHANGELOG + NORMATIVE_OWNERSHIP；实施决策记录于本文 §5
+# SRAF Overall Design Document (Living Document)
+- Status: v0.6 (overall design for implementation phase, updated as implementation progresses)
+- Date: 2026-08-28
+- Specification Baseline: docs/ 00-08 Specification Set **v1.2.1 FROZEN** (this document does not modify specifications; it records implementation status and design decisions built upon the specifications)
+- Implementation Baseline Update: docs/CHANGELOG_v1.2.2.md (regional priority semantics + logical fence merge, 2026-08-28)
+- Governance: Specification changes follow CHANGELOG + NORMATIVE_OWNERSHIP; implementation decisions are recorded in §5 of this document
 
 ---
 
-## 1. 项目定位
+## 1. Project Positioning
 
-**SRAF = 给经销商区域管理装大脑。**
+**SRAF = Adding a brain to dealer territory management.**
 
-起点是用户的一句诊断：**"现在的区域调整，只有功能，没有业务知识，也就是没有智商。"**
+Starting point is a user diagnosis: **"Current territory adjustments only have functionality, no business knowledge, meaning no intelligence."**
 
-现有工具（围栏绘制、门店归类、排班引擎）都是"怎么做"的肌肉；缺的是"为什么"的大脑：
-哪个店是谁的（身份）、缺口是真的还是假的（诊断）、改了会怎样（预测）、该怎么改（建议）。
+Existing tools (fence drawing, store classification, scheduling engine) are all "how-to" muscles; what's missing is the "why" brain:
+Which store belongs to whom (identity), whether the gap is real or false (diagnosis), what happens if changed (prediction), how to change it (recommendation).
 
 ```text
-智能 = 世界模型（骨架） + 知识库（血肉） + 推理（给人建议）
+Intelligence = World Model (skeleton) + Knowledge Base (flesh) + Reasoning (giving recommendations to people)
 ```
 
-**产出定位：建议给人，不是自动决策。** 每条建议自带证据链，每个"为什么"
-落到有出处的知识条目上（K-*），人可以一直追问到底。
+**Output Positioning: Recommendations are for people, not autonomous decisions.** Each recommendation comes with an evidence chain, and every "why"
+traces back to a sourced knowledge entry (K-*), so people can keep questioning down to the root.
 
 ---
 
-## 2. 总体架构：三级独立决策层
+## 2. Overall Architecture: Three-Level Independent Decision Layers
 
-**层级镜像组织，每层独立决策，仅通过接口交接，禁止跨层干预**（D10）：
+**Layer mirroring organization; each layer makes decisions independently, transfers only via interfaces, cross-layer intervention prohibited** (D10):
 
 ```text
 ┌──────────────────────────────────────────────────────────────┐
-│  人（城市经理 D 层 / 经销商主管 B 层 / 业代 V 层）              │
-│  ↑ 各层建议+证据链                ↑ 各层独立审批（GW 流程）      │
+│  People (City Manager D layer / Dealer Supervisor B layer / Field Sales Rep V layer)              │
+│  ↑ Recommendations+evidence chain for each layer                ↑ Independent approval for each layer (GW process)      │
 ├──────────────────────────────────────────────────────────────┤
-│  04 分配智能层（设计中）：诊断先定位层，再在该层内归因            │
+│  04 Allocation Intelligence layer (in design): Diagnosis first locates the layer, then attributes causes within that layer            │
 ├──────────────────────┬───────────────────────────────────────┤
-│  世界模型 v2.1（骨架） │  知识库 v0.3.0（血肉，31 条）            │
-│  L1-L4 UFO 分层       │  原理6·规则12·事实3·案例3·约束2·基准5    │
-│  事件目录 E1-E11       │  治理：无出处不入库；MEDIUM 只做辅助     │
-│  三级层结构 §2A        │  依据：书+论文+数据+对话+行业检索        │
+│  World Model v2.1 (skeleton) │  Knowledge Base v0.3.0 (flesh, 31 entries)            │
+│  L1-L4 UFO layering       │  Principles 6 · Rules 12 · Facts 3 · Cases 3 · Constraints 2 · Benchmarks 5    │
+│  Event catalog E1-E11       │  Governance: No unverified source enters the database; MEDIUM only assists     │
+│  Three-level structure §2A        │  Sources: books + papers + data + dialogues + industry search        │
 ├──────────────────────┴───────────────────────────────────────┤
-│  Layer-D 经销商区域层（决策主体：厂家城市经理）                  │
-│  dealer_territory/ 围栏切分/分配 — 输出 I-D: store→dealer      │
+│  Layer-D Dealer Territory layer (Decision authority: manufacturer city manager)                  │
+│  dealer_territory/ fence splitting/assignment — Output I-D: store→dealer      │
 ├───────────────────────────────────────────────────────────────┤
-│  Layer-B 业代线路层（决策主体：经销商老板+主管）【待建】          │
-│  定点→定片→定人→定频→定线 — 输出 I-B: store→beat→rep+频率      │
+│  Layer-B Field Sales Rep Beat Route layer (Decision authority: dealer owner + supervisor) 【To be built】          │
+│  Site→sub-area→person→frequency→beat — Output I-B: store→beat→rep+frequency      │
 ├───────────────────────────────────────────────────────────────┤
-│  Layer-V 拜访排程层（决策主体：业代/系统）                       │
-│  visit-scheduling-optimizer（只读依赖）— 输出: 拜访计划          │
+│  Layer-V Visit Scheduling layer (Decision authority: field sales rep/system)                       │
+│  visit-scheduling-optimizer (read-only dependency) — Output: visit plan          │
 ├───────────────────────────────────────────────────────────────┤
-│  数据资产：gz_data.json（38 围栏+33,109 门店+kind 六分类）       │
-│  合同包 · POS 上游 · OSM 路网河流                               │
+│  Data assets: gz_data.json (38 territories + 33,109 stores + kind six-classification)       │
+│  Contract package · POS upstream · OSM road network rivers                               │
 └───────────────────────────────────────────────────────────────┘
 
-接口契约：I-D（门店归属清单）· I-B（线路+频率政策）
-层间纪律：上游输出=下游固定输入；下游发现问题→向上游发信号，不越权自改；
-各层优化目标互不掺和；层内事件层内消化（E6 只动 D 层，E10/E11 只动 B 层）
+Interface contract: I-D (store assignment list) · I-B (beat + frequency policy)
+Cross-layer discipline: upstream output = downstream fixed input; downstream finds issues → sends signal upstream, does not overstep to modify;
+Each layer's optimization objectives do not interfere with each other; internal events are resolved within the layer (E6 only affects D layer, E10/E11 only affect B layer)
 ```
 
 ---
 
-## 3. 组件状态总表
+## 3. Component Status Summary
 
-| 组件 | 位置 | 状态 | 说明 |
+| Component | Location | Status | Description |
 |---|---|---|---|
-| 规范集 00-08 | `docs/` | **v1.2.1 FROZEN** | 含 08 身份规范；变更需走治理流程 |
-| 世界模型 v2.1 | `analysis/WORLD_MODEL_dealer_management.md` + iCloud designs/ | **已定稿** | UFO 对齐+三级层结构；唯一遗留：POS 可用性 |
-| 知识库 | `knowledge_base/` | **v0.3.0** | 31 条（+K-PRIN-006 区域优先）；缺口 5→2（客情量化算法、审批链本地化） |
-| Layer-D 代码 | `dealer_territory/` `tools/` | 可用 | 6 模块 13 测试（11 绿+2 跳过）；fence_split 已集成 market_partition |
-| Layer-B 线路设计 | （待建） | **缺失** | 需决策问题合同+实现；方法：五步定线法+线路四原则（K-RULE-011/012） |
-| Layer-V visit adapter | （待建） | **设计完成，待实施** | 32 项差距清单见 DP06_GAP_ANALYSIS_v2_full.md |
+| Specification Set 00-08 | `docs/` | **v1.2.1 FROZEN** | Includes 08 identity specification; changes require governance process |
+| World Model v2.1 | `analysis/WORLD_MODEL_dealer_management.md` + iCloud designs/ | **Finalized** | UFO alignment + three-level structure; remaining issue: POS availability |
+| Knowledge Base | `knowledge_base/` | **v0.3.0** | 31 entries (+K-PRIN-006 regional priority); gaps reduced from 5→2 (customer relationship quantification algorithm, approval chain localization) |
+| Layer-D code | `dealer_territory/` `tools/` | Available | 6 modules 13 tests (11 green+2 skipped); fence_split integrated with market_partition |
+| Layer-B beat design | (To be built) | **Missing** | Requires decision problem contract + implementation; method: five-step beat design + four beat principles (K-RULE-011/012) |
+| Layer-V visit adapter | (To be built) | **Design complete, pending implementation** | 32-item gap list in DP06_GAP_ANALYSIS_v2_full.md |
 
 ---
 
-## 4. 数据资产快照（2026-08，广州）
+## 4. Data Asset Snapshot (2026-08, Guangzhou)
 
 ```text
-38 围栏 · 33,109 门店（/tmp/gz_data.json，字段 n/c/d/u/lon/lat/direct/dealers/kind）
+38 territories · 33,109 stores (/tmp/gz_data.json, fields n/c/d/u/lon/lat/direct/dealers/kind)
 
-kind 六分类 = 世界模型 L4 的现成实现：
-  OK        26,182 (79%)  三层对齐正常
-  OOF        4,300 (12%)  跨界供货（诊断信号）
-  DIRECT_IN  2,111  (6%)  连锁直供（美宜佳系占直供 97%）
-  GAP          433  (1%)  覆盖缺口（四分类诊断的输入）
-  DIRECT        76        直供店
-  MULTI          7        矛盾登记簿真实实例
+kind six-classification = ready-made implementation of World Model L4:
+OK        26,182 (79%)  Three-layer alignment normal
+OOF        4,300 (12%)  Out-of-fence supply (diagnosis signal)
+DIRECT_IN  2,111  (6%)  Chain direct supply (Meiyijia system accounts for 97% of direct supply)
+GAP          433  (1%)  Coverage gap (input for four-classification diagnosis)
+DIRECT        76        Direct supply stores
+MULTI 7 Conflict Ledger Real Instance
 
-渠道结构：食杂店/批发 51% · 特殊渠道 33% · CVS 11%（典型批发分销市场）
-围栏画法实证：72% 区县承包制；边界沿主干道/河流；老城一区切 3~6 块
+Channel Structure: Grocery/Wholesale 51% · Special Channels 33% · CVS 11% (Typical Wholesale Distribution Market)
+Fence Drawing Empirical Evidence: 72% district/county contracting system; boundaries follow main roads/rivers; old urban areas segmented into 3-6 blocks
 ```
 
 ---
 
-## 5. 关键设计决策记录（ADR）
+## 5. Key Design Decision Records (ADR)
 
-| # | 决策 | 理由 | 日期 |
+| # | Decision | Rationale | Date |
 |---|---|---|---|
-| D1 | **身份先行**：分配/诊断前必须经 08 身份解析 | 未解析身份的缺口可能是假缺口（重复计算） | v1.2 冻结时 |
-| D2 | **visit 只读依赖**：代码由他人维护，SRAF 经 adapter 调用其公开 API，锁版本+兼容哨兵 | 32 项 DP06 差距全部在 adapter 层解决，求解器核心零改动；上游升级自动受益 | 2026-08-28 |
-| D3 | **证书化诚实**：沿用 visit 的 ColumnGenerationCertificate 模式，启发式结果绝不签发全局最优 | 对齐 06 反-Cherry-pick | 2026-08-28 |
-| D4 | **世界模型 UFO 对齐**：L1 对象/L2 角色承诺/L3 事件/L4 派生四层；OntoClean 检验（经销商=角色非种类） | 文献审查结论（UFO/gUFO+OntoClean） | 2026-08-28 |
-| D5 | **供应关系=事件流**：EPCIS ObjectEvent 模式，静态边废弃，F3 足迹=物化视图 | GS1 EPCIS 标准；静态边丢失时间/品项且不可追溯 | 2026-08-28 |
-| D6 | **三层围栏本体**：F1 规范对象(UFO-C)/F2 人工制品/F3 派生观察；健康度=align(F1,F2,F3) | 三层对齐度是三个本体层级间的测量 | 2026-08-28 |
-| D7 | **知识治理三铁律**：无出处不入库；MEDIUM 只做辅助理由；数据类随快照刷新、原则类需业务确认 | 防"幻觉知识" | 2026-08-28 |
-| D8 | **轻量存储起步**：dataclass+JSON/SQLite，接口按图模型设计，双时间线在应用层实现（XTDB close-and-open 语义） | 38 围栏+3.3 万店规模无需 Neo4j；将来可平滑迁移 | 2026-08-28 |
-| D9 | **智能层产出=给人建议**：观察→规则匹配→推理链组装（建议+理由链+风险+路由），不自动执行 | 用户定位："给人类建议"；高风险调整必须人审批（GW 流程） | 2026-08-28 |
-| D13 | **坐标系边界归一**：数据包按 meta.crs 声明（缺省 GCJ-02=高德系）；加载时一次性 GCJ→WGS（`pack_from_disk`），写盘逆转换（`pack_for_disk`），内部几何=纯 WGS-84（与 OSM 地标/瓦片同标准） | 判别实验：围栏顶点→OSM 道路 GCJ 直比中位 338m vs 转 WGS 后 123m → 业务围栏确系高德(GCJ-02)绘制；广州混用两系=623m 系统偏移（东-549/北+293），足以让四至方向验证/沿路判定/底图对齐失真。门店↔围栏 kind 分类两侧同系故不受影响 | 2026-08-28 |
-| D11 | **区域优先 + 逻辑围栏合并**：划转只重分配门店归属（唯一事实、数量守恒平凡成立），围栏=经销商门店点集凸包的派生视图；废弃 union/difference 多边形手术、碎片/守恒校验 | 业务方修正「决策对象是区域，店是附带效果」（K-PRIN-006）；手写 GIS 手术是 bug 温床（GeometryCollection 崩溃、km² 口径偏差 9%、碎片治理伪问题），逻辑合并一类问题整体消失 | 2026-08-28 |
-| D12 | **调整解析规则优先、LLM 兜底**：片区选择器+正则模式（<1s）为主路径，LLM·M3 仅处理自由句式；@ 提及引擎保证 LLM 永远只见全名 | LLM 在关键路径导致 8-20s 延迟与超时抖动；口语简称误匹配靠 @ 展开（前端确定性替换）根治 | 2026-08-28 |
-| D10 | **三级独立决策层**：D/B/V 层各自独立，仅接口（I-D/I-B）交接，禁止跨层干预；诊断先定位层再归因 | 用户拍板"每一层独立不要干扰"+层级镜像组织原则（行业共识）；防止围栏层优化排线效率等跨层耦合 | 2026-08-28 |
+| D1 | **Identity First**: Must pass 08 Identity Resolution before allocation/diagnosis | Gaps without resolved identity may be false (double-counting) | When v1.2 was frozen |
+| D2 | **visit Read-Only Dependency**: Code maintained by others, SRAF calls its public API via adapter, locked version + compatibility sentinel | 32 DP06 gaps all resolved in adapter layer; solver core zero modifications; upstream upgrades automatically benefit | 2026-08-28 |
+| D3 | **Certificated Honesty**: Follows visit's ColumnGenerationCertificate pattern; heuristic results never certify global optimality | Align with 06 anti-cherry-pick | 2026-08-28 |
+| D4 | **World Model UFO Alignment**: L1 objects/L2 role commitments/L3 events/L4 derived four layers; OntoClean verification (dealer=role not kind) | Literature review conclusion (UFO/gUFO+OntoClean) | 2026-08-28 |
+| D5 | **Supply Relationship=Event Stream**: EPCIS ObjectEvent pattern; static edges deprecated; F3 footprint=materialized view | GS1 EPCIS standard; static edges lose time/item traceability | 2026-08-28 |
+| D6 | **Three-Layer Fence Ontology**: F1 normative object (UFO-C)/F2 artifact/F3 derived observation; health=align(F1,F2,F3) | Three-layer alignment is measurement between three ontology levels | 2026-08-28 |
+| D7 | **Three Iron Laws of Knowledge Governance**: No source, no entry; MEDIUM only for auxiliary reasoning; data classes refresh with snapshots, principle classes require business confirmation | Prevent "hallucinated knowledge" | 2026-08-28 |
+| D8 | **Lightweight Storage Start**: dataclass+JSON/SQLite, interfaces designed per graph model, bitemporal implemented at application layer (XTDB close-and-open semantics) | 38 fences + 33k stores don't need Neo4j; smooth migration path exists | 2026-08-28 |
+| D9 | **Intelligent Layer Output=Human Advice**: Observation→rule matching→reasoning chain assembly (advice+justification chain+risk+routing), no auto-execution | User positioning: "give humans advice"; high-risk adjustments require human approval (GW process) | 2026-08-28 |
+| D13 | **Coordinate System Boundary Normalization**: Data packages declare meta.crs (default GCJ-02=Gaode system); one-time GCJ→WGS on load (`pack_from_disk`), reverse conversion on write (`pack_for_disk`), internal geometry=pure WGS-84 (same standard as OSM landmarks/tiles) | Discrimination experiment: fence vertices→OSM roads GCJ direct comparison median 338m vs after WGS conversion 123m → business fences confirmed drawn in Gaode (GCJ-02); Guangzhou mixed two systems=623m systematic offset (E-549/N+293), sufficient to distort four-direction verification/route-following judgment/base map alignment. Store↔fence kind classification on both sides uses same system so unaffected | 2026-08-28 |
+| D11 | **Territory Priority + Logical Fence Merge**: Transfers only reassign store assignment (unique fact, quantity conservation trivially holds), fences=derived view of dealer-store point set convex hull; deprecated union/difference polygon surgery, fragmentation/conservation checks | Business corrected "decision object is territory, stores are side effects" (K-PRIN-006); hand-written GIS surgery is bug breeding ground (GeometryCollection crashes, km² caliber deviation 9%, fragmentation governance pseudo-problem), entire class of problems disappears with logical merge | 2026-08-28 |
+| D12 | **Parsing Rules Priority, LLM Fallback**: Sub-area selector+regex pattern (<1s) as main path, LLM·M3 only for free-form sentences; @ mention engine ensures LLM always sees full names | LLM on critical path causes 8-20s latency and timeout jitter; colloquial abbreviation mismatches cured by @ expansion (frontend deterministic replacement) | 2026-08-28 |
+| D10 | **Three-Tier Independent Decision Layers**: D/B/V layers independent, only interfaces (I-D/I-B) exchange data, cross-layer intervention prohibited; diagnosis first locates layer then attributes | User decision "each layer independent, don't interfere" + layer-mirrored organizational principle (industry consensus); prevents cross-layer coupling like fence layer optimizing route efficiency | 2026-08-28 |
 
 ---
 
-## 6. visit 集成架构（D2 展开）
+## 6. visit Integration Architecture (D2 Expansion)
 
 ```text
-SRAF adapter（自建，负责）              visit 引擎（只读，别人维护）
-├── 投影构建：世界模型切片→数组          solve_to_plan / build_time_matrix
-├── 失败语义：F1-F7 分类器              PlanVersion / DecisionEvidence
-├── 承诺输出：Unfulfilled/利用率计算     ColumnGenerationCertificate
-├── 旅行回填：SRAF 校准数据填缺口        （PVRPTW/多人优化在其 roadmap）
-└── Provenance：snapshot/seed/版本      锁版本 ==0.1.x + CI 签名哨兵
+SRAF adapter (self-built, responsible)              visit engine (read-only, maintained by others)
+├── Projection construction: World Model slice→array          solve_to_plan / build_time_matrix
+├── Failure semantics: F1-F7 classifier              PlanVersion / DecisionEvidence
+├── Commitment output: Unfulfilled/utilization calculation     ColumnGenerationCertificate
+├── Travel backfill: SRAF calibrated data fills gaps        (PVRPTW/multi-person optimization on their roadmap)
+└── Provenance: snapshot/seed/version      Locked version ==0.1.x + CI signature sentinel
 ```
 
-五问验证结论（详见 DP06_GAP_ANALYSIS_v2_full.md）：
-投影层缺失 / 后计算指标缺失 / 失败语义分类器缺失 / 围栏智能已有（fence_split）/ 效果追踪需修 TravelEstimate。
-**改造量：3-5 工作日（Envelope S），全部在 adapter 层。**
+Five-Question Verification Conclusions (see DP06_GAP_ANALYSIS_v2_full.md):
+Projection layer missing / post-calculation metrics missing / failure semantics classifier missing / fence intelligence already exists (fence_split) / effect tracking needs TravelEstimate fix.
+**Modification scope: 3-5 working days (Envelope S), all in adapter layer.**
 
 ---
 
-## 7. 当前差距与下一步
+## 7. Current Gaps and Next Steps
 
-**P0 状态（本轮已全部完成设计/实现）**
-0. ✅ 坐标系契约（D13）：GCJ-02 数据包 ↔ WGS-84 内部，边界单次归一、往返无损（round-trip 残差 0.000m 实测）
-1. ✅ Layer-B 合同提案：`docs/PROPOSAL_v1.3_LAYER_BINDINGS.md`（待批准入 v1.3）
-2. ✅ 04 实施设计：`analysis/DESIGN_04_allocation_intelligence.md`
-   并已代码化为 `intelligence/` 包（MVP 三问在真实数据验证通过）
-3. ✅ visit adapter（只读集成）：随 Demo 落地（/api/bootstrap 投影 +
-   generate/adjust/apply/analysis 四端点 + 区域包热切换）
+**P0 Status (all design/implementation completed this round)**
+0. ✅ Coordinate System Contract (D13): GCJ-02 data package ↔ WGS-84 internal, boundary single normalization, lossless round-trip (round-trip residual 0.000m measured)
+1. ✅ Layer-B Contract Proposal: `docs/PROPOSAL_v1.3_LAYER_BINDINGS.md` (pending approval for v1.3)
+2. ✅ 04 Implementation Design: `analysis/DESIGN_04_allocation_intelligence.md`
+Also code-generated into `intelligence/` package (MVP three questions verified on real data)
+3. ✅ visit adapter (read-only integration): landed with Demo (/api/bootstrap projection +
+generate/adjust/apply/analysis four endpoints + territory package hot-switch)
 
-**Demo 当前能力**（`tools/demo_server.py` + `demo_page.html`）：
-区域数据包热切换（/api/regions + /api/switch，data/<region> 目录即插即用）·
-合同→区域生成（解释采用/草案双路径 + 道路语义 + 视觉终审 + 冲突检测）·
-**区域优先语义调整**：@ 提及（选中即插全名）+ 片区选择器（整个区域/半区/
-区名/OOF/店周边）+ 规则主路径 LLM 兜底 + 提案证据链 + 橙色预览环 +
-逻辑合并应用/拒绝（/api/reject 作废过期提案）· 聚焦工作流（本家+邻居
-门店各自颜色）· 应用后围栏几何原地重画 · 全灰底图 · 存在性语义
-（生成前围栏不存在）· 视口自动对准围栏范围。
-换数据指南：`data/README.md`。
+**Demo Current Capabilities** (`tools/demo_server.py` + `demo_page.html`):
+Territory data package hot-switch (/api/regions + /api/switch, data/<territory> directory plug-and-play) ·
+Contract→territory generation (interpreted adoption/draft dual paths + road semantics + visual final review + conflict detection) ·
+**Territory Priority Semantic Adjustment**: @ mentions (select to insert full name) + sub-area selector (entire territory/half-territory/
+territory name/OOF/store surroundings) + rule main path LLM fallback + proposal evidence chain + orange preview ring +
+Logical merge apply/reject (/api/reject invalidates expired proposals) · Focused workflow (home store+neighbor
+stores each color) · Post-apply fence geometry redraw in-place · Full gray base map · Existence semantics
+(fence does not exist before generation) · Viewport automatically aligns to fence extent.
+Data switching guide: `data/README.md`.
 
-**P1（本周内）**
-1. VisitSchedulingProjection dataclass（含 identity_snapshot_id）
-2. ScheduleQualityEvaluator（频次达成/产能利用/稳定性）
-3. Oracle 独立入口（feasibility_only）
+**P1 (This Week)**
+1. VisitSchedulingProjection dataclass (with identity_snapshot_id)
+2. ScheduleQualityEvaluator (frequency achievement/capacity utilization/stability)
+3. Oracle independent entry (feasibility_only)
 
-**遗留业务确认（不阻塞）**
-- POS 流水按月可得性（供应边证据上限现挂 MEDIUM）
-- 客情量化算法（建议：服务年限+拜访稳定性代理）
-- 审批链本地化（现挂行业默认五级）
+**Legacy Business Confirmation (Non-blocking)**
+- POS transaction data monthly availability (supply side evidence ceiling immediate hanging MEDIUM)
+- Customer relationship quantification algorithm (suggestion: service years + visit stability proxy)
+- Approval chain localization (immediate hanging industry default five levels)
 
 ---
 
-## 8. 文档地图
+## 8. Document Map
 
 ```text
-docs/                    规范集 v1.2.1 FROZEN（00 章程 … 08 身份）+ 治理文件
-                           CHANGELOG_v1.2.2 = 实施基线更新记录（规范零改动）
-DESIGN.md                本文件——实施阶段总体设计（活文档）
-knowledge_base/          知识库 v0.3.0（31 条；json 机器可读 + md 人读索引）
-analysis/                世界模型 v2.1 · 04 实施设计 · DP06 差距分析 v2 · 合同包
-                         围栏特性 · 行业空白 · 三轮审查 · CN 市场现实 · intel_reports_v0
-dealer_territory/        6 模块（models/assignment/four_bounds/fence_from_text/
-                         fence_allocator/fence_analysis/fence_split）
-tools/                   demo_server + demo_page（区域包 Demo）· intel_report
-                         validate_region_pack · fetch_region_osm · 一致性/引用检查
-                         H3 索引 · 地图生成
-data/                    区域数据包（data/gz 广州默认 + data/fs 佛山 greenfield 测试
-                         + data/demo2 切换样例）· 换数据指南 README.md
-tests/                   13 测试（11 绿 + 2 跳过）
-iCloud designs/          世界模型 v2.1 评审镜像（跨 agent 协作）
+docs/ Specification set v1.2.1 FROZEN (00 Charter … 08 Identity) + governance documents
+CHANGELOG_v1.2.2 = implementation baseline update record (no spec changes)
+DESIGN.md This file — overall design for the implementation phase (living document)
+knowledge_base/ Knowledge Base v0.3.0 (31 entries; json machine-readable + md human-readable index)
+analysis/ World Model v2.1 · 04 Implementation Design · DP06 Gap Analysis v2 · Contract Package
+Fence characteristics · Industry gaps · Three-round review · CN market reality · intel_reports_v0
+dealer_territory/ 6 modules (models/assignment/four_bounds/fence_from_text/
+                         fence_allocator/fence_analysis/fence_split) 
+tools/ demo_server + demo_page (Region Package Demo) · intel_report
+validate_region_pack · fetch_region_osm · consistency/reference check
+H3 index · map generation
+data/ Region data package (data/gz Guangzhou default + data/fs Foshan greenfield test
++ data/demo2 switch sample) · Data Switch Guide README.md
+tests/ 13 tests (11 green + 2 skipped)
+iCloud designs/ World Model v2.1 review mirror (cross-agent collaboration)
 
-镜像协作：iCloud `AI团队/zcode/designs/经销商管理世界模型.md`（评审用），
-仓库 `analysis/` 为实现侧正本。
+Mirror Collaboration: iCloud `AI team/zcode/designs/Dealer Management World Model.md` (for review),
+Repository `analysis/` is the implementation-side master.

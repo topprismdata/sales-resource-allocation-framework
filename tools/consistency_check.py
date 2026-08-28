@@ -61,7 +61,7 @@ chk("No normative v1.0 wording left", not residual, str(residual))
 if "06_EVALUATION_AND_BENCHMARK.md" in doc:
     b = doc["06_EVALUATION_AND_BENCHMARK.md"]
     chk("06 case-version example preserved & annotated",
-        "case v1.0" in b and "与规范文档版本无关" in b)
+        "case v1.0" in b and re.search(r"nrelated to.{0,60}spec(ification)? document version|与规范文档版本无关", b))
 
 # --- 3. v1.2 hard fixes -----------------------------------------------------
 chk("approved_approved_decision_id removed",
@@ -77,7 +77,7 @@ chk("06 Scale Benchmark references Envelope",
 
 gov = doc.get("05_DECISION_ORCHESTRATION.md", "")
 chk("05 owns GW01-GW03", all(x in gov for x in ("GW01", "GW02", "GW03", "14A")))
-chk("05 forbids auto-execute for governance", "禁止 A2/A3" in gov)
+chk("05 forbids auto-execute for governance", "禁止 A2/A3" in gov or "prohibits A2/A3" in gov or "A2/A3 forbidden" in gov)
 chk("02 router covers ModelGovernance", has("02_DECISION_ONTOLOGY.md", "ModelGovernance"))
 chk("02 §94 points to GW in 05", "§14A" in doc.get("02_DECISION_ONTOLOGY.md", ""))
 
@@ -110,7 +110,7 @@ chk("02 owns identity subtypes",
     all(s in doc.get("02_DECISION_ONTOLOGY.md", "") for s in
         ("IdentityDuplicate", "IdentityFalseMatch", "IdentityUnresolved", "HierarchyMisattribution")))
 chk("04 refers subtypes to 02/08",
-    "由 `02 §21` 拥有" in doc.get("04_ALLOCATION_INTELLIGENCE.md", ""))
+    ("由 `02 §21` 拥有" in doc.get("04_ALLOCATION_INTELLIGENCE.md", "") or "Owned by `02 §21`" in doc.get("04_ALLOCATION_INTELLIGENCE.md", "")))
 chk("04 has IdentityIntegrityTest", "IdentityIntegrityTest" in doc.get("04_ALLOCATION_INTELLIGENCE.md", ""))
 chk("04 H6 carries IdentityConfidence",
     "IdentityConfidence" in doc.get("04_ALLOCATION_INTELLIGENCE.md", ""))
@@ -185,7 +185,7 @@ chk("All referenced spec files exist", all(r in doc or (DOCS / r).exists() for r
 
 # --- 8. evidence-level wording discipline -----------------------------------
 chk("08 does not claim production validation",
-    not re.search(r"已验证生产|已证明提升销售", z))
+    not re.search(r"已验证生产|已证明提升销售|validated in production|proven to lift sales", z))
 
 # v1.2.1 hotfix lock: ambiguous MissedOpportunity must not reappear as a term
 chk("MissedOpportunity term eliminated (v1.2.1 hotfix)",

@@ -1,10 +1,10 @@
 # SRAF Decision Ontology Specification v1.2
 
-**项目：** Sales Resource Allocation Framework  
-**简称：** SRAF  
-**文档：** `02_DECISION_ONTOLOGY.md`  
-**状态：** Implementation Baseline v1.2  
-**上位规范：**
+**Project:** Sales Resource Allocation Framework
+**Abbreviation:** SRAF
+**Document:** `02_DECISION_ONTOLOGY.md`
+**Status:** Implementation Baseline v1.2
+**Upper-level Specification:**
 
 ```text
 00_PROJECT_CHARTER.md
@@ -13,11 +13,11 @@
 
 ---
 
-## 1. 文档目标
+## 1. Document Objectives
 
-Decision Ontology 必须建立 World Model 与 Decision Engine 之间统一的业务语言。
+Decision Ontology must establish a unified business language between World Model and Decision Engine.
 
-核心链路：
+Core Chain:
 
 ```text
 World State
@@ -47,48 +47,48 @@ Execution
 Decision Validation
 ```
 
-因此 Decision Ontology 不描述：
+Therefore, Decision Ontology does not describe:
 
 ```text
-客户经纬度
-员工姓名
-门店地址
-道路网络
+Customer latitude and longitude
+Employee name
+Store address
+Road network
 ```
 
-这些属于 World Model。
+These belong to the World Model.
 
-它描述：
+It describes:
 
 ```text
-哪里存在问题
-问题为什么存在
-问题是否值得解决
-允许改变什么
-有哪些候选方案
-方案有什么影响
-为什么选择某一个方案
-如何实施
-如何验证
+Where the problem exists
+Why the problem exists
+Whether the problem is worth solving
+What changes are allowed
+What candidate solutions exist
+What impact the solution has
+Why a particular solution is chosen
+How to implement
+How to verify
 ```
 
 ---
 
-## 2. Decision Ontology 的核心原则
+## 2. Core Principles of Decision Ontology
 
-Decision Ontology 必须遵循：
+Decision Ontology must comply with:
 
 > **Problem before Solution.**
 
-禁止：
+Prohibited:
 
 ```text
-Territory Solver 发现更优结果
+Territory Solver discovers better results
       ↓
-创建一个“Territory Problem”
+Create a 'Territory Problem'
 ```
 
-正确顺序：
+Correct order:
 
 ```text
 World State
@@ -104,15 +104,15 @@ Problem Definition
 Solver
 ```
 
-即：
+i.e.:
 
-> Solver 不创造业务问题。
+> Solver does not create business problems.
 
 ---
 
-## 3. Decision 与 World State 分离
+## 3. Separation of Decision and World State
 
-以下对象不属于 Canonical World Truth：
+The following objects do not belong to Canonical World Truth:
 
 ```text
 DiagnosticHypothesis
@@ -124,11 +124,11 @@ CandidateDeployment
 SolverSolution
 ```
 
-它们属于：
+They belong to:
 
 # Decision State
 
-只有：
+Only:
 
 ```text
 Approved Decision
@@ -138,13 +138,13 @@ Transition
 Confirmed World Event
 ```
 
-以后，世界状态才真正改变。
+After that, the world state truly changes.
 
 ---
 
-## 4. Decision Ontology 一级对象
+## 4. Decision Ontology First-level Objects
 
-v1.2 固定以下一级对象：
+v1.2 fixes the following first-level objects:
 
 ```text
 DECISION WORLD
@@ -175,19 +175,19 @@ DECISION WORLD
 └── DecisionValidationPlan
 ```
 
-这些对象共同形成一个完整 Decision Lifecycle。
+These objects together form a complete Decision Lifecycle.
 
 ---
 
 ## 5. AllocationHealth
 
-`AllocationHealth` 表示：
+`AllocationHealth` represents:
 
-> **当前销售资源配置状态在某个业务范围内的总体健康情况。**
+> **The overall health status of the current sales resource allocation state within a certain business scope.**
 
-它不是简单 Score。
+It is not a simple score.
 
-结构：
+Structure:
 
 ```text
 AllocationHealth
@@ -211,9 +211,9 @@ calculated_at
 
 ## 6. Health Scope
 
-Health 必须有明确 Scope。
+Health must have a clear Scope.
 
-例如：
+For example:
 
 ```text
 Market
@@ -225,19 +225,19 @@ CustomerSegment
 Product
 ```
 
-不能只有：
+Cannot have only:
 
 ```text
 health_score = 72
 ```
 
-却不知道 72 指什么。
+but not knowing what 72 refers to.
 
 ---
 
 ## 7. Health Metric
 
-v1.2 至少允许：
+v1.2 allows at least:
 
 ```text
 OpportunityCoverage
@@ -254,33 +254,33 @@ ServiceLevel
 DataConfidence
 ```
 
-这些大部分属于 Derived State。
+Most of these belong to Derived State.
 
-Health 只是对这些 Derived State 的组合解释。
+Health is just a combined interpretation of these Derived State.
 
 ---
 
-## 8. Health 不等于问题
+## 8. Health does not equal problem
 
-例如：
+For example:
 
 ```text
 CapacityUtilization = 112%
 ```
 
-只能说明：
+It can only indicate:
 
 ```text
 Metric abnormal
 ```
 
-不能直接得出：
+Cannot directly conclude:
 
 ```text
 Need 2 additional reps
 ```
 
-因此：
+Therefore:
 
 \[
 HealthSignal
@@ -288,7 +288,7 @@ HealthSignal
 DecisionProblem
 \]
 
-中间必须经过：
+Must go through:
 
 ```text
 Gap
@@ -300,13 +300,13 @@ Materiality
 
 ## 9. AllocationGap
 
-`AllocationGap` 是 Decision Ontology 的核心对象之一。
+`AllocationGap` is one of the core objects of Decision Ontology.
 
-正式定义：
+Formal definition:
 
-> **当前 Sales Resource Allocation 与某个业务要求、机会状态或可接受目标状态之间存在的可解释差异。**
+> **Current Sales Resource Allocation with respect to a certain business requirement, opportunity status, or acceptable target state is an explicable difference.**
 
-统一结构：
+Unified structure:
 
 ```text
 AllocationGap
@@ -338,7 +338,7 @@ calculation_version
 
 ## 10. Gap Type
 
-v1.2 固定七类一级 Gap：
+v1.2 fixes seven first-level Gap categories:
 
 ```text
 CoverageGap
@@ -354,21 +354,21 @@ StabilityGap
 
 ## 10A. Gap Taxonomy Ownership
 
-`02_DECISION_ONTOLOGY.md` 只定义七类 Gap 的上位语义。
+`02_DECISION_ONTOLOGY.md` only defines the upper-level semantics of the seven Gap categories.
 
-`CoverageGap`、`CapacityGap`、`SpatialTravelGap` 等的进一步 subtype taxonomy 由 `04_ALLOCATION_INTELLIGENCE.md` 负责。
+`CoverageGap`, `CapacityGap`, `SpatialTravelGap`, etc.'s further subtype taxonomy is handled by `04_ALLOCATION_INTELLIGENCE.md`.
 
-因此 02 不再重复维护另一套细分分类。
+Therefore 02 no longer repeats maintenance of another set of detailed classifications.
 
 ---
 
 ## 11. CoverageGap
 
-表示：
+Indicates:
 
-> 业务需要的 Coverage 与可达到或实际完成的 Coverage 之间的差异。
+> The difference between the Coverage required by the business and the Coverage that can be achieved or actually achieved.
 
-例如：
+For example:
 
 \[
 CoverageGap
@@ -378,32 +378,32 @@ RequiredCoverage
 AchievableCoverage
 \]
 
-需要区分：
+Need to distinguish:
 
 ```text
 PlannedCoverageGap
 ActualCoverageGap
 ```
 
-因为：
+Because:
 
 ```text
-计划本身不可行
+The plan itself is not feasible
 ```
 
-和：
+and:
 
 ```text
-计划合理但执行失败
+The plan is reasonable but execution fails
 ```
 
-是不同问题。
+Are different problems.
 
 ---
 
 ## 12. CapacityGap
 
-表示：
+Indicates:
 
 \[
 CapacityGap
@@ -413,7 +413,7 @@ RequiredResourceCapacity
 AvailableResourceCapacity
 \]
 
-必须明确：
+Must be clear:
 
 ```text
 ResourceType
@@ -422,37 +422,37 @@ Period
 MarketScope
 ```
 
-因此：
+Therefore:
 
 ```text
-整体不缺人
+Overall there is no shortage of personnel
 ```
 
-不意味着：
+Does not mean:
 
 ```text
-不存在 CapacityGap
+There is no CapacityGap
 ```
 
-可能只是某类 Capability 缺失。
+May just be a missing certain type of Capability.
 
 ---
 
 ## 13. OpportunityGap
 
-定义：
+Definition:
 
-> **当前资源配置未能有效覆盖的可服务市场机会。**
+> **Current resource allocation fails to effectively cover the serviceable market opportunity.**
 
-不能写成：
+Cannot be written as:
 
 ```text
 LostSales
 ```
 
-因为 Opportunity 通常是 Estimate。
+Because Opportunity is usually an Estimate.
 
-更准确的表达：
+A more accurate expression:
 
 ```text
 UncoveredOpportunity
@@ -460,7 +460,7 @@ OpportunityAtRisk
 IncrementalOpportunityGap
 ```
 
-必须继承 OpportunityEstimate 的：
+Must inherit from OpportunityEstimate:
 
 ```text
 confidence
@@ -472,18 +472,18 @@ evidence
 
 ## 14. SpatialTravelGap
 
-回答：
+Answer:
 
-> 资源是不是因为空间部署或责任划分不合理而浪费 Capacity？
+> Is the resource being wasted due to unreasonable spatial deployment or responsibility division?
 
-例如：
+For example:
 
 ```text
 peer travel burden     18%
 current territory      36%
 ```
 
-或者：
+Or:
 
 ```text
 current base location
@@ -493,20 +493,20 @@ alternative location
 → expected field capacity 118h
 ```
 
-这类问题原则上应该优先进入：
+Such issues should in principle be prioritized into:
 
 ```text
 ResourceLocation
 TerritoryAlignment
 ```
 
-而不是 Sizing。
+rather than Sizing.
 
 ---
 
 ## 15. CapabilityGap
 
-表示：
+Indicates:
 
 \[
 RequiredCapability
@@ -514,44 +514,44 @@ RequiredCapability
 AvailableCapability
 \]
 
-例如：
+For example:
 
 ```text
 Available capacity = 120h
 Required workload  = 90h
 ```
 
-看似 Capacity 足够。
+Seems Capacity is sufficient.
 
-但：
+But:
 
 ```text
 required capability = KA Negotiation
 resource capability = Field Generalist
 ```
 
-仍然不能完成责任。
+Still cannot fulfill the responsibility.
 
 ---
 
 ## 16. LocalAllocationGap
 
-`LocalAllocationGap` 表示：
+`LocalAllocationGap` indicates:
 
-> 全局 Demand 与 Supply 基本可行，但局部责任/资源配置不合理。
+> Global Demand and Supply are basically feasible, but local responsibility/resource allocation is unreasonable.
 
-`AllocationGap` 保留为所有销售资源配置 Gap 的上位对象名称，禁止同时作为 subtype 名称。
+Keep `AllocationGap` as the supertype name for all sales resource allocation Gaps, and prohibit it from also being used as a subtype name.
 
-例如：
+For example:
 
 ```text
 Total demand    = 4,200h
 Total capacity  = 4,350h
 ```
 
-总体够。
+Overall sufficient.
 
-但是：
+However:
 
 ```text
 Territory A = 126%
@@ -559,13 +559,13 @@ Territory B = 72%
 Territory C = 83%
 ```
 
-这属于：
+This belongs to:
 
 ```text
 Local Allocation Mismatch / LocalAllocationGap
 ```
 
-而不是：
+Rather than:
 
 ```text
 Global Capacity Shortage
@@ -575,11 +575,11 @@ Global Capacity Shortage
 
 ## 17. StabilityGap
 
-表示：
+Indicates:
 
-> Allocation 当前看起来可行，但改变频率或责任关系稳定性已经不可接受。
+> Allocation currently appears feasible, but the change frequency or stability of responsibility relationships has become unacceptable.
 
-例如：
+For example:
 
 ```text
 Assignment changes / 12 months
@@ -588,13 +588,13 @@ Rep transfers
 Customer ownership changes
 ```
 
-因此 Stable Allocation 本身也是一种价值。
+Therefore Stable Allocation itself is also a value.
 
 ---
 
-## 18. Gap 可以同时存在
+## 18. Gaps Can Coexist
 
-禁止假设：
+Prohibition of assuming:
 
 ```text
 One symptom
@@ -602,7 +602,7 @@ One symptom
 One gap
 ```
 
-例如：
+For example:
 
 ```text
 CoverageGap
@@ -614,37 +614,37 @@ OpportunityGap
 TravelGap
 ```
 
-可以同时存在。
+Can coexist.
 
-Decision Ontology 必须支持：
+Decision Ontology must support:
 
 ```text
 GapSet
 ```
 
-而不是强迫互斥分类。
+Rather than forcing mutually exclusive classification.
 
 ---
 
 ## 19. DiagnosticHypothesis
 
-Gap 只能说明：
+Gap can only indicate:
 
-> 哪里不对。
+> Where it is wrong.
 
-还不能说明：
+Cannot yet explain:
 
-> 为什么。
+> Why.
 
-因此增加：
+Therefore add:
 
 # `DiagnosticHypothesis`
 
-定义：
+Definition:
 
-> **针对一个或多个 Allocation Gap 的、可被证据支持或反驳的潜在原因解释。**
+> **A potential cause explanation for one or more Allocation Gaps that can be supported or refuted by evidence.**
 
-统一结构：
+Unified structure:
 
 ```text
 DiagnosticHypothesis
@@ -670,16 +670,16 @@ created_at
 
 ---
 
-## 20. Hypothesis 不是 LLM 文本
+## 20. Hypothesis Is Not LLM Text
 
-例如禁止：
+For example, prohibited:
 
 ```text
 reason =
-“可能是人员不足，也可能是线路太远。”
+"May be due to insufficient staff, or the beat route being too long."
 ```
 
-而应该：
+Instead should:
 
 ```text
 Hypothesis H1
@@ -691,13 +691,13 @@ type = ExcessiveTravel
 confidence = 0.82
 ```
 
-并分别保存证据。
+And save evidence separately.
 
 ---
 
 ## 21. Root Cause Taxonomy
 
-第一版至少包括：
+The first version should include at least:
 
 ```text
 CapacityShortage
@@ -724,47 +724,47 @@ ModelQualityIssue
 PolicyConflict
 ```
 
-`DataQualityIssue` 的身份侧 subtype 由本文件拥有
-（判定规则与阈值见 `08` §10–§14）：
+The identity-side subtypes of `DataQualityIssue` are owned by this document
+(judgment rules and thresholds are in `08` §10–§14):
 
 ```text
-IdentityDuplicate          同一对象多条未解析记录
-IdentityFalseMatch         已被误并，覆盖被隐藏
-IdentityUnresolved         候选未决，置信度上限受限
-HierarchyMisattribution    Group 与其门店被重复计入
+IdentityDuplicate          Multiple unresolved records for the same object
+IdentityFalseMatch         Already merged by mistake, with coverage hidden
+IdentityUnresolved         Candidate undecided, confidence ceiling limited
+HierarchyMisattribution    Group and its stores are double-counted
 ```
 
-这四个 subtype 的意义在于：让 `04` 的 H-DATA 假设变成**可检验**的，
-而不是一个兜底的垃圾桶标签。
+The purpose of these four subtypes is to make the H-DATA hypothesis in `04` **verifiable**,
+rather than a catch-all garbage bin label.
 
 ---
 
 ## 22. EvidenceFor / EvidenceAgainst
 
-这是 v1.2 强制要求。
+This is a v1.2 mandatory requirement.
 
-例如：
+For example:
 
 ```text
 Hypothesis:
 CapacityShortage
 ```
 
-支持证据：
+Supporting evidence:
 
 ```text
 utilization = 118%
 missed required calls = high
 ```
 
-反对证据：
+Contradicting evidence:
 
 ```text
 travel burden = 39%
 peer travel burden = 20%
 ```
 
-则可能：
+Then possibly:
 
 ```text
 CapacityShortage confidence ↓
@@ -772,13 +772,13 @@ CapacityShortage confidence ↓
 SpatialInefficiency confidence ↑
 ```
 
-这避免 Agent 只收集支持自己结论的证据。
+This prevents the Agent from only collecting evidence that supports its conclusion.
 
 ---
 
 ## 23. Diagnostic Status
 
-建议：
+Recommendation:
 
 ```text
 Proposed
@@ -788,27 +788,27 @@ Rejected
 Confirmed
 ```
 
-只有达到：
+Only when reaching:
 
 ```text
 Supported / Confirmed
 ```
 
-并满足 Confidence Gate，才允许自动进入部分 Decision Workflow。
+And satisfying the Confidence Gate, is it allowed to automatically enter part of the Decision Workflow.
 
 ---
 
-## 24. Data / Model Hypothesis 必须存在
+## 24. Data / Model Hypothesis Must Exist
 
-任何异常都必须允许：
+Any anomaly must allow:
 
 ```text
 DataQualityIssue
 ```
 
-成为合法根因。
+To become a legitimate root cause.
 
-例如：
+Example:
 
 ```text
 customer coordinates wrong
@@ -818,21 +818,21 @@ service time inflated
 duplicate accounts
 ```
 
-不能默认：
+Cannot assume:
 
-> 数据一定正确，业务配置出了问题。
+> Data must be correct; the business configuration is problematic.
 
 ---
 
 ## 25. MaterialityAssessment
 
-即使 Gap 与 Root Cause 都成立，也不意味着值得行动。
+Even if both Gap and Root Cause are valid, it does not mean it is worth taking action.
 
-正式定义：
+Formal definition:
 
-> **衡量一个已识别 Allocation Problem 是否达到值得组织进行决策或结构调整的业务重要性。**
+> **Measure whether an identified Allocation Problem has reached a business importance that justifies the organization to make a decision or adjust its structure.**
 
-结构：
+Structure:
 
 ```text
 MaterialityAssessment
@@ -853,7 +853,7 @@ recommendation
 
 ---
 
-## 26. Materiality 主要考虑
+## 26. Materiality Key Considerations
 
 \[
 Materiality
@@ -867,19 +867,19 @@ StrategicImportance
 )
 \]
 
-不能只按：
+Cannot base solely on:
 
 ```text
 metric > threshold
 ```
 
-触发。
+Trigger.
 
 ---
 
 ## 27. Persistence
 
-必须明确：
+Must clarify:
 
 ```text
 DetectedAt
@@ -887,25 +887,25 @@ Duration
 ObservationCount
 ```
 
-例如：
+For example:
 
 ```text
 110% utilization for one week
 ```
 
-与：
+With:
 
 ```text
 110% utilization for four months
 ```
 
-语义不同。
+Semantics differ.
 
 ---
 
 ## 28. Materiality Level
 
-v1.2 建议：
+v1.2 recommendation:
 
 ```text
 Informational
@@ -915,39 +915,39 @@ Actionable
 Critical
 ```
 
-例如：
+For example:
 
 ### Informational
 
-记录，但不需要动作。
+Record, but no action required.
 
 ### Monitor
 
-持续观察。
+Continue to monitor.
 
 ### Review
 
-进入人工/Agent Diagnosis。
+Enter manual/Agent Diagnosis.
 
 ### Actionable
 
-允许创建 DecisionCase。
+Allow creation of DecisionCase.
 
 ### Critical
 
-可进入快速响应流程。
+Can enter the rapid response process.
 
 ---
 
 ## 29. DecisionTrigger
 
-DecisionTrigger 不是简单报警。
+DecisionTrigger is not a simple alarm.
 
-正式定义：
+Formal definition:
 
-> **在明确 Gap、Diagnosis、Materiality 与治理条件满足以后，用于创建 Decision Case 的业务规则。**
+> **A business rule used to create a DecisionCase after Gap, Diagnosis, Materiality, and governance conditions are satisfied.**
 
-结构：
+Structure:
 
 ```text
 DecisionTrigger
@@ -978,14 +978,14 @@ policy_reference
 
 ## 30. Hysteresis
 
-必须允许：
+Must allow:
 
 ```text
 EntryThreshold
 ExitThreshold
 ```
 
-例如：
+For example:
 
 ```text
 enter review:
@@ -995,7 +995,7 @@ exit review:
 utilization < 100% for 4 weeks
 ```
 
-避免：
+Avoid:
 
 # Decision Flapping
 
@@ -1003,40 +1003,40 @@ utilization < 100% for 4 weeks
 
 ## 31. Cooldown
 
-结构调整之后必须允许：
+After structural adjustment must allow:
 
 ```text
 cooldown_period
 ```
 
-例如：
+For example:
 
 ```text
 Territory realignment:
 120 days
 ```
 
-除非出现 Critical Trigger，否则不再次启动结构调整。
+Unless a Critical Trigger occurs, do not restart structural adjustment.
 
-这保证 Stability。
+This ensures Stability.
 
 ---
 
 ## 32. DecisionCase
 
-这是整个 Decision Ontology 的中心对象。
+This is the central object of the entire Decision Ontology.
 
-正式定义：
+Formal definition:
 
-> **围绕一个明确业务资源配置问题建立的、包含 Baseline、Evidence、Diagnosis、Objectives、Candidate Decisions、Review 与 Validation 的完整决策单元。**
+> **A complete decision unit built around a clear business resource allocation problem, containing Baseline, Evidence, Diagnosis, Objectives, Candidate Decisions, Review, and Validation.**
 
-它是 Agent 最主要的工作对象。
+It is the Agent's primary work object.
 
 ---
 
 ## 33. DecisionCase Schema
 
-建议：
+Recommendation:
 
 ```text
 DecisionCase
@@ -1074,7 +1074,7 @@ closed_at
 
 ## 34. Decision Horizon
 
-沿用 Charter：
+Follow the Charter:
 
 ```text
 Strategic
@@ -1084,15 +1084,15 @@ Operational
 Execution
 ```
 
-一个 DecisionCase 可以包含多个 Atomic Decision Problem，但必须声明主要 Horizon。
+A DecisionCase can contain multiple Atomic Decision Problems, but must declare the primary Horizon.
 
-例如：
+For example:
 
 ```text
 Expansion
 ```
 
-可能包含：
+May include:
 
 ```text
 Strategic:
@@ -1108,7 +1108,7 @@ Personnel
 
 ## 35. DecisionCase Status
 
-建议：
+Recommendation:
 
 ```text
 Detected
@@ -1126,27 +1126,27 @@ Failed
 Closed
 ```
 
-状态必须显式。
+State must be explicit.
 
-不能使用：
+Cannot use:
 
 ```text
 is_done = true
 ```
 
-代替 Decision Lifecycle。
+as a substitute for Decision Lifecycle.
 
 ---
 
 ## 36. BusinessObjective
 
-业务目标不能直接写成 Solver objective。
+Business objectives cannot be directly written as Solver objectives.
 
-正式定义：
+Formal definition:
 
-> **组织希望通过该 Decision Case 改善的业务结果。**
+> **The business outcome that the organization hopes to improve through this DecisionCase.**
 
-例如：
+For example:
 
 ```text
 IncreaseHighPotentialCoverage
@@ -1186,7 +1186,7 @@ evaluation_window
 
 ## 38. Objective Priority
 
-第一版支持：
+First version supports:
 
 ```text
 Primary
@@ -1195,19 +1195,19 @@ Supporting
 Diagnostic
 ```
 
-而不是一开始强迫：
+Instead of forcing from the start:
 
 ```text
 weight = 0.23
 ```
 
-因为很多权重并没有真实业务依据。
+Because many weights do not have real business justification.
 
 ---
 
 ## 39. DecisionRequirement
 
-这一抽象用于统一：
+This abstraction is used for unification:
 
 ```text
 Invariant
@@ -1216,7 +1216,7 @@ Guardrail
 Preference
 ```
 
-结构：
+Structure:
 
 ```text
 DecisionRequirement
@@ -1239,35 +1239,35 @@ exception_authority
 
 ## 40. Invariant
 
-定义：
+Definition:
 
-> **业务世界或核心语义不允许违反的规则。**
+> **Rules that the business world or core semantics do not allow to be violated.**
 
-例如：
+Examples:
 
 ```text
-同一 exclusive Primary Responsibility
-不能同时存在两个 active owner
+The same exclusive Primary Responsibility
+Cannot have two active owners simultaneously.
 ```
 
-或者：
+or:
 
 ```text
 CandidateDecision
-不能直接修改 Observed World
+Cannot directly modify Observed World
 ```
 
-Invariant 原则上不可通过普通业务审批绕过。
+Invariant in principle cannot be bypassed through ordinary business approval.
 
 ---
 
 ## 41. HardConstraint
 
-表示：
+Indicates:
 
-> **当前 Decision Problem 中不能违反的业务要求。**
+> **Business requirements that must not be violated in the current Decision Problem.**
 
-例如：
+Examples:
 
 ```text
 Distributor contractual boundary
@@ -1277,47 +1277,47 @@ Mandatory KA ownership
 Regulatory service constraint
 ```
 
-Hard Constraint 可以因 DecisionCase 不同而不同。
+Hard Constraint can differ depending on the DecisionCase.
 
 ---
 
 ## 42. Guardrail
 
-这是非常重要的中间语义。
+This is a very important intermediate semantics.
 
-例如：
+Examples:
 
 ```text
 ReassignedRevenue <= 10%
 ```
 
-可能原则上不希望超过。
+Possibly, in principle, we do not want to exceed.
 
-但如果：
+but if:
 
 ```text
 business gain is extremely high
 ```
 
-管理层可以审批例外。
+Management can approve exceptions.
 
-因此 Guardrail：
+Therefore Guardrail:
 
 ```text
-可以违反
-但必须产生 Exception
-并需要明确 Approval
+can be violated
+but must generate an Exception
+and requires explicit Approval
 ```
 
 ---
 
 ## 43. Preference
 
-表示：
+Indicates:
 
-> 在多个可行方案中倾向于更好的方向。
+> Prefers a better direction among multiple feasible solutions.
 
-例如：
+Examples:
 
 ```text
 lower travel
@@ -1326,23 +1326,23 @@ less churn
 more balanced workload
 ```
 
-Preference 不是业务事实。
+Preference is not a business fact.
 
-也不是 Hard Constraint。
+Nor is it a Hard Constraint.
 
 ---
 
 ## 43A. RequirementExceptionProposal
 
-当现有 Requirement 在当前 DecisionCase 中造成不可接受的业务冲突时，系统可以生成：
+When the existing Requirement causes unacceptable business conflict in the current DecisionCase, the system can generate:
 
 ```text
 RequirementExceptionProposal
 ```
 
-它不是 Solver 自动 relax。
+It is not automatically relaxed by the Solver.
 
-最小结构：
+Minimal structure:
 
 ```text
 proposal_id
@@ -1361,7 +1361,7 @@ required_authority
 status
 ```
 
-适用场景包括：
+Applicable scenarios include:
 
 ```text
 temporary hard-constraint exception
@@ -1369,51 +1369,51 @@ guardrail exception
 temporary policy exception
 ```
 
-只有在原 `DecisionRequirement` 明确允许 exception，且满足审批权限后，Proposal 才能影响新的 Candidate / Problem Projection。
+Only when the original `DecisionRequirement` explicitly allows an exception and the approval authority is satisfied can the Proposal affect the new Candidate / Problem Projection.
 
 ---
 
-## 44. 为什么一定要四层
+## 44. Why Must It Be Four Layers
 
-假设统一写成：
+Suppose we write it uniformly as:
 
 ```text
 constraint
 ```
 
-开发人员很容易：
+Developers can easily:
 
 ```text
-经理说最好不要跨区
+Manager says it is best not to cross regions
 → hard constraint
 ```
 
-然后模型无解。
+Then the model has no solution.
 
-也可能：
+It may also:
 
 ```text
-真正合同边界
+Actual contract boundaries
 → soft penalty
 ```
 
-产生违法业务方案。
+Generate non-compliant business solutions.
 
-所以必须先做 Semantic Classification。
+Therefore, Semantic Classification must be performed first.
 
 ---
 
 ## 45. DecisionProblem
 
-DecisionProblem 正式定义：
+DecisionProblem formal definition:
 
-> **在一个明确 DecisionCase 和 World Baseline 下，需要改变某些可控业务变量、同时满足 Requirements 并改善 Business Objectives 的决策问题。**
+> **A decision problem that, under a clear DecisionCase and World Baseline, requires changing certain controllable business variables while satisfying Requirements and improving Business Objectives.**
 
 ---
 
 ## 46. Atomic Decision Problem
 
-v1.2 固定七类：
+v1.2 fixes seven categories:
 
 ```text
 DP01 ResourceSizing
@@ -1425,15 +1425,15 @@ DP06 VisitScheduling
 DP07 DailyRouting
 ```
 
-这里再次强调：
+Here we emphasize again:
 
-> Problem Type 是业务语义，不是 Solver Type。
+> Problem Type is a business semantic, not a Solver Type.
 
 ---
 
 ## 47. AtomicProblem Contract
 
-至少：
+At least:
 
 ```text
 problem_id
@@ -1468,11 +1468,11 @@ validation_requirement
 
 ## 48. CompositeDecisionProblem
 
-正式定义：
+Formal definition:
 
-> **由多个 Atomic Decision Problems 共同构成的高层业务配置问题。**
+> **A high-level business configuration problem composed of multiple Atomic Decision Problems.**
 
-第一版：
+Version 1:
 
 ```text
 CP01 DeploymentDesign
@@ -1483,23 +1483,23 @@ CP04 CoverageExecutionDesign
 
 ---
 
-## 49. Composite Problem 不拥有新业务变量
+## 49. Composite Problem does not have new business variables
 
-这是一个重要规则。
+This is an important rule.
 
-例如：
+For example:
 
 ```text
 CapacityExpansion
 ```
 
-不是再创造一个：
+Do not recreate a new one:
 
 ```text
 expansion_variable
 ```
 
-而是编排：
+But orchestrate:
 
 ```text
 IncrementalSizing
@@ -1508,13 +1508,13 @@ Territory
 Personnel
 ```
 
-已有 Atomic Problem 的变量。
+The variables of existing Atomic Problems.
 
 ---
 
 ## 50. CouplingMode
 
-Composite Problem 必须声明：
+Composite Problem must declare:
 
 ```text
 Independent
@@ -1527,13 +1527,13 @@ Joint
 
 ## 51. Independent
 
-各 Atomic Problem 之间几乎没有实质依赖。
+There is almost no substantial dependency between Atomic Problems.
 
 ---
 
 ## 52. Sequential
 
-例如：
+For example:
 
 ```text
 Coverage Commitment
@@ -1541,13 +1541,13 @@ Coverage Commitment
 Visit Scheduling
 ```
 
-前一结果是后一输入。
+The previous result is the next input.
 
 ---
 
 ## 53. Iterative
 
-例如：
+For example:
 
 ```text
 Territory Candidate
@@ -1557,7 +1557,7 @@ Routing Evaluation
 Territory Improvement
 ```
 
-循环直到：
+Loop until:
 
 ```text
 convergence
@@ -1569,7 +1569,7 @@ no material improvement
 
 ## 54. Joint
 
-数学层面联合求解：
+Joint solution at the mathematical level:
 
 ```text
 Sizing
@@ -1579,9 +1579,9 @@ Location
 Territory
 ```
 
-但输出仍必须恢复成三个独立业务 Decision Objects。
+But the output must still be restored to three independent business Decision Objects.
 
-即：
+That is:
 
 > Mathematical jointness does not erase semantic boundaries.
 
@@ -1589,13 +1589,13 @@ Territory
 
 ## 55. CandidateDecision
 
-Solver、Heuristic、Human、Rule Engine 或 Scenario 都可以产生：
+Solver, Heuristic, Human, Rule Engine or Scenario can all produce:
 
 # CandidateDecision
 
-它不是正式 Decision。
+It is not a formal Decision.
 
-结构：
+Structure:
 
 ```text
 CandidateDecision
@@ -1629,7 +1629,7 @@ created_at
 
 ## 56. Candidate Type
 
-例如：
+For example:
 
 ```text
 MaintainCurrentState
@@ -1647,9 +1647,9 @@ ScheduleChange
 
 ## 57. MaintainCurrentState
 
-这是 v1.2 强制 Candidate。
+This is a v1.2 mandatory Candidate.
 
-对于 Structural DecisionCase：
+For Structural DecisionCase:
 
 ```text
 Candidate A
@@ -1657,29 +1657,29 @@ Candidate A
 Maintain Current State
 ```
 
-原则上必须存在。
+Must exist in principle.
 
-这样才能真正回答：
+Only then can it truly answer:
 
-> 调整值得吗？
+> Is the adjustment worthwhile?
 
-而不是：
+instead of:
 
-> 哪个调整方案最好？
+> Which adjustment plan is best?
 
 ---
 
 ## 58. CandidateChange
 
-每一个 Candidate 应明确表达：
+Each Candidate should explicitly express:
 
 ```text
 What changes?
 ```
 
-而不是存一个黑盒 Solution Blob。
+rather than storing a black-box Solution Blob.
 
-例如：
+For example:
 
 ```text
 ResourceDeployment D17
@@ -1696,7 +1696,7 @@ Coverage C883
 
 ## 59. Candidate Origin
 
-必须知道来源：
+Must know the source:
 
 ```text
 Solver
@@ -1708,7 +1708,7 @@ Baseline
 Hybrid
 ```
 
-如果来自 Solver：
+If it comes from a Solver:
 
 ```text
 solver_id
@@ -1716,13 +1716,13 @@ solver_version
 run_id
 ```
 
-应进入 Provenance。
+It should go into Provenance.
 
 ---
 
-## 60. SolverSolution 与 CandidateDecision
+## 60. SolverSolution and CandidateDecision
 
-两者不能合并。
+The two cannot be merged.
 
 ```text
 SolverSolution
@@ -1732,13 +1732,13 @@ Decision Interpreter
 CandidateDecision
 ```
 
-Solver 中可能：
+In Solver it may:
 
 ```text
 x_17_92 = 1
 ```
 
-Candidate 中应该变成：
+In Candidate it should become:
 
 ```text
 Responsibility 92
@@ -1750,13 +1750,13 @@ Deployment 17
 
 ## 61. DeltaEvaluation
 
-所有 Structural/Tactical Candidate 应与 Baseline 比较。
+All Structural/Tactical Candidates should be compared with Baseline.
 
-正式定义：
+Formal definition:
 
-> **描述 Candidate Decision 相对于 Baseline 在业务指标、风险、成本和稳定性上的变化。**
+> **Describes the change of Candidate Decision relative to Baseline in business metrics, risk, cost, and stability.**
 
-结构：
+Structure:
 
 ```text
 DeltaEvaluation
@@ -1780,9 +1780,9 @@ evaluation_version
 
 ---
 
-## 62. Delta 是核心，不是 Candidate Score
+## 62. Delta is core, not Candidate Score
 
-例如：
+For example:
 
 | Metric | Baseline | Candidate | Delta |
 |---|---:|---:|---:|
@@ -1792,7 +1792,7 @@ evaluation_version
 | Accounts Reassigned | 0 | 1,820 | +1,820 |
 | Relationship Risk | 0 | High | ↑ |
 
-不能只生成：
+Cannot only generate:
 
 ```text
 Candidate Score = 87.3
@@ -1802,15 +1802,15 @@ Candidate Score = 87.3
 
 ## 63. ChangeCost
 
-这是 Decision Ontology 的一级对象。
+This is a first-level object of the Decision Ontology.
 
-SRAF 将其进一步一般化。
+SRAF further generalizes it.
 
 ---
 
 ## 64. ChangeCost Type
 
-至少：
+At least:
 
 ```text
 CustomerRelationshipCost
@@ -1826,21 +1826,21 @@ OrganizationalRisk
 
 ---
 
-## 65. ChangeCost 允许定量与定性
+## 65. ChangeCost allows quantitative and qualitative
 
-例如：
+For example:
 
 ```text
 expected revenue impact = -¥500k
 ```
 
-也可以：
+Also possible:
 
 ```text
 customer relationship risk = High
 ```
 
-但都必须声明：
+But all must be declared:
 
 ```text
 estimate method
@@ -1852,31 +1852,31 @@ evidence
 
 ## 66. ChangeCost ≠ Penalty Weight
 
-World/Decision Ontology 中表达：
+Expressed in World/Decision Ontology:
 
 ```text
 CustomerRelationshipRisk = High
 ```
 
-Problem Compiler 以后可以映射成：
+After Problem Compiler can be mapped to:
 
 ```text
 penalty = ...
 ```
 
-但 Ontology 本身不能存：
+However the Ontology itself cannot store:
 
 ```text
 lambda_disruption = 0.32
 ```
 
-这种 solver-specific 参数。
+These solver-specific parameters.
 
 ---
 
 ## 67. Decision Evaluation Level
 
-我建议所有 Candidate 使用三级评价：
+I suggest all Candidates use three-level evaluation:
 
 ```text
 L1 Feasibility
@@ -1888,11 +1888,11 @@ L3 Effectiveness
 
 ## 68. L1 Feasibility
 
-回答：
+Answer:
 
-> 方案能不能执行？
+> Can the solution be executed?
 
-例如：
+For example:
 
 ```text
 Hard constraints satisfied
@@ -1905,11 +1905,11 @@ Scheduling feasible
 
 ## 69. L2 Efficiency
 
-回答：
+Answer:
 
-> 同样的资源投入是否更高效？
+> Is the same resource investment more efficient?
 
-例如：
+For example:
 
 ```text
 Travel
@@ -1922,11 +1922,11 @@ Change cost
 
 ## 70. L3 Effectiveness
 
-回答：
+Answer:
 
-> 是否真正把资源投到了更值得的 Opportunity？
+> Is the resource truly invested into a more valuable Opportunity?
 
-例如：
+For example:
 
 ```text
 Opportunity coverage
@@ -1935,7 +1935,7 @@ Strategic account protection
 Growth support
 ```
 
-因此：
+Therefore:
 
 \[
 GoodDecision
@@ -1943,7 +1943,7 @@ GoodDecision
 BalancedTerritory
 \]
 
-更准确：
+More accurate:
 
 \[
 GoodDecision
@@ -1961,19 +1961,19 @@ Governable
 
 ## 71. Decision Confidence
 
-Candidate 不只是：
+Candidate is not only:
 
 ```text
 expected improvement = 8%
 ```
 
-还应该知道：
+but also should know:
 
 ```text
 confidence
 ```
 
-例如：
+For example:
 
 ```text
 Opportunity model confidence = 0.58
@@ -1981,19 +1981,19 @@ Travel estimate confidence = 0.92
 Relationship risk confidence = 0.41
 ```
 
-Decision Evaluation 可以建立：
+Decision Evaluation can establish:
 
 ```text
 DecisionConfidence
 ```
 
-但禁止创造虚假的精确度。
+but prohibits creating false precision.
 
 ---
 
 ## 72. UncertaintyModel
 
-每个 Problem / Candidate 可以声明：
+Each Problem / Candidate can declare:
 
 ```text
 Deterministic
@@ -2002,19 +2002,19 @@ Robust
 Stochastic
 ```
 
-例如：
+For example:
 
 ```text
 Potential Low / Base / High
 ```
 
-分别评价 Candidate。
+Evaluate Candidates separately.
 
 ---
 
 ## 73. Scenario Robustness
 
-Candidate 可以有：
+Candidate can have:
 
 ```text
 expected case
@@ -2022,7 +2022,7 @@ downside case
 upside case
 ```
 
-例如：
+For example:
 
 | Candidate | Low | Base | High |
 |---|---:|---:|---:|
@@ -2030,17 +2030,17 @@ upside case
 | Add 2 Reps | 79 | 87 | 93 |
 | Rebalance | 83 | 86 | 88 |
 
-这会帮助管理层看到：
+This will help management see:
 
-> 最大收益方案是否高度依赖 Opportunity Forecast。
+> Is the maximum benefit plan highly dependent on the Opportunity Forecast?
 
 ---
 
 ## 74. HumanReview
 
-Human-in-the-loop 必须成为正式 Decision Object。
+Human-in-the-loop must become a formal Decision Object.
 
-结构：
+Structure:
 
 ```text
 HumanReview
@@ -2064,7 +2064,7 @@ created_at
 
 ## 75. Local Knowledge Review
 
-SRAF 将其规范化为：
+SRAF normalizes it as:
 
 ```text
 Central Candidate
@@ -2076,22 +2076,22 @@ Evidence / Exception
 Re-evaluation
 ```
 
-而不是：
+rather than:
 
 ```text
-经理拖地图
-→ 直接覆盖模型
+Manager drags the map
+→ directly overwrites the model
 ```
 
 ---
 
 ## 76. HumanOverride
 
-正式定义：
+Formal definition:
 
-> **人工对 Candidate Decision 进行明确修改，并记录原因、证据和预期影响。**
+> **Human explicitly modifies a Candidate Decision, and records reasons, evidence, and expected impact.**
 
-结构：
+Structure:
 
 ```text
 HumanOverride
@@ -2121,7 +2121,7 @@ created_at
 
 ## 77. Override Reason Taxonomy
 
-第一版可以包含：
+The first version can include:
 
 ```text
 CustomerRelationship
@@ -2139,16 +2139,16 @@ Other
 
 ---
 
-## 78. Override 必须保留原 Candidate
+## 78. Override must retain the original Candidate
 
-不要：
+Do not:
 
 ```text
 Candidate V1
-被人工覆盖
+be overridden by humans
 ```
 
-而应该：
+instead should:
 
 ```text
 Candidate V1
@@ -2158,13 +2158,13 @@ HumanOverride
 Candidate V1.1
 ```
 
-原始方案仍可追溯。
+The original plan remains traceable.
 
 ---
 
 ## 79. Approval
 
-正式 Decision 必须来自：
+A formal Decision must come from:
 
 ```text
 Candidate
@@ -2174,7 +2174,7 @@ Approval
 ApprovedDecision
 ```
 
-Approval 至少：
+Approval at least:
 
 ```text
 approval_id
@@ -2185,7 +2185,7 @@ conditions
 timestamp
 ```
 
-例如：
+For example:
 
 ```text
 Approved
@@ -2198,11 +2198,11 @@ Deferred
 
 ## 80. ApprovedDecision
 
-`ApprovedDecision` 是：
+`ApprovedDecision` is:
 
-> **经治理流程确认、允许进入 Transition 的 CandidateDecision 的正式批准结果。**
+> **Formal approval result of a CandidateDecision confirmed by the governance process and allowed to enter Transition.**
 
-标准链路：
+Standard chain:
 
 ```text
 DecisionCase
@@ -2216,9 +2216,9 @@ ApprovedDecision
 TransitionPlan
 ```
 
-`Decision` 只作为概念性总称，不作为与 `ApprovedDecision` 并列的第二套 canonical class。
+`Decision` is used only as a conceptual umbrella term, not as a second set of canonical classes alongside `ApprovedDecision`.
 
-结构至少包括：
+Structure must include at least:
 
 ```text
 approved_decision_id
@@ -2237,17 +2237,17 @@ approved_by
 
 ## 81. TransitionPlan
 
-一个 Target Allocation 正确，不代表：
+A correct Target Allocation does not imply:
 
-> 明天全部切换。
+> Switch everything tomorrow.
 
-因此：
+Therefore:
 
 # `TransitionPlan`
 
-必须独立存在。
+Must exist independently.
 
-结构：
+Structure:
 
 ```text
 TransitionPlan
@@ -2276,7 +2276,7 @@ owner
 
 ## 82. Transition Phase
 
-例如：
+For example:
 
 ```text
 Phase 1
@@ -2297,29 +2297,29 @@ Post-transition evaluation
 
 ---
 
-## 83. Structural Decision 与 Transition 必须分离
+## 83. Structural Decision and Transition Must Be Separated
 
-目标：
+Objective:
 
 ```text
 T2027Q1
 ```
 
-可能是最佳 Territory。
+May be the optimal Territory.
 
-但如果需要：
+But if needed:
 
 ```text
-3个月客户交接
+3‑month customer handover
 ```
 
-则：
+Then:
 
 ```text
 Target State
 ```
 
-不能立即成为：
+Cannot immediately become:
 
 ```text
 Current State
@@ -2329,13 +2329,13 @@ Current State
 
 ## 84. Transition Event
 
-Transition Plan 最终产生：
+Transition Plan ultimately produces:
 
 ```text
 World Events
 ```
 
-例如：
+For example:
 
 ```text
 DeploymentActivated
@@ -2344,19 +2344,19 @@ CoverageCommitmentChanged
 TerritoryActivated
 ```
 
-然后才更新 World Model。
+Only then update the World Model.
 
 ---
 
 ## 85. Rollback
 
-大型结构调整必须允许：
+Large‑scale structural adjustments must allow:
 
 ```text
 RollbackCondition
 ```
 
-例如：
+For example:
 
 ```text
 Critical account loss
@@ -2365,21 +2365,21 @@ Unexpected personnel loss
 Data defect discovered
 ```
 
-Rollback 本身也是一个新的 Decision / Transition。
+Rollback itself is also a new Decision/Transition.
 
-不能直接数据库回滚。
+Cannot directly roll back the database.
 
 ---
 
 ## 86. DecisionValidationPlan
 
-这是 SRAF 与传统 Optimization Project 拉开差距的关键对象。
+This is the key object that differentiates SRAF from traditional Optimization Projects.
 
-正式定义：
+Formal definition:
 
-> **在 Decision 实施前定义未来将如何使用真实执行结果判断这项决策是否有效。**
+> **Define, before the Decision is implemented, how the real execution results will be used to judge whether this decision is effective.**
 
-结构：
+Structure:
 
 ```text
 DecisionValidationPlan
@@ -2410,7 +2410,7 @@ evaluation_method
 
 ## 87. Validation Hypothesis
 
-例如：
+For example:
 
 ```text
 Territory rebalancing
@@ -2418,7 +2418,7 @@ will reduce travel burden
 without reducing high-potential coverage.
 ```
 
-具体：
+Specifics:
 
 ```text
 Travel -10%
@@ -2429,15 +2429,15 @@ HighPotentialCoverage >= baseline
 
 ## 88. Validation Window
 
-Structural Decision 不应该：
+Structural Decision should not:
 
 ```text
-实施第二天
+Implement on the second day
 ```
 
-就判断成败。
+judge success or failure.
 
-例如：
+For example:
 
 ```text
 30 days stabilization
@@ -2445,13 +2445,13 @@ Structural Decision 不应该：
 90 days validation
 ```
 
-应该由 Decision 类型声明。
+Should be declared by the Decision type.
 
 ---
 
 ## 89. Control / Comparison
 
-当条件允许时，Validation 应支持：
+When conditions allow, Validation should support:
 
 ```text
 Before / After
@@ -2462,13 +2462,13 @@ A/B
 Synthetic Control
 ```
 
-具体采用哪一种属于 Benchmark Specification。
+Which specific one to use is part of the Benchmark Specification.
 
 ---
 
 ## 90. Decision Outcome
 
-最终：
+Ultimately:
 
 ```text
 DecisionOutcome
@@ -2481,7 +2481,7 @@ ValidationResult
 Confidence
 ```
 
-可以是：
+Can be:
 
 ```text
 Validated
@@ -2492,15 +2492,15 @@ Inconclusive
 
 ---
 
-## 91. Failed Decision 不是系统异常
+## 91. Failed Decision Is Not a System Anomaly
 
-如果：
+If:
 
 ```text
 DecisionFailed
 ```
 
-但当初：
+But at the time:
 
 ```text
 Evidence
@@ -2508,25 +2508,25 @@ Assumptions
 Decision Process
 ```
 
-都是合理的，
+were all reasonable,
 
-它仍然是有价值的学习样本。
+It is still a valuable learning sample.
 
-真正的问题是：
+The real problem is:
 
-> 无法解释为什么当时做出这个 Decision。
+> Cannot explain why this Decision was made at that time.
 
 ---
 
 ## 92. LearningSignal
 
-Decision Validation 可以生成：
+Decision Validation can generate:
 
 ```text
 LearningSignal
 ```
 
-例如：
+For example:
 
 ```text
 OpportunityModelOverestimated
@@ -2536,7 +2536,7 @@ LocalKnowledgeMissing
 CoverageResponseWeak
 ```
 
-这些信号进入后续：
+These signals feed into subsequent:
 
 ```text
 Model Review
@@ -2544,13 +2544,13 @@ Policy Review
 World Model Improvement
 ```
 
-但不会让 Agent 自行修改核心 Ontology。
+But will not allow the Agent to modify the core Ontology on its own.
 
 ---
 
 ## 93. Problem Router
 
-Allocation Intelligence 最终输出：
+Allocation Intelligence final output:
 
 ```text
 DecisionCase
@@ -2558,7 +2558,7 @@ DecisionCase
 ProblemRouter
 ```
 
-第一版映射：
+First version mapping:
 
 ```text
 Global Capacity Shortage
@@ -2597,51 +2597,51 @@ Policy mismatch
 
 ---
 
-## 94. `WorldModelRepair` 为什么不属于 7 个 Decision Problem
+## 94. Why does `WorldModelRepair` not belong to the 7 Decision Problems
 
-因为：
+Because:
 
 ```text
 Data problem
 ```
 
-不是 Sales Resource Allocation Decision。
+It is not a Sales Resource Allocation Decision.
 
-因此：
+Therefore:
 
 ```text
 WorldModelRepair
 ```
 
-属于 Governance Workflow（见 `05_DECISION_ORCHESTRATION.md` §14A，GW01）。
+It belongs to Governance Workflow (see `05_DECISION_ORCHESTRATION.md` §14A, GW01).
 
-不能为了所有异常都塞进 Decision Problem Library。
+You cannot stuff every exception into the Decision Problem Library.
 
-同理：
+Similarly:
 
 ```text
 PotentialModelRetraining
 ```
 
-属于 Model Governance（GW02）。
+It belongs to Model Governance (GW02).
 
-`Policy mismatch` 属于 Policy Review（GW03）。
+`Policy mismatch` belongs to Policy Review (GW03).
 
-三者都不占用 DP01–DP07 编号，不得注册为 Atomic Decision Problem，
-也不得由 Solver 执行；它们的产出是**修正提案 + 治理决定**，不是资源配置 Candidate。
+None of the three occupy DP01–DP07 numbering and may not be registered as an Atomic Decision Problem,
+nor may they be executed by a Solver; their output is **correction proposal + governance decision**, not a resource allocation Candidate.
 
 ---
 
 ## 95. Decision Case Example
 
-例如：
+For example:
 
 ```text
 CASE:
-长沙河西高潜餐饮 Coverage Gap
+Changsha Hexi high-potential catering Coverage Gap
 ```
 
-可以表达：
+Can be expressed as:
 
 ```text
 Baseline:
@@ -2678,25 +2678,25 @@ Reassigned Revenue < 10%
 Customer Relationship Risk <= Medium
 ```
 
-这就是完整的 Decision Case。
+This is a complete Decision Case.
 
 ---
 
-## 96. Decision Case 与 Agent 的关系
+## 96. Relationship between Decision Case and Agent
 
-Agent 的标准接口不应该是：
+The standard interface of an Agent should not be:
 
 ```text
-给我一堆客户数据
+Give me a bunch of customer data
 ```
 
-而应该优先是：
+Instead, the priority should be:
 
 ```text
 DecisionCase
 ```
 
-Agent 查询：
+Agent queries:
 
 ```text
 World Snapshot
@@ -2708,19 +2708,19 @@ Candidate
 Evaluation
 ```
 
-然后调用具体 Tool。
+Then calls the specific Tool.
 
 ---
 
-## 97. Agent 不拥有 Objective
+## 97. Agent Does Not Own Objective
 
-Agent 不允许自行决定：
+Agent is not allowed to decide on its own:
 
 ```text
-“我觉得 workload fairness 最重要”
+"I think workload fairness is the most important"
 ```
 
-Objective 必须来自：
+Objective must come from:
 
 ```text
 BusinessObjective
@@ -2728,42 +2728,42 @@ DecisionPolicy
 Human Decision
 ```
 
-Agent 可以指出目标冲突。
+Agent can point out goal conflicts.
 
-不能擅自重新定义组织目标。
+It cannot redefine organizational goals on its own.
 
 ---
 
-## 98. Agent 不拥有 Hard Constraint
+## 98. Agent Does Not Own Hard Constraint
 
-同样禁止：
+Similarly prohibited:
 
 ```text
 LLM:
-“这个区域看起来最好不要跨河。”
+"This region looks like it should not cross the river."
 ```
 
-然后直接成为 Hard Constraint。
+Then directly becomes a Hard Constraint.
 
-它最多可以生成：
+At most it can generate:
 
 ```text
 Candidate Diagnostic Hypothesis
 ```
 
-或者：
+or:
 
 ```text
 Proposed Preference
 ```
 
-经过 Evidence / Human Review 后才能成为 Requirement。
+After Evidence / Human Review can it become a Requirement.
 
 ---
 
-## 99. Decision Ontology 核心关系图
+## 99. Decision Ontology Core Relationship Diagram
 
-最终核心关系可以表达为：
+The final core relationship can be expressed as:
 
 ```text
                WORLD SNAPSHOT
@@ -2839,57 +2839,57 @@ Proposed Preference
 
 ## 100. Architecture Gates
 
-`02_DECISION_ONTOLOGY` 实现中，出现以下情况应该作为架构问题拒绝：
+In the implementation of `02_DECISION_ONTOLOGY`, the following situations should be rejected as architectural issues:
 
 ```text
-Metric abnormal 直接等同 Decision Problem
+Metric abnormal directly equates to Decision Problem
 
-AllocationGap 没有 Baseline / reference
+AllocationGap has no Baseline / reference
 
-Diagnosis 没有 Evidence Against
+Diagnosis has no Evidence Against
 
-LLM 文本直接成为 Root Cause Truth
+LLM text directly becomes Root Cause Truth
 
-DecisionCase 没有 Baseline
+DecisionCase has no Baseline
 
-Structural Decision 不包含 Maintain Candidate
+Structural Decision does not contain Maintain Candidate
 
-Objective 直接保存 solver weight
+Objective directly saves solver weight
 
-Policy 与 Hard Constraint 不区分
+Policy and Hard Constraint are not distinguished
 
-Guardrail 被当成不可违反规则
+Guardrail is treated as an inviolable rule
 
-Candidate Solution 直接等于 Decision
+Candidate Solution directly equals Decision
 
-SolverSolution 直接成为 Candidate World State
+SolverSolution directly becomes Candidate World State
 
-Candidate 没有 Provenance
+Candidate has no Provenance
 
-Candidate 只保存总分、不保存 Delta
+Candidate only stores total score, does not store Delta
 
-Territory 调整不计算 ChangeCost
+Territory adjustment does not compute ChangeCost
 
-Human Override 静默覆盖原 Candidate
+Human Override silently overwrites the original Candidate
 
-Human Override 不记录原因
+Human Override does not record reason
 
-Target State 与 Transition Plan 合并
+Target State merges with Transition Plan
 
-Decision 实施前没有 Validation Plan
+Decision has no Validation Plan before implementation
 
-Solver Objective Improvement 被当作业务成功
+Solver Objective Improvement is considered business success
 
-Failed Decision 被删除
+Failed Decision is deleted
 
-Agent 可以自由修改 Objective / Constraint
+Agent can freely modify Objective / Constraint
 ```
 
 ---
 
-## 101. MVP 范围
+## 101. MVP Scope
 
-为了防止 v1.2 做得过重，第一版 Decision Ontology 最少实现：
+To prevent v1.2 from being overly heavy, the first version of Decision Ontology must at least implement:
 
 ```text
 AllocationGap
@@ -2914,26 +2914,26 @@ TransitionPlan
 DecisionValidationPlan
 ```
 
-暂时可以简化：
+For now, it can be simplified:
 
 ```text
-复杂 approval hierarchy
-复杂 stochastic object
-复杂 causal graph engine
-自动 ontology learning
+Complex approval hierarchy
+Complex stochastic object
+Complex causal graph engine
+Automated ontology learning
 ```
 
 ---
 
 ## 102. Definition of Done
 
-Decision Ontology v1.2 不能以：
+Decision Ontology v1.2 cannot use as:
 
-> 类和表已经创建
+> Classes and tables have been created
 
-作为完成。
+as completion.
 
-必须至少跑通这样一个真实 Case：
+Must at least run through such a real Case:
 
 ```text
 World Snapshot
@@ -2970,13 +2970,13 @@ Observed Outcome
 Decision Validation
 ```
 
-这条链完整跑通以后，Decision Ontology 才真正成立。
+After this chain is fully traversed, Decision Ontology is truly established.
 
 ---
 
-## 103. 与 `01_WORLD_MODEL_SPEC` 的最终边界
+## 103. Final Boundary with `01_WORLD_MODEL_SPEC`
 
-可以压缩成一句：
+Can be compressed into one sentence:
 
 ```text
 WORLD MODEL
@@ -2990,7 +2990,7 @@ why should it change,
 and how do we know the decision worked?
 ```
 
-或者更加工程化：
+Or more engineering-oriented:
 
 ```text
 Observed World

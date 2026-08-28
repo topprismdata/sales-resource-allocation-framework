@@ -1,47 +1,158 @@
-# SRAF — 经销商区域分配智能决策框架
+# Sales Resource Allocation Framework
 
-> SRAF = 给经销商区域管理装大脑。围栏绘制/门店归类/排班引擎是"怎么做"的肌肉；
-> 本框架补上"为什么"的大脑：哪个店是谁的（身份）、缺口是真的还是假的（诊断）、
-> 改了会怎样（影响预测）、该怎么改（带证据链的建议）。
+**An allocation-intelligence layer for distributor territory management:
+world model + evidence-governed knowledge base + reasoning that proposes
+to humans — and never auto-executes.**
+
+`WORLD MODEL` · `DECISION INTELLIGENCE` · `REAL-DATA VALIDATED` ·
+`NO OPERATIONAL DATA IN REPO` · `MIT`
+
+> **Decision question:** Given dealer territories derived from contracts,
+> observed supply footprints, and road/river landmarks — which coverage
+> gaps are real, which organizational layer owns them, and what happens
+> if a sub-area is transferred between dealers?
+>
+> Part of **TopPrism Decision Intelligence**. Existing tools (fence
+> drawing, store classification, visit scheduling) are the muscle — the
+> *how*. SRAF supplies the brain — the *why*: identity, gap diagnosis,
+> impact prediction, and advice with a full evidence chain.
+
+------------------------------------------------------------------------
+
+## Why this exists
+
+Territory adjustments in the field today carry "function without
+business knowledge": a fence can be redrawn, but nothing can answer
+*why* a gap exists, *who* should own the fix, or *what breaks* if the
+boundary moves.
 
 ```text
-智能 = 世界模型（骨架） + 知识库（血肉） + 推理（给人建议）
-产出定位：建议给人，不是自动决策——每条建议自带证据链。
+Intelligence = World Model (skeleton)
+             + Knowledge Base (flesh, 31 sourced entries)
+             + Reasoning (advice for humans, every "why" lands on an entry)
 ```
 
-## 仓库结构
+The output is always a **proposal for a human to approve** — with
+signals, risks, and provenance attached (governance workflow GW,
+approval gate A2/A3 forbidden for auto-execute).
 
-| 路径 | 内容 |
+------------------------------------------------------------------------
+
+## Architecture: three independent decision layers
+
+Layers mirror the organization. Each layer decides independently and
+hands off only through interfaces (D10):
+
+```text
+ Human   city manager (D) / dealer supervisor (B) / field rep (V)
+          ↑ advice + evidence chain          ↑ per-layer approval (GW)
+├────────────────────────────────────────────────────────────┤
+│  04 Allocation Intelligence: locate the layer, then diagnose│
+├─────────────────────────┬──────────────────────────────────┤
+│  World Model (skeleton) │  Knowledge Base (flesh, 31)      │
+│  F1/F2/F3 fence ontology│  principles·rules·facts·cases…   │
+│  events E1–E11          │  no-provenance-no-entry governance│
+├─────────────────────────┴──────────────────────────────────┤
+│  Layer D  dealer territory  → I-D: store → dealer          │
+│  Layer B  rep beat routes   → I-B: store → beat → rep+freq │
+│  Layer V  visit scheduling  → visit plan (read-only dep.)  │
+└────────────────────────────────────────────────────────────┘
+```
+
+## What v1.2.2 establishes
+
+- **Area-first adjustment semantics (K-PRIN-006 / D11).** The decision
+  object is a *sub-area* of a territory — whole region, half-region,
+  district, out-of-fence pocket, or store-neighborhood. Stores follow
+  the area as a derived effect; editing stores directly is a CRM job,
+  not a decision.
+- **Logical fence merge, no polygon surgery.** Applying a transfer
+  reassigns store ownership (the only fact — conservation trivially
+  holds); a dealer's fence is a derived convex hull of its current
+  stores. ~150 lines of union/difference geometry surgery deleted with
+  it.
+- **CRS boundary normalization (D13).** Business packs are declared
+  GCJ-02 (Amap); OSM is WGS-84. Mixed naively, that is a ~623 m
+  systematic offset in Guangzhou (measured) — enough to make four-bound
+  direction checks fiction. All geometry runs pure WGS-84 internally:
+  one-shot `pack_from_disk` on load, exact inverse on write
+  (round-trip residual 0.000 m, tested).
+- **Rules-first parsing, LLM as fallback (D12).** An `@`-mention engine
+  guarantees the LLM only ever sees full legal names; the deterministic
+  rule path answers standard commands in &lt;1 s.
+
+## Demo: the three-step loop
+
+```bash
+python3 tools/demo_server.py          # stdlib server, Leaflet single page
+# ① contract text → four bounds → OSM landmark rebuild → fence draft + conflicts
+# ② natural-language area transfer:  "move @A's east half to @B"
+#    → proposal card (area, stores, contract signals, materiality) → apply / reject
+# ③ analysis: per-fence health (Q1) + coverage-gap taxonomy (Q2)
+```
+
+Business data packs (`data/<region>/`) are **not** included; assemble
+your own per [data/README.md](data/README.md) (schema + `crs`
+contract).
+
+------------------------------------------------------------------------
+
+## Repository layout
+
+| Path | Contents |
 |---|---|
-| `docs/` | 规范集 00-08（**v1.2.1 FROZEN**：章程/世界模型/决策本体/问题合同/分配智能/编排/评测/参考架构/身份解析）+ CHANGELOG 治理文件 |
-| `DESIGN.md` | 实施阶段总体设计（活文档）+ ADR 决策记录（D1-D13） |
-| `intelligence/` | 世界模型切片、区域调整引擎（区域优先 + 逻辑围栏合并）、GCJ-02⇄WGS-84 坐标系边界归一、道路语义、视觉终审、LLM 语义解析 |
-| `dealer_territory/` | Layer-D 围栏切分/分配/四至/分析 6 模块 |
-| `knowledge_base/` | 31 条有出处知识条目（json 机器可读 + md 人读索引） |
-| `tools/` | 区域数据包热切换 Demo（stdlib server + Leaflet 单页前端）、OSM 抓取、包校验 |
-| `data/README.md` | 数据包 schema 与坐标系（crs）契约 |
+| `docs/` | Normative specs 00–08 (**v1.2.1 FROZEN**) + governance files; language normalization per `CHANGELOG_v1.2.3.md` |
+| `DESIGN.md` | Living implementation design + ADR log (D1–D13) |
+| `intelligence/` | World-model slice, area-first adjust engine, GCJ⇄WGS boundary, road semantics, vision verification, LLM parse |
+| `dealer_territory/` | Layer-D fence split / allocation / four-bounds / analysis |
+| `knowledge_base/` | 31 knowledge entries (JSON machine-readable + human index) |
+| `tools/` | Demo server + frontend, OSM fetch, pack validation, consistency & reference checks |
+| `tests/` | 13 unit tests (`python3 -m unittest discover tests`) |
 
-## Demo 三步流程
+## Evidence
 
-1. **合同 → 区域**：四至文本 → OSM 地标重建围栏草案 + 冲突检测（错位/重叠/缺口）
-2. **区域语义调整**：`把 @甲 的东部片区划给 @乙` —— 决策对象是【片区】，
-   门店归属是附带效果（店随区域走）；规则主路径 + LLM 兜底；提案带面积/门店/
-   契约信号证据链；应用=逻辑合并（门店重分配，围栏=门店派生视图）
-3. **分析**：围栏健康排名（Q1）+ 覆盖缺口四分类（Q2）
+- World-model semantics validated on an anonymizable 38-fence /
+  33,109-store Guangzhou snapshot (six-way `kind` classification,
+  79% three-layer alignment rate — aggregate figures only; raw data is
+  out of scope for this repository).
+- Fence-vertex → OSM-road distance test discriminated the CRS question
+  (338 m under GCJ-02 direct comparison vs 123 m after conversion).
+- Consistency and cross-reference gates run in CI-able scripts:
+  `tools/consistency_check.py`, `tools/ref_check.py`.
 
-运行：`python3 tools/demo_server.py`（业务数据包 `data/*` 不入库，
-按 `data/README.md` 自备；坐标系声明 GCJ-02 的包加载时自动归一为 WGS-84）。
+## Where it fits at TopPrism
 
-## 关键工程决策（ADR 摘录）
+SRAF is the decision-intelligence layer above
+[market-partition](https://github.com/topprismdata/market-partition)
+(spatial partitioning),
+[bge-entity-match](https://github.com/topprismdata/bge-entity-match)
+(entity resolution), and
+[visit-scheduling-optimizer](https://github.com/topprismdata/visit-scheduling-optimizer)
+(execution layer, consumed read-only through an adapter — D2).
 
-- **D11 区域优先 + 逻辑围栏合并**：划转只重分配门店归属（唯一事实），
-  围栏 = 经销商门店点集凸包的派生视图；废弃多边形 union/difference 手术
-- **D12 规则优先、LLM 兜底**：@ 提及引擎保证 LLM 只见全名
-- **D13 坐标系边界归一**：数据包按 `meta.crs` 声明；加载 GCJ→WGS 一次、
-  写盘逆转换、内部纯 WGS-84——混系 = 广州实测 ~623m 系统偏移
-- **D10 三级独立决策层**（D/B/V）：仅接口交接，禁止跨层干预
+------------------------------------------------------------------------
 
-## 不做什么（Non-goals）
+## TopPrism metadata
 
-不做 LLM 端到端诊断；不自动执行（建议止于人审）；不跨层开方子；
-v0 不做在线学习。业务数据与凭证一律不入库。
+```yaml
+topprism:
+  purpose: decision-intelligence
+  capability: territory-allocation
+  platform_layer: business-world-model
+  maturity: applied-internal
+  evidence:
+    type: operational-data-validated
+    source: anonymized business snapshot + public OSM
+    validation: programmatic-plus-visual
+  spec_baseline: docs v1.2.1 FROZEN
+  product_context:
+    - dealer-territory-design
+    - coverage-gap-diagnosis
+    - area-transfer-what-if
+```
+
+## License
+
+MIT. No operational business data or credentials are distributed with
+this repository; `data/*` and `analysis/*` are excluded by contract
+(`.gitignore`).

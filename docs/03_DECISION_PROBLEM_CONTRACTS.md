@@ -1,17 +1,17 @@
 # SRAF Decision Problem Contracts Specification v1.2
 
-**项目：** Sales Resource Allocation Framework  
-**文档：** `03_DECISION_PROBLEM_CONTRACTS.md`  
-**状态：** Implementation Baseline v1.2  
+**Project:** Sales Resource Allocation Framework
+**Document:** `03_DECISION_PROBLEM_CONTRACTS.md`
+**Status:** Implementation Baseline v1.2
 
-**上位规范：**
-`00_PROJECT_CHARTER.md`、`01_WORLD_MODEL_SPEC.md`、`02_DECISION_ONTOLOGY.md`
+**Parent Specification:**
+`00_PROJECT_CHARTER.md`, `01_WORLD_MODEL_SPEC.md`, `02_DECISION_ONTOLOGY.md`
 
 ---
 
-## 1. 核心原则
+## 1. Core Principles
 
-任何 Decision Engine 都不能直接定义自己的业务问题：
+No Decision Engine may directly define its own business problem:
 
 ```text
 DecisionCase
@@ -25,13 +25,13 @@ ProblemCompiler
 Solver
 ```
 
-Solver 接收的是已被业务语义定义清楚的问题，而不是一堆原始业务数据。
+Solver receives a problem that has been clearly defined by business semantics, rather than a pile of raw business data.
 
 ---
 
 ## 1A. Normative Ownership
 
-本文件唯一拥有：
+This document uniquely has:
 
 ```text
 AtomicDecisionProblem
@@ -44,25 +44,25 @@ SolverCapabilityRequirement
 ProblemRun
 ```
 
-它引用 World / Decision / Workflow 对象，但不重新定义其 canonical schema。
+It references World / Decision / Workflow objects, but does not redefine their canonical schema.
 
 ---
 
-## 2. Contract 必须回答的问题
+## 2. Questions a Contract Must Answer
 
-每个 Contract 必须回答：
+Each Contract must answer:
 
 ```text
-1. 我在解决什么业务问题？
-2. 当前世界状态是什么？
-3. 哪些东西允许改变？
-4. 哪些东西绝对不能改变？
-5. 哪些规则必须满足？
-6. 哪些只是优化倾向？
-7. 什么样的结果才算可行？
-8. 什么样的结果才算更好？
-9. 输出怎样被解释回业务世界？
-10. 如果失败，失败到底意味着什么？
+1. What business problem am I solving?
+2. What is the current world state?
+3. What is allowed to change?
+4. What is absolutely not allowed to change?
+5. What rules must be satisfied?
+6. Which are merely optimization preferences?
+7. What results are considered feasible?
+8. What results are considered better?
+9. How should the output be interpreted back into the business world?
+10. If it fails, what does the failure actually mean?
 ```
 
 ---
@@ -88,8 +88,8 @@ DecisionProblemContract:
     required_derived_states:
     data_quality_requirements:
     temporal_context:
-    identity_snapshot_id:      # 所用身份决策集版本，见 08 §20
-    min_identity_confidence:   # 低于此值的 subject 不得进入结构决策
+identity_snapshot_id:      # version of the identity decision set used, see 08 §20
+min_identity_confidence:   # subjects with confidence below this value must not enter structural decisions
 
   decision_scope:
     mutable_objects:
@@ -139,19 +139,19 @@ DecisionProblemContract:
 
 ---
 
-## 4. ProblemProjection 是 Contract 与 Solver 的边界
+## 4. ProblemProjection Is the Boundary Between Contract and Solver
 
-WorldModel → ProblemProjection → SolverModel。
+WorldModel → ProblemProjection → SolverModel. 
 
-ProblemProjection 对世界进行目的限定的提取、聚合和转换，但不得改写 Canonical World。
+ProblemProjection performs purpose‑limited extraction, aggregation, and transformation of the world, but must not rewrite the Canonical World.
 
 ---
 
-## 5. Business Variable 与 Mathematical Variable 分离
+## 5. Separation of Business Variables and Mathematical Variables
 
-Contract 声明业务变量，如 ResponsibilityAssignment、ResourceDeployment、CoverageCommitment 是否可改变。
+Contract declares business variables, such as ResponsibilityAssignment, ResourceDeployment, CoverageCommitment, and whether they can change.
 
-`x[i,j]`、`y[k]`、`z[t]` 等只属于 Solver Model。
+`x[i,j]`, `y[k]`, `z[t]`, etc. belong only to the Solver Model.
 
 ```text
 Business Decision Variable
@@ -161,33 +161,33 @@ Problem Compiler
 Mathematical Variable
 ```
 
-求解后必须重新解释回业务对象。
+After solving, they must be re‑interpreted back to business objects.
 
 ---
 
 ## 6. Immutable Objects
 
-每个 Contract 必须明确本次决策不允许改变什么。Solver 不得通过静默修改上游决策来“解决”本问题。
+Each Contract must explicitly state what is not allowed to change for this decision. The Solver must not "solve" the problem by silently modifying upstream decisions.
 
 ---
 
-## 7. Feasibility 不等于 Optimality
+## 7. Feasibility Does Not Equal Optimality
 
-先判断 Candidate 是否属于 FeasibleSet，再优化。Objective 好不能覆盖 Hard Constraint。
+First determine whether a Candidate belongs to the FeasibleSet, then optimize. A good Objective cannot override a Hard Constraint.
 
 ---
 
 ## 8. ProblemFeasibilityPrecheck
 
-昂贵 Solver 前先检查显而易见的业务不可行性，例如 Required workload 显著高于 Available capacity 且 Coverage/Resource 均不可改变。
+Before invoking an expensive Solver, first check for obvious business infeasibility, such as Required workload significantly higher than Available capacity while both Coverage/Resource cannot be changed.
 
-Precheck 的目的既是节省计算，也是区分“业务不可行”与“Solver/Model 出错”。
+The purpose of Precheck is both to save computation and to distinguish "business infeasibility" from "Solver/Model error".
 
 ---
 
 ## 9. FeasibilityOracle
 
-标准 Oracle：
+Standard Oracle:
 
 ```text
 SchedulingFeasibilityOracle
@@ -198,13 +198,13 @@ TravelFeasibilityOracle
 PolicyFeasibilityOracle
 ```
 
-Oracle 只返回可行性证据，不能自动修改 Candidate。
+Oracle only returns feasibility evidence and must not automatically modify a Candidate.
 
 ---
 
 ## 10. Infeasibility Taxonomy
 
-禁止统一返回 `INFEASIBLE`。至少区分：
+Do not uniformly return `INFEASIBLE`. Distinguish at least:
 
 ```text
 F1 DATA_INFEASIBLE
@@ -216,14 +216,14 @@ F6 MODEL_INFEASIBLE
 F7 SOLVER_FAILURE
 ```
 
-`F1 DATA_INFEASIBLE` 的合法成因之一，
-是 subject 身份未解析或存在被阻塞的身份冲突
-（`08_CANONICAL_IDENTITY_AND_ENTITY_RESOLUTION.md` §14）。
-此时应路由 `GW01 WorldModelRepair`，
-而**不得**在 `IdentityDuplicate` 未排除前
-解释为 `F4 RESOURCE_INFEASIBLE`（假性缺人）。
+`F1 DATA_INFEASIBLE` is one of the legitimate causes,
+subject identity not resolved or there is a blocked identity conflict.
+ (`08_CANONICAL_IDENTITY_AND_ENTITY_RESOLUTION.md` §14) . 
+In this case, route to `GW01 WorldModelRepair`,
+and **must not** before `IdentityDuplicate` is excluded
+interpret it as `F4 RESOURCE_INFEASIBLE` (false manpower shortage).
 
-Solver status 与 Business feasibility 分开：
+Separate Solver status from Business feasibility:
 
 ```text
 OPTIMAL
@@ -236,7 +236,7 @@ MODEL_ERROR
 NUMERICAL_FAILURE
 ```
 
-分层为：
+Layer as follows:
 
 ```text
 Business Feasibility
@@ -250,11 +250,11 @@ Solver Success
 
 # DP01 — Resource Sizing
 
-## 11. 问题定义
+## 11. Problem Definition
 
-> 当前市场机会与 Coverage Strategy 下，需要多少不同类型的销售资源？
+> Under the current market opportunity and Coverage Strategy, how many different types of sales resources are needed?
 
-Required Projection：
+Required Projection: 
 
 ```text
 DemandSurface
@@ -267,7 +267,7 @@ CostModel
 BusinessPolicy
 ```
 
-Mutable：
+Mutable: 
 
 ```text
 ResourceRequirement
@@ -275,7 +275,7 @@ ResourceMix
 ResourceEnvelope
 ```
 
-Immutable by default：
+Immutable by default: 
 
 ```text
 Market Definition
@@ -284,13 +284,13 @@ CoverageNeed
 ResourceArchetype definition
 ```
 
-Primary Objective：
+Primary Objective: 
 
 ```text
 Maximize Addressable / Profitable Opportunity Coverage
 ```
 
-Secondary：
+Secondary: 
 
 ```text
 Minimize resource cost
@@ -299,7 +299,7 @@ Maintain utilization target
 Reduce missed profitable coverage
 ```
 
-Required Output：
+Required Output: 
 
 ```text
 ResourceRequirement
@@ -311,28 +311,28 @@ ExpectedServiceLevel
 UncertaintyRange
 ```
 
-Sizing 默认 Frontier First，而不是只输出单点人数。
+Sizing defaults to Frontier First, rather than only outputting a single‑point headcount.
 
-允许与 Coverage Allocation、Resource Location、Territory 进行 Iterative / Joint Coupling。
+Allow iterative / joint coupling with Coverage Allocation, Resource Location, and Territory.
 
-> **DP01 Prerequisite Gate（v1.2.1）**：销售努力对销量的影响存在跨期
-> carryover（当年销量 = 当年努力 + 往年结转；见 CHANGELOG_v1.2.1）。
-> 在 SalesResponseEstimate / OpportunityEstimate 契约中显式声明
-> `impact_horizon` 与 `carryover_share`（或等效滞后参数）之前，
-> **不得启动 DP01 Sizing Engine 的实现**；
-> 否则边际产能曲线与 MarginalValue 会把往年努力的产出记入本年 Candidate 名下，
-> Frontier 与增员建议系统性偏高。B4 Validation 亦必须声明
-> `minimum_lag_window`，避免把滞后效应对错观察窗而误判 Failed。
+> **DP01 Prerequisite Gate (v1.2.1)**: sales effort has a cross‑period impact on sales volume (carryover: current year sales = current year effort + prior‑year carryover; see CHANGELOG_v1.2.1)
+> carryover (current year sales = current year effort + previous years' carryover; see CHANGELOG_v1.2.1).
+> In the SalesResponseEstimate / OpportunityEstimate contract, explicitly declare
+> before `impact_horizon` and `carryover_share` (or equivalent lag parameters),
+> **must not start the implementation of the DP01 Sizing Engine**;
+> Otherwise, the marginal capacity curve and MarginalValue will credit the output of previous years' efforts to this year's Candidate,
+> Frontier and staffing recommendations are systematically overestimated. B4 Validation must also declare
+> `minimum_lag_window`, to avoid misclassifying the lag effect due to a mismatched observation window as Failed.
 
 ---
 
 # DP02 — Resource Location
 
-## 12. 问题定义
+## 12. Problem Definition
 
-> 销售能力应该部署在哪里？
+> Where should sales capacity be deployed?
 
-Required Projection：
+Required Projection: 
 
 ```text
 DemandSurface
@@ -345,7 +345,7 @@ ChangeCost
 BusinessBoundary
 ```
 
-Mutable：
+Mutable: 
 
 ```text
 ResourceDeployment.base_location
@@ -353,7 +353,7 @@ ResourceDeployment.capacity_commitment
 DeploymentOpenCloseStatus
 ```
 
-Immutable by default：
+Immutable by default: 
 
 ```text
 Resource Headcount
@@ -361,7 +361,7 @@ Opportunity
 Coverage
 ```
 
-输出：
+Output:
 
 ```text
 CandidateDeployments
@@ -373,17 +373,17 @@ RelocationImpact
 PersonnelFeasibility
 ```
 
-需要同时支持 IdealDeployment 与 ExistingPersonnelFeasibleDeployment。
+Must simultaneously support IdealDeployment and ExistingPersonnelFeasibleDeployment.
 
 ---
 
 # DP03 — Responsibility / Territory Alignment
 
-## 13. 问题定义
+## 13. Problem Definition
 
-> 在既定 Resource Envelope 和 Coverage Context 下，销售责任应如何分配和组织？
+> Given a fixed Resource Envelope and Coverage Context, how should sales responsibilities be allocated and organized?
 
-Required Projection：
+Required Projection: 
 
 ```text
 ResponsibilityUnit
@@ -399,7 +399,7 @@ CapabilityEligibility
 ChangeCost
 ```
 
-Mutable：
+Mutable: 
 
 ```text
 ResponsibilityAssignment
@@ -407,7 +407,7 @@ TerritoryMembership
 ```
 
 
-其中：
+Among them:
 
 ```text
 TerritoryMembership
@@ -415,9 +415,9 @@ TerritoryMembership
 Territory ↔ Responsibility
 ```
 
-不得将 `ResponsibilityAssignment` 当作 Territory membership；Assignment 只表示当前由谁承担 Responsibility。
+The `ResponsibilityAssignment` must not be treated as territory membership; an Assignment only indicates who currently bears the Responsibility.
 
-Immutable by default：
+Immutable by default: 
 
 ```text
 ResourceCount
@@ -426,7 +426,7 @@ OpportunityEstimate
 ResourceCapability
 ```
 
-Invariants：
+Invariants: 
 
 ```text
 Every mandatory responsibility is assigned
@@ -435,11 +435,11 @@ Resource eligibility cannot be violated
 Temporal overlap rules remain valid
 ```
 
-Hard Constraints 可包含 Contractual distributor boundary、Mandatory KA ownership、Legal geography、Fixed personnel assignment。
+Hard Constraints may include contractual distributor boundaries, mandatory KA ownership, legal geography, and fixed personnel assignments.
 
-Guardrails 可包含 Reassigned revenue、Account churn、Utilization 等，违反时必须 flag exception + impact + approval。
+Guardrails may include reassigned revenue, account churn, utilization, etc.; violations must be flagged with exception + impact + approval.
 
-Preferences：
+Preferences: 
 
 ```text
 lower travel
@@ -449,7 +449,7 @@ greater spatial coherence
 less disruption
 ```
 
-Travel Evaluation Fidelity：
+Travel Evaluation Fidelity: 
 
 ```text
 L1 Geometric
@@ -457,7 +457,7 @@ L2 Network
 L3 Routing Simulation
 ```
 
-输出：
+Output:
 
 ```text
 ResponsibilityAssignments
@@ -476,11 +476,11 @@ UnassignedResponsibilities
 
 # DP04 — Personnel Matching
 
-## 14. 问题定义
+## 14. Problem Definition
 
-> 谁应该承担已经确定的 Resource Deployment / Territory Responsibility？
+> Who should bear the already determined Resource Deployment / Territory Responsibility?
 
-Required Projection：
+Required Projection: 
 
 ```text
 SalesResource
@@ -497,15 +497,15 @@ RelocationPreference
 EmploymentPolicy
 ```
 
-Mutable：
+Mutable: 
 
 ```text
 DeploymentAssignment
 ```
 
-`ResourceDeployment` 表示需要被填充的部署位；`SalesResource` 表示实际能力实例；DP04 通过 `DeploymentAssignment` 将两者在时间上关联。
+`ResourceDeployment` denotes a deployment slot that needs to be filled; `SalesResource` denotes an actual capability instance; DP04 links the two temporally via `DeploymentAssignment`.
 
-目标：
+Goal:
 
 ```text
 Capability Fit
@@ -516,17 +516,17 @@ Fairness
 Retention Risk
 ```
 
-禁止未经校正直接把 Raw Sales Performance 作为人员匹配核心目标；历史 performance 需要 territory-normalized 或明确局限。
+Prohibit directly using raw sales performance as the core objective for personnel matching without correction; historical performance must be territory-normalized or explicitly bounded.
 
 ---
 
 # DP05 — Coverage & Channel Allocation
 
-## 15. 问题定义
+## 15. Problem Definition
 
-> 不同 Account / Opportunity 应该投入什么销售活动、多少努力、通过何种 Sales Resource / Channel 完成？
+> What sales activities, how much effort, and through which Sales Resource / Channel should be invested for different Accounts / Opportunities?
 
-Required Projection：
+Required Projection: 
 
 ```text
 Account / Prospect
@@ -541,7 +541,7 @@ Policy
 ResourceEnvelope
 ```
 
-Mutable：
+Mutable: 
 
 ```text
 CoverageCommitment
@@ -550,7 +550,7 @@ ResourceTypeAllocation
 ActivityMix
 ```
 
-Coverage 必须支持：
+Coverage must support:
 
 ```text
 minimum
@@ -558,19 +558,19 @@ preferred
 maximum
 ```
 
-并调用 SchedulingFeasibilityOracle，避免 workload nominally feasible 但 temporal schedule infeasible。
+And invoke SchedulingFeasibilityOracle to avoid a workload that is nominally feasible but temporally infeasible.
 
-输出需要表达多资源/多渠道服务，而不是单一 frequency。
+The output must express multi-resource / multi-channel service rather than a single frequency.
 
 ---
 
 # DP06 — Visit Scheduling
 
-## 16. 问题定义
+## 16. Problem Definition
 
-> 已经确定的 CoverageCommitment 应在具体周期/日期如何安排？
+> How should a confirmed CoverageCommitment be scheduled for a specific period/date?
 
-Required Projection：
+Required Projection: 
 
 ```text
 ResponsibilityAssignment
@@ -585,14 +585,14 @@ TravelEstimate
 FixedDayPolicy
 ```
 
-Mutable：
+Mutable: 
 
 ```text
 VisitPeriodAssignment
 VisitDayAssignment
 ```
 
-Immutable：
+Immutable: 
 
 ```text
 Territory ownership
@@ -601,7 +601,7 @@ Resource location
 Opportunity
 ```
 
-目标：
+Goal:
 
 ```text
 maximize committed visit feasibility
@@ -611,7 +611,7 @@ reduce schedule instability
 reduce travel burden
 ```
 
-无法全部安排时必须输出：
+When not all can be scheduled, it must output:
 
 ```text
 UnfulfilledCoverageCommitment
@@ -620,17 +620,17 @@ severity
 upstream implication
 ```
 
-如果 monthly workload <= monthly capacity 但 schedule 无解，应识别 `TEMPORAL_STRUCTURAL_INFEASIBILITY`，而非 Global Capacity Shortage。
+If monthly workload <= monthly capacity but the schedule has no solution, `TEMPORAL_STRUCTURAL_INFEASIBILITY` should be identified, not a global capacity shortage.
 
 ---
 
 # DP07 — Daily Routing
 
-## 17. 问题定义
+## 17. Problem Definition
 
-> 已确定某日访问集合后，以什么顺序与路径执行？
+> After a set of visits for a given day is determined, in what order and path should they be executed?
 
-Required Projection：
+Required Projection: 
 
 ```text
 DailyVisitSet
@@ -642,7 +642,7 @@ Vehicle / Mobility
 BreakRules
 ```
 
-Mutable：
+Mutable: 
 
 ```text
 VisitSequence
@@ -650,7 +650,7 @@ Route
 ArrivalTime
 ```
 
-Immutable：
+Immutable: 
 
 ```text
 Long-term Territory
@@ -658,7 +658,7 @@ Monthly Coverage
 Cycle Assignment
 ```
 
-输出：
+Output:
 
 ```text
 RouteSequence
@@ -671,7 +671,7 @@ UnservedStops
 FeasibilityStatus
 ```
 
-Routing Engine 同时可作为 DP03/DP06 的 Feasibility Oracle。
+The Routing Engine can also serve as a Feasibility Oracle for DP03/DP06.
 
 ---
 
@@ -683,7 +683,7 @@ Routing Engine 同时可作为 DP03/DP06 的 Feasibility Oracle。
 Sizing + Location + Territory
 ```
 
-Greenfield 常见，支持 Sequential / Iterative / Joint。
+Common in greenfield scenarios, supporting Sequential / Iterative / Joint.
 
 ## 19. CP02 Capacity Expansion
 
@@ -691,7 +691,7 @@ Greenfield 常见，支持 Sequential / Iterative / Joint。
 Incremental Sizing + Location + Territory + Personnel
 ```
 
-核心评价是 IncrementalValue - ChangeCost。
+The core evaluation is IncrementalValue - ChangeCost.
 
 ## 20. CP03 Structural Rebalancing
 
@@ -699,7 +699,7 @@ Incremental Sizing + Location + Territory + Personnel
 Territory + Personnel + ChangeCost
 ```
 
-Baseline 与 Maintain Candidate 强制。
+Baseline and Maintain Candidate are mandatory.
 
 ## 21. CP04 Coverage Execution Design
 
@@ -707,7 +707,7 @@ Baseline 与 Maintain Candidate 强制。
 Coverage + Scheduling + Routing
 ```
 
-典型 Iterative Loop。
+A typical iterative loop.
 
 ---
 
@@ -724,13 +724,13 @@ coupling:
   convergence_metric:
 ```
 
-停止条件可使用 objective improvement、business delta、max iterations、runtime budget 等，不能只写 `until optimal`。
+Stopping conditions may use objective improvement, business delta, max iterations, runtime budget, etc., and must not just write `until optimal`.
 
 ---
 
 ## 23. Solver Capability Contract
 
-Decision Problem 不绑定 Solver，只声明 Capability Requirement：
+Decision Problems are not bound to a Solver; they only declare capability requirements:
 
 ```text
 problem_types
@@ -747,13 +747,13 @@ reproducibility
 runtime_class
 ```
 
-维护 SolverRegistry；ProblemRouter 与 SolverSelector 分离。
+Maintain SolverRegistry; separate ProblemRouter and SolverSelector.
 
 ---
 
 ## 24. Optimality Contract
 
-Solver Result 必须明确：
+Solver Result must be explicit:
 
 ```text
 Exact Optimal
@@ -763,13 +763,13 @@ Best Known Candidate
 No Guarantee
 ```
 
-Heuristic 不得在业务层声称 global optimum。
+Heuristics must not claim global optimum at the business layer.
 
 ---
 
 ## 25. Candidate Explainability Contract
 
-Candidate 至少回答：
+Candidate must at least answer:
 
 ```text
 What changed?
@@ -780,15 +780,15 @@ Which guardrails are close or violated?
 Which assumptions matter most?
 ```
 
-解释以 Structured Decision Evidence 为基础，LLM 只负责转成业务语言。
+Explanations are based on Structured Decision Evidence, and LLM only converts them into business language.
 
 ---
 
 ## 26. Evaluation Contract
 
-Atomic Problem 必须声明 Primary、Secondary、Guardrail、Diagnostic Metrics。
+Atomic Problems must declare Primary, Secondary, Guardrail, and Diagnostic Metrics.
 
-跨 Problem 统一 Shared Evaluation Space：
+Unified Shared Evaluation Space across Problems:
 
 ```text
 Opportunity Coverage
@@ -805,13 +805,13 @@ Business Risk
 
 ## 27. Validation Contract
 
-每个 Problem Type 事先声明实施后的真实 Observation 验证指标。
+Each Problem Type declares its real observation validation metrics after implementation.
 
 ---
 
 ## 28. Versioning / Reproducibility
 
-Candidate 可追踪：
+Candidate traceable:
 
 ```text
 WorldSnapshot
@@ -824,17 +824,17 @@ Random Seed
 Run ID
 ```
 
-定义 ProblemRun 作为技术 Provenance 对象，一个 Run 可产生多个 Candidate。
+Define ProblemRun as a technical Provenance object; a Run can produce multiple Candidates.
 
-Benchmark 与 Production 必须使用同一 Contract。
+Benchmark and Production must use the same Contract.
 
 ---
 
 ## 29. Shadow Decision / Dry Run
 
-DryRun 只计算 Candidate，不进入 Execution。
+DryRun only computes Candidate, does not enter Execution.
 
-ShadowDecision 不执行，但继续使用未来真实 Observation 验证预测、可行性和诊断稳定性。
+ShadowDecision does not execute, but continues to use future real Observations to validate prediction, feasibility, and diagnostic stability.
 
 ---
 
@@ -849,13 +849,13 @@ MODEL_INFEASIBLE → Model Engineering Review
 SOLVER_FAILURE → Alternate Solver / runtime strategy
 ```
 
-禁止 Solver infeasible 后自动把 Hard Constraint 变 soft。若允许放松，必须产生 ConstraintRelaxationProposal 并审批。
+Prohibit Solver from automatically turning a Hard Constraint into soft after infeasibility. If relaxation is allowed, a ConstraintRelaxationProposal must be generated and approved.
 
 ---
 
 ## 31. Reference Engine — visit-scheduling-optimizer
 
-注册：
+Registration:
 
 ```text
 engine_id: visit-scheduling-optimizer
@@ -863,9 +863,9 @@ supported_problem: DP06 VisitScheduling
 oracle_capabilities: SchedulingFeasibilityOracle
 ```
 
-标准输入来自 VisitSchedulingProblemProjection。
+Standard input comes from VisitSchedulingProblemProjection.
 
-标准输出至少包括：
+Standard output must at least include:
 
 ```text
 FeasibilityStatus
@@ -881,35 +881,35 @@ OptimalityStatus
 
 ## 32. Architecture Gates
 
-原则上拒绝：
+In principle, reject:
 
 ```text
-Solver 直接查询全部 World Model
-Solver 自己解释业务字段
-Business Decision Variable 与数学变量混用
-一个 Problem 静默修改上游决策
-Scheduling 自动改变 Coverage
-Territory 自动改变 Headcount
-无 Precheck 直接跑昂贵 Solver
-所有 infeasible 返回同一状态
-Solver timeout 被解释为业务无解
-Policy conflict 被解释为数学无解
-资源不足被当成 Territory Solver failure
-Hard constraint infeasible 后自动 soft relaxation
-Heuristic candidate 被称为 global optimum
-Candidate 只保存 objective score
-没有 Baseline delta
-没有 optimality claim
-没有 run provenance
-Benchmark 与 production 使用不同 contract
-Solver-specific 数据写回 World Model
+Solver directly queries the entire World Model.
+Solver interprets business fields by itself.
+Mixing Business Decision Variables with mathematical variables.
+A Problem silently modifies upstream decisions.
+Scheduling automatically changes Coverage.
+Territory automatically changes Headcount.
+Running an expensive Solver without a Precheck.
+All infeasible cases return the same status.
+Solver timeout is interpreted as business unsolvable.
+Policy conflict is interpreted as mathematically unsolvable.
+Insufficient resources are treated as a Territory Solver failure.
+Automatic soft relaxation after hard constraint infeasibility.
+Heuristic candidate is called a global optimum.
+Candidate only stores the objective score.
+No Baseline delta.
+No optimality claim.
+No run provenance.
+Benchmark and production use different contracts.
+Solver-specific data is written back to the World Model.
 ```
 
 ---
 
-## 33. MVP 顺序与 DoD
+## 33. MVP Sequence and DoD
 
-第一条 Vertical Slice：
+First vertical slice:
 
 ```text
 World Model
@@ -921,11 +921,11 @@ World Model
 → Evaluation
 ```
 
-第二条增加 Allocation Health / Gap / Diagnosis / Problem Routing。
+Second item adds Allocation Health / Gap / Diagnosis / Problem Routing.
 
-第三条实现 DP03 简版 Territory Rebalance。
+Third item implements a simplified DP03 Territory Rebalance.
 
-至少演示五类 Case：
+Demonstrate at least five types of Cases:
 
 ```text
 Business Feasible
@@ -935,4 +935,4 @@ Solver Failure
 Policy Infeasible
 ```
 
-并正确分类。
+and correctly classify them.

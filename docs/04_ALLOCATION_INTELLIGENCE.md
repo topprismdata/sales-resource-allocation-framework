@@ -1,27 +1,27 @@
 # SRAF Allocation Intelligence Specification v1.2
 
-**项目：** Sales Resource Allocation Framework  
-**文档：** `04_ALLOCATION_INTELLIGENCE.md`  
-**状态：** Implementation Baseline v1.2  
+**Project:** Sales Resource Allocation Framework  
+**Document:** `04_ALLOCATION_INTELLIGENCE.md`  
+**Status:** Implementation Baseline v1.2  
 
-**上位规范：**
-`00_PROJECT_CHARTER.md`、`01_WORLD_MODEL_SPEC.md`、`02_DECISION_ONTOLOGY.md`、`03_DECISION_PROBLEM_CONTRACTS.md`
+**Upstream Specification:**
+`00_PROJECT_CHARTER.md`, `01_WORLD_MODEL_SPEC.md`, `02_DECISION_ONTOLOGY.md`, `03_DECISION_PROBLEM_CONTRACTS.md`
 
 ---
 
-## 1. 文档目标
+## 1. Document Objectives
 
-Allocation Intelligence 回答：
+Allocation Intelligence answers:
 
 ```text
-1. 当前销售资源配置是否健康？
-2. 哪里存在 Demand–Supply mismatch？
-3. 为什么出现这种 mismatch？
-4. 问题是否重要到值得重新决策？
-5. 应该创建哪一种 Decision Problem？
+1. Is the current sales resource allocation healthy?
+2. Where is there a Demand–Supply mismatch?
+3. Why did this mismatch occur?
+4. Is the problem important enough to justify re-decision?
+5. Which Decision Problem should be created?
 ```
 
-核心链：
+Core chain:
 
 ```text
 WORLD STATE
@@ -43,13 +43,13 @@ PROBLEM ROUTER
 DECISION CASE
 ```
 
-它不直接产生最终 Territory、Headcount 或 Schedule。
+It does not directly produce the final Territory, Headcount, or Schedule.
 
 ---
 
 ## 1A. Normative Ownership
 
-本文件唯一拥有：
+This file is the sole owner of:
 
 ```text
 Allocation Health dimensions
@@ -62,11 +62,11 @@ ProblemRouter
 AllocationDecisionSignal
 ```
 
-`AllocationGap` 基类与 `DecisionCase` schema 仍由 02 拥有。
+The `AllocationGap` base class and `DecisionCase` schema remain owned by 02.
 
 ---
 
-## 2. 核心抽象：Demand–Supply Matching
+## 2. Core Abstraction: Demand–Supply Matching
 
 ```text
 MARKET SIDE
@@ -86,15 +86,15 @@ Resource Deployment
 RESOURCE SIDE
 ```
 
-Demand 至少包含 Opportunity、Coverage、Workload、Capability、Spatial、Temporal Demand。
+Demand includes at least Opportunity, Coverage, Workload, Capability, Spatial, and Temporal Demand.
 
-Supply 至少包含 Capacity、Capability、Location、Availability、Mobility、ServiceChannel、Responsibility Eligibility。
+Supply includes at least Capacity, Capability, Location, Availability, Mobility, ServiceChannel, and Responsibility Eligibility.
 
 ---
 
 ## 3. DerivedAllocationState
 
-标准派生状态：
+Standard derived states:
 
 ```text
 OpportunityCoverage
@@ -112,15 +112,15 @@ OpportunityAtRisk
 UnfulfilledCoverage
 ```
 
-均需 calculation_version、input_snapshot、calculated_at、confidence。
+All require calculation_version, input_snapshot, calculated_at, and confidence.
 
 ---
 
 ## 4. Multi-dimensional Health Profile
 
-禁止默认只生成单一 Territory Health Score。
+Do not default to generating only a single Territory Health Score.
 
-六个维度：
+Six dimensions:
 
 ```text
 H1 Opportunity Health
@@ -131,7 +131,7 @@ H5 Responsibility Health
 H6 Stability & Confidence Health
 ```
 
-Health Status：
+Health Status: 
 
 ```text
 Healthy
@@ -145,7 +145,7 @@ Unknown
 
 ## 5. H1 Opportunity Health
 
-核心：
+Core:
 
 ```text
 AddressableOpportunity
@@ -156,15 +156,15 @@ OpportunityAtRisk
 HighPriorityOpportunityCoverage
 ```
 
-Opportunity 是 Estimate，不是确定销售额。
+Opportunity is an Estimate, not confirmed sales revenue.
 
-Coverage Attainment 高不等于 Opportunity Coverage 高。
+High Coverage Attainment does not equal high Opportunity Coverage.
 
 ---
 
 ## 6. H2 Service Health
 
-严格区分：
+Strictly distinguish:
 
 ```text
 Coverage Need
@@ -176,13 +176,13 @@ Scheduled Coverage
 Actual Coverage
 ```
 
-Gap 分别可能是 Allocation Gap、Scheduling Gap、Execution Gap。
+A Gap may be, respectively, an Allocation Gap, Scheduling Gap, or Execution Gap.
 
 ---
 
 ## 7. H3 Capacity Health
 
-核心：
+Core:
 
 ```text
 NominalCapacity
@@ -194,20 +194,20 @@ CapacityUtilization
 CapacityGap
 ```
 
-建议：
+Recommendation:
 
 \[
 Utilization =
 AssignedWorkload / EffectiveCapacity
 \]
 
-Capacity Utilization 必须与 Opportunity Coverage 联合解释。
+Capacity Utilization must be interpreted jointly with Opportunity Coverage.
 
 ---
 
 ## 8. H4 Spatial Efficiency Health
 
-核心：
+Core:
 
 ```text
 TravelBurden
@@ -219,13 +219,13 @@ CrossBoundaryTravel
 RouteEfficiency
 ```
 
-Compactness 只能是 L1 proxy，生产判断优先 Road Network，重大调整可用 Routing Simulation。
+Compactness can only be an L1 proxy; for production decisions, prioritize Road Network; for major adjustments, Routing Simulation can be used.
 
 ---
 
 ## 9. H5 Responsibility Health
 
-核心：
+Core:
 
 ```text
 AssignmentCompleteness
@@ -242,7 +242,7 @@ RelationshipContinuity
 
 ## 10. H6 Stability & Confidence Health
 
-Stability：
+Stability: 
 
 ```text
 AssignmentChurn
@@ -252,7 +252,7 @@ CustomerOwnershipChange
 TransitionFrequency
 ```
 
-Confidence：
+Confidence: 
 
 ```text
 OpportunityConfidence
@@ -260,21 +260,21 @@ LocationQuality
 TravelModelQuality
 CoverageDataQuality
 ResponsibilityEvidenceQuality
-IdentityConfidence      （08 §16；subject 计数是否可信）
+IdentityConfidence      (08 §16; whether the subject count is credible)
 ```
 
-低置信度不能触发大规模结构调整。
+Low confidence must not trigger large-scale structural adjustments.
 
-`IdentityConfidence` 的特殊性在于它是**其他置信度的前提**：
-若 subject 本身可能是重复或误并，
-则 OpportunityConfidence 与 Workload 的数值高低都不具备决策意义。
-因此 H6 必须先解析身份，再解释其余维度。
+`IdentityConfidence` is special because it is **a prerequisite for other confidence levels**:
+If the subject itself may be a duplicate or incorrectly merged,
+then the high or low values of OpportunityConfidence and Workload have no decision significance.
+Therefore H6 must first perform Identity Resolution, then interpret the other dimensions.
 
 ---
 
 ## 11. Gap Detection Contract
 
-Gap 必须回答：
+A Gap must answer:
 
 ```text
 What?
@@ -286,7 +286,7 @@ Business impact?
 Confidence?
 ```
 
-Reference Type：
+Reference Type: 
 
 ```text
 PolicyTarget
@@ -299,13 +299,13 @@ ScenarioTarget
 ModelExpectedValue
 ```
 
-Gap Severity 综合 Magnitude、Persistence、BusinessImpact、Confidence。
+Gap Severity integrates Magnitude, Persistence, BusinessImpact, and Confidence.
 
 ---
 
-## 11A. Coverage Gap v1.2 子类型
+## 11A. Coverage Gap v1.2 Subtypes
 
-`CoverageGap` 统一沿 Coverage Funnel 细分为：
+`CoverageGap` is uniformly subdivided along the Coverage Funnel into:
 
 ```text
 CoverageAllocationGap
@@ -313,7 +313,7 @@ SchedulingCoverageGap
 ExecutionCoverageGap
 ```
 
-对应：
+Corresponds to:
 
 ```text
 CoverageNeed → CoverageCommitment
@@ -321,11 +321,11 @@ CoverageCommitment → ScheduledCoverage
 ScheduledCoverage → ActualCoverage
 ```
 
-02 只定义 `CoverageGap` 上位对象，具体 subtype 以本文件为 normative owner。
+02 defines only the parent object `CoverageGap`; this file is the normative owner of concrete subtypes.
 
 ---
 
-## 12. 七类 Gap
+## 12. Seven Types of Gap
 
 ```text
 G1 CoverageGap
@@ -337,21 +337,21 @@ G6 LocalAllocationGap
 G7 StabilityGap
 ```
 
-CoverageGap 区分 CoverageCommitmentGap、SchedulingCoverageGap、ExecutionCoverageGap。
+CoverageGap distinguishes CoverageCommitmentGap, SchedulingCoverageGap, and ExecutionCoverageGap.
 
-CapacityGap 区分 Global、Local、ResourceType、Temporal。
+CapacityGap distinguishes Global, Local, ResourceType, and Temporal.
 
-`LocalAllocationGap` 专指全局资源基本可行但局部责任/资源配置失衡；不得简称成 subtype `AllocationGap`。
+`LocalAllocationGap` specifically refers to a case where global resources are generally feasible but local responsibility/resource allocation is imbalanced; it must not be abbreviated to the subtype `AllocationGap`.
 
-OpportunityGap 区分 Unserved、UnderServed、Misallocated。
+OpportunityGap distinguishes Unserved, UnderServed, and Misallocated.
 
-SpatialTravelGap 区分 BaseLocation、TerritoryShape、RoadNetwork、CrossBoundaryTravel、RouteStructure。
+SpatialTravelGap distinguishes BaseLocation, TerritoryShape, RoadNetwork, CrossBoundaryTravel, and RouteStructure.
 
 ---
 
 ## 13. Diagnostic Causal Graph
 
-第一版是“带因果方向假设的业务诊断图”，不是严格科学因果模型。
+The first version is a "business diagnostic map with assumed causal directions," not a strict scientific causal model.
 
 ```text
                   OPPORTUNITY GAP
@@ -368,13 +368,13 @@ SpatialTravelGap 区分 BaseLocation、TerritoryShape、RoadNetwork、CrossBound
    COVERAGE POLICY
 ```
 
-外侧始终存在 Data / Model Quality。
+Data / Model Quality is always present on the outside.
 
 ---
 
 ## 14. DiagnosticHypothesis Test
 
-每个 Hypothesis 应具有：
+Each Hypothesis should have:
 
 ```text
 RequiredEvidence
@@ -384,13 +384,13 @@ MinimumConfidence
 AlternativeExplanation
 ```
 
-不能只依靠 LLM 自由推理。
+It cannot rely solely on free LLM reasoning.
 
 ---
 
-## 15. H-CAP：Capacity Shortage
+## 15. H-CAP: Capacity Shortage
 
-支持：
+Support:
 
 ```text
 Global effective capacity < required workload
@@ -402,7 +402,7 @@ Coverage policy validated
 Persistent opportunity at risk
 ```
 
-反对：
+Oppose:
 
 ```text
 Total capacity sufficient
@@ -412,13 +412,13 @@ Coverage policy inflated
 Scheduling concentration explains gap
 ```
 
-Utilization > 100% 本身不足以证明缺人。
+Utilization > 100% itself is insufficient to prove understaffing.
 
 ---
 
-## 16. H-ALLOC：Territory / Allocation Imbalance
+## 16. H-ALLOC: Territory / Allocation Imbalance
 
-支持：
+Support:
 
 ```text
 Global capacity sufficient
@@ -427,13 +427,13 @@ Opportunity/workload distribution uneven
 Reallocation materially reduces gap
 ```
 
-所有 Territory 都均匀过载时，更像 Global Capacity Shortage。
+When all Territories are uniformly overloaded, it is more like Global Capacity Shortage.
 
 ---
 
-## 17. H-LOC：Resource Location Mismatch
+## 17. H-LOC: Resource Location Mismatch
 
-支持：
+Support:
 
 ```text
 Travel burden abnormal
@@ -442,15 +442,15 @@ Alternative deployment releases capacity
 Territory shape not primary issue
 ```
 
-建议计算 Capacity Released by Relocation。
+Recommend calculating Capacity Released by Relocation.
 
 ---
 
 ## 18. ResourceEquivalent
 
-`ResourceEquivalent` 是 `MetricRegistry` 中的 **Derived Metric**，不是 Resource Entity、Headcount 或新的 World class。
+`ResourceEquivalent` is a **Derived Metric** in `MetricRegistry`, not a Resource Entity, Headcount, or new World class.
 
-它用于将不同改善方式转换成可比较 Capacity Effect：
+It is used to convert different improvement approaches into comparable Capacity Effect:
 
 ```text
 Reduce travel = +0.42 RE
@@ -463,57 +463,57 @@ Add one new rep = +1.00 RE
 ResourceEquivalent = GapWorkload / EffectiveCapacity_{Archetype}
 \]
 
-必须同 ResourceArchetype、Capability、Time Horizon。
+Must be within the same ResourceArchetype, Capability, and Time Horizon.
 
-RE 不等于 Headcount。
+RE is not Headcount.
 
 ---
 
 ## 19. H-CAPABILITY
 
-Total capacity 足够但 Eligible capacity 不足时，路由 Personnel Matching、Skill/Pool/Channel Substitution 等，而不是整体加人。
+When Total capacity is sufficient but Eligible capacity is insufficient, route to Personnel Matching, Skill/Pool/Channel Substitution, etc., rather than adding headcount overall.
 
 ---
 
 ## 20. H-COVERAGE
 
-若 Coverage commitment 驱动 overload，且低价值客户占用大量 capacity，Stress Scenario 显示 workload 大幅下降而 Opportunity Coverage 轻微下降，则更可能是 Coverage Allocation / Policy 问题。
+If Coverage commitment drives overload, and low-value customers occupy large capacity, and Stress Scenario shows workload significantly decreases while Opportunity Coverage decreases slightly, then it is more likely a Coverage Allocation / Policy problem.
 
 ---
 
 ## 21. H-SCHED / H-ROUTE
 
-Monthly workload 可行但 weekday/spacing/time-window 冲突 → DP06 Visit Scheduling。
+Monthly workload feasible but weekday/spacing/time-window conflicts → DP06 Visit Scheduling.
 
-Daily assignment reasonable 但 sequence/traffic/time-window 导致 travel 过高 → DP07 Daily Routing。
+Daily assignment reasonable but sequence/traffic/time-window cause travel too high → DP07 Daily Routing.
 
 ---
 
 ## 22. H-DATA / H-MODEL
 
-DataQualityIssue 必须始终是顶层 Alternative Hypothesis。
+DataQualityIssue must always be a top-level Alternative Hypothesis.
 
-数据正确但 Opportunity/Travel/ServiceTime 模型系统性偏差 → Model Governance。
+Data is correct but Opportunity/Travel/ServiceTime models have systematic bias → Model Governance.
 
-**Identity 子假设**：
+**Identity sub-hypotheses**:
 
-`DataQualityIssue` 的身份侧 subtype
-（`IdentityDuplicate` / `IdentityFalseMatch` /
-`IdentityUnresolved` / `HierarchyMisattribution`）
-由 `02 §21` 拥有；判定规则、阈值与人工权限由 `08` 拥有。
-本文件只负责**如何检验它们**（见 §24 `IdentityIntegrityTest`）。
+Identity-side subtypes of `DataQualityIssue`
+ (`IdentityDuplicate` / `IdentityFalseMatch` /
+`IdentityUnresolved` / `HierarchyMisattribution`) 
+Owned by `02 §21`; judgment rules, thresholds, and human permissions are owned by `08`.
+This file is only responsible for **how to test them** (see §24 `IdentityIntegrityTest`).
 
-没有这些 subtype，H-DATA 只是一个不可检验的垃圾桶标签。
+Without these subtypes, H-DATA is only an untestable garbage-bin label.
 
-诊断顺序要求：在支持 H-CAPACITY 之前，
-必须先执行 `IdentityIntegrityTest` 并证明无显著 `IdentityDuplicate`。
-否则「忙 → 加人」的误诊只是把身份缺陷转成了编制决策。
+Diagnostic ordering requirement: before supporting H-CAPACITY,
+`IdentityIntegrityTest` must first be executed and prove no significant `IdentityDuplicate`.
+Otherwise the misdiagnosis of "busy → add headcount" merely turns identity defects into staffing decisions.
 
 ---
 
 ## 23. Diagnosis Engine
 
-v1.2 推荐：
+v1.2 recommendation:
 
 ```text
 Rule / Statistical Tests
@@ -525,13 +525,13 @@ Comparative Benchmark
 LLM Explanation
 ```
 
-而非 LLM end-to-end diagnosis。
+rather than LLM end-to-end diagnosis.
 
 ---
 
 ## 24. DiagnosticTest Library
 
-MVP 建议：
+MVP recommendation:
 
 ```text
 GlobalCapacityTest
@@ -547,24 +547,24 @@ AssignmentConflictTest
 IdentityIntegrityTest
 ```
 
-其中 `IdentityIntegrityTest` 至少包含（判定规则与阈值见 08 §11、§14）：
+of which `IdentityIntegrityTest` at least includes (judgment rules and thresholds see 08 §11, §14):
 
 ```text
-DuplicateSuspectTest       同址/同品牌高相似且同期双活
-HierarchyOverlapTest       group 与 store 是否被重复求和
-IdentityCoverageTest       处于 UNRESOLVED / CONTESTED 的 subject 占比
-FalseMatchProbeTest        已合并簇内是否存在冲突强信号
+DuplicateSuspectTest       same-address/same-brand high similarity and concurrently active in same period
+HierarchyOverlapTest       whether group and store are double-counted
+IdentityCoverageTest       proportion of subjects in UNRESOLVED / CONTESTED
+FalseMatchProbeTest        whether conflicting strong signals exist within already-merged clusters
 ```
 
-Materiality 联动：`IdentityUnresolved` 比例超过阈值时，
-该 scope 内任何 Gap 的 `materiality_level` 不得高于 `Review`，
-不得直接进入 `Actionable`（08 §14.2）。
+Materiality linkage: when the proportion of `IdentityUnresolved` exceeds the threshold,
+the `materiality_level` of any Gap within that scope must not be higher than `Review`,
+and must not enter `Actionable` directly (08 §14.2).
 
 ---
 
 ## 25. Hypothesis Ranking
 
-允许：
+Allowed:
 
 ```text
 Primary Hypothesis
@@ -572,13 +572,13 @@ Contributing Hypothesis
 Alternative Hypothesis
 ```
 
-未来可扩展 causal contribution decomposition。
+In the future, causal contribution decomposition may be extended.
 
 ---
 
 ## 26. Materiality
 
-至少考虑：
+At least consider:
 
 ```text
 Magnitude
@@ -590,7 +590,7 @@ ExpectedDecisionValue
 ChangeCost
 ```
 
-EDV 可粗略表示：
+EDV can be roughly represented as:
 
 \[
 ExpectedDecisionValue
@@ -600,9 +600,9 @@ ExpectedImprovement
 ExpectedChangeCost
 \]
 
-目的不是精确财务建模，而是阻止“只要有 gap 就优化”。
+The purpose is not precise financial modeling, but to prevent "optimize whenever there is a gap."
 
-Materiality：
+Materiality: 
 
 ```text
 Informational
@@ -616,7 +616,7 @@ Critical
 
 ## 27. Decision Trigger
 
-综合：
+Synthesis:
 
 ```text
 Gap
@@ -627,7 +627,7 @@ Persistence
 Cooldown
 ```
 
-Trigger 只创建 DecisionCase，绝不自动修改 Territory。
+Trigger only creates DecisionCase, never automatically modifies Territory.
 
 ---
 
@@ -647,13 +647,13 @@ Trigger 只创建 DecisionCase，绝不自动修改 Territory。
 | Model Quality Issue | Model Governance |
 | Policy Conflict | Policy Review |
 
-Router 可输出 Composite Problem、Alternative Route、Monitor、RequestMoreEvidence、NoAction。
+Router can output Composite Problem, Alternative Route, Monitor, RequestMoreEvidence, NoAction.
 
 ---
 
 ## 29. AllocationDecisionSignal
 
-标准输出：
+Standard output:
 
 ```text
 scope
@@ -669,17 +669,17 @@ confidence
 evidence_summary
 ```
 
-满足 Trigger 后才创建 DecisionCase。
+DecisionCase is created only after Trigger conditions are met.
 
 ---
 
-## 30. Agent 边界
+## 30. Agent Boundary
 
-Allocation Intelligence 负责结构化检测、计算、对比、诊断测试、证据组织。
+Allocation Intelligence is responsible for structured detection, calculation, comparison, diagnostic tests, and evidence organization.
 
-Agent 负责语义解释、假设探索、交互式分析、Scenario 调用、决策支持。
+Agent is responsible for semantic interpretation, hypothesis exploration, interactive analysis, Scenario invocation, and decision support.
 
-Agent 不替代 Gap calculation、Business thresholds、Hard diagnostic tests。
+Agent does not replace Gap calculation, Business thresholds, or Hard diagnostic tests.
 
 ---
 
@@ -699,15 +699,15 @@ Hypothesis Update
 DecisionCase
 ```
 
-Local knowledge 要进入 Assertion / Evidence / ChangeCost / Guardrail 等治理结构，不可自由覆盖。
+Local knowledge must enter governance structures such as Assertion / Evidence / ChangeCost / Guardrail, and may not freely override.
 
 ---
 
 ## 32. Counterfactual Diagnosis
 
-问“只改变 X，Gap 会减少多少？”可调用 Diagnostic Solver，但必须与正式 Candidate Generation 的 run_purpose 区分。
+Asking "If only X changes, how much would Gap decrease?" may invoke Diagnostic Solver, but it must be distinguished from the run_purpose of formal Candidate Generation.
 
-ProblemRun 建议支持：
+ProblemRun is recommended to support:
 
 ```text
 diagnostic
@@ -721,7 +721,7 @@ benchmark
 
 ## 33. Fast / Slow Allocation Intelligence
 
-Fast：
+Fast: 
 
 ```text
 coverage
@@ -731,7 +731,7 @@ route
 day/week
 ```
 
-Slow：
+Slow: 
 
 ```text
 sizing
@@ -741,13 +741,13 @@ personnel
 month/quarter
 ```
 
-Operational Failure 持续且 Root Cause 结构性时才向上升级。
+Escalate upward only when Operational Failure persists and Root Cause is structural.
 
 ---
 
 ## 34. Decision Suppression / Seasonality / Structurality
 
-支持 Suppression：
+Support Suppression:
 
 ```text
 Recent structural change
@@ -758,7 +758,7 @@ Known one-off event
 Transition period
 ```
 
-Gap 分类：
+Gap categories:
 
 ```text
 TemporaryGap
@@ -766,54 +766,54 @@ StructuralGap
 Unknown
 ```
 
-避免把旺季或促销峰值误判为结构性缺人。
+Avoid misjudging peak season or promotional peaks as structural staffing shortages.
 
 ---
 
 ## 35. Management View
 
-输出应从指标升级为业务结论，例如：
+Outputs should be upgraded from metrics to business conclusions, for example:
 
 ```text
-存在持续性高潜覆盖缺口。
-缺口约 0.6 Field Rep Equivalent。
-主要原因是 Territory 分配不均，而非全市场人员不足。
-证据：全市场 Capacity 充足、相邻 Territory 有可释放 Capacity、Travel 正常。
-建议：先评估 Territory Rebalancing，暂不直接增员。
+A persistent high-potential coverage gap exists.
+The gap is approximately 0.6 Field Rep Equivalent.
+The main cause is uneven Territory allocation, not a shortage of personnel across the whole market.
+Evidence: whole-market Capacity is sufficient, adjacent Territory has releasable Capacity, and Travel is normal.
+Recommendation: first assess Territory Rebalancing, and do not directly add headcount for now.
 ```
 
 ---
 
 ## 36. Architecture Gates
 
-原则上拒绝：
+Principled refusals:
 
 ```text
-Health 只有一个总分
-Metric 异常直接生成 DecisionProblem
-Utilization > threshold 就建议加人
-CoverageGap 不区分 Need/Commitment/Schedule/Actual
-Global/Local Capacity Gap 混淆
-Capability Gap 被当普通 Capacity Gap
-Compactness 直接当 Travel Root Cause
-Root Cause 没有 Evidence Against
-LLM 自由生成 Root Cause 而无 Diagnostic Test
-DataQualityIssue 不允许成为 Root Cause
-Opportunity Gap 无 confidence
-临时峰值触发 Territory Realignment
-没有 Persistence/Cooldown/Suppression
-Problem Router 与 Solver Selector 合并
-所有问题都路由 Territory Solver
-Router 不允许 NoAction
-Agent 自己决定 Business Threshold
-Diagnostic Solver Result 被当正式 Candidate
+Health has only a single total score
+Metric anomalies directly generate DecisionProblem
+When Utilization > threshold, it immediately recommends adding headcount
+CoverageGap does not distinguish Need/Commitment/Schedule/Actual
+Global/Local Capacity Gap are conflated
+Capability Gap is treated as an ordinary Capacity Gap
+Compactness is directly treated as Travel Root Cause
+Root Cause lacks Evidence Against
+LLM freely generates Root Cause without a Diagnostic Test
+DataQualityIssue is not allowed to become Root Cause
+Opportunity Gap has no confidence
+Temporary peaks trigger Territory Realignment
+There is no Persistence/Cooldown/Suppression
+Problem Router and Solver Selector are merged
+All issues are routed to Territory Solver
+Router does not allow NoAction
+Agent itself decides Business Threshold
+Diagnostic Solver Result is treated as a formal Candidate
 ```
 
 ---
 
 ## 37. MVP Scope / Benchmark
 
-MVP：
+MVP: 
 
 ```text
 DerivedAllocationState
@@ -830,7 +830,7 @@ DecisionTrigger
 ProblemRouter
 ```
 
-加五个 Diagnostic Tests：
+Add five Diagnostic Tests:
 
 ```text
 GlobalCapacityTest
@@ -840,17 +840,17 @@ CoveragePolicyStressTest
 SchedulingFeasibilityTest
 ```
 
-至少用五个 Case 验证：
+Validate with at least five Cases:
 
 ```text
-真缺人
-Territory失衡
-Location问题
-Coverage问题
-Data问题
+True staffing shortage
+Territory imbalance
+Location issue
+Coverage issue
+Data issue
 ```
 
-核心 Benchmark：
+Core Benchmark:
 
 ```text
 Problem Routing Accuracy

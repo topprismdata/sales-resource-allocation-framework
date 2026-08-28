@@ -1,88 +1,88 @@
-# SRAF Changelog — v1.2.2（实施基线更新：Demo 智能层）
+# SRAF Changelog — v1.2.2 (Implementation Baseline Update: Demo Intelligence Layer)
 
-v1.2.2 是 **实施层更新**。规范集 00-08 保持 **v1.2.1 FROZEN**，本文件
-只记录 Demo / 分配智能实现（`intelligence/` + `tools/`）落地到 v1.2 语义
-之上的新事实。实施总设计见仓库根 `DESIGN.md` v0.6。
+v1.2.2 is **Implementation Layer Update**. Specification set 00-08 stays **v1.2.1 FROZEN**, this document
+only records Demo / Allocation Intelligence implementation (`intelligence/` + `tools/`) landing onto v1.2 semantics
+new facts above. See overall implementation design in repository root `DESIGN.md` v0.6.
 
-日期：2026-08-28 ｜ 代码提交锚点：`1c13b12`（区域优先）→ `a07b248`（Demo 布局修复）
+Date: 2026-08-28 | Code commit anchor: `1c13b12` (region-first) → `a07b248` (Demo layout fix)
 
 ---
 
-## 1. 调整语义确立：区域优先（K-PRIN-006）
+## 1. Adjusted Semantics Established: Region-First (K-PRIN-006)
 
-业务方修正了决策本体：**区域调整的对象是【区域/片区】（F2 围栏），
-不是门店**。"店"是附带效果——门店随片区走；如果只是改门店，直接在
-CRM 改即可，轮不到本系统。
+Business side corrected the Decision Ontology: **the object of region adjustment is [region/sub-area] (F2 fence),
+not the store**. "Store" is a side effect — stores follow the sub-area; if only changing a store, directly in
+CRM can be changed, no need for this system.
 
-- 指令形态：`把 <src> 的 <片区> 划给 <dst>` / `<src> 不做了，区域都给 <dst>`
-- 片区选择器：整个区域 / 东南西北半区 / 区或街道名 / OOF（跨界供货）/ 门店名周边
-- `intelligence/adjust.py` 与 LLM 解析路径（`intelligence/llm.py`）统一走
-  `build_proposal`，规则路径为主（<1s），LLM 仅兜底自由句式。
+- Instruction form: `transfer <src>'s <sub-area> to <dst>` / `<src> no longer does it, all region to <dst>`
+- Sub-area selector: entire region / east/west/north/south half / district or street name / OOF (cross-boundary supply) / store name vicinity
+- `intelligence/adjust.py` and LLM parsing path (`intelligence/llm.py`) both go through
+`build_proposal`, rule path dominates (<1s), LLM only as fallback for free-form sentences.
 
-## 2. 围栏逻辑合并（去多边形手术）
+## 2. Fence Logic Consolidation (Polygon Surgery Removal)
 
-应用划转 = **逻辑操作**，不是物理切割：
+Application transfer = **logical operation**, not physical cutting:
 
-- 唯一事实 = 门店归属（`store.dealers` 重分配，数量守恒平凡成立）
-- 围栏 = 派生视图：每个经销商的围栏几何 = 其门店点集凸包；划转后
-  仅重算 src/dst 两个经销商的凸包
-- 废弃：`union/difference` 多边形手术、碎片/悬空检测、单环 `-2/-3`
-  多块编号、面积守恒校验。原 `GeometryCollection` 崩溃、km² 换算
-  口径错位（~9% 系统性偏差）等一类 bug 整体消失
-- `km2()` 按质心纬度换算（1°lat≈110.574，1°lon≈111.320·cos(lat)），
-  仅作统计展示，不参与任何守恒语义
-- 提案预览：`sub_ring`（移动门店凸包）以橙色虚线环渲染在独立
-  `proposalLayer`；拒绝/应用后自动清除，底图不碰
+- Unique fact = store assignment (`store.dealers` reassignment, quantity conservation trivially holds)
+- Fence = derived view: each dealer’s fence geometry = convex hull of its store point set; after transfer
+only recalculate convex hulls of src/dst two dealers
+- Deprecated: `union/difference` polygon surgery, fragment/dangling detection, single ring `-2/-3`
+multi-block numbering, area conservation check. Original `GeometryCollection` crash, km² conversion
+caliber mismatch (~9% systemic bias) etc. a whole class of bugs disappeared
+- `km2()` conversion by centroid latitude (1°lat≈110.574, 1°lon≈111.320·cos(lat)),
+only used for statistical display, not participating in any conservation semantics
+- Proposal preview: `sub_ring` (moving store convex hull) rendered as orange dashed ring on the independent `proposalLayer`
+`proposalLayer`; automatically cleared after reject/apply, base map untouched
 
-## 3. 交互与韧性
+## 3. Interaction and Resilience
 
-- `@` 提及引擎：输入 `@` 弹经销商名单（色标+短名+全名，↑↓/Enter/Tab
-  选择），**选中后插入完整名称**——LLM/规则永远只见全名
-- 经销商匹配按 dealer 名去重（同一经销商多围栏块不再误判"多家"）
-- 新增 `POST /api/reject`：拒绝即作废服务端待应用提案，防止
-  拒绝后再点旧提案"确认应用"吃到过期提案
-- Demo 布局修复：`#p-adj` 缺失闭合导致地图被挤进 440px 侧栏
-  （右侧大片空白）；boot 时视口按围栏实际范围 `fitBounds`
-  （不再用固定 center），`zoomSnap: 0.25`，拒绝提案后视野回全区
+- `@` mention engine: typing `@` pops dealer list (color tag + short name + full name, ↑↓/Enter/Tab
+select), **after selection inserts full name** — LLM/rules always see only the full name
+- Dealer matching deduplicates by dealer name (multiple fence blocks of the same dealer no longer mistakenly judged as "multiple dealers")
+- Added `POST /api/reject`: rejection immediately invalidates the server-side pending proposal, preventing
+rejecting then clicking old proposal "Confirm Apply" to accept an expired proposal
+- Demo layout fix: `#p-adj` missing closing causes the map to be squeezed into a 440px sidebar
+(large blank area on the right); at boot, viewport fits to the fence's actual extent via `fitBounds`
+(no longer using fixed center), `zoomSnap: 0.25`, after rejecting a proposal the view returns to the whole region
 
-## 4. 知识库 v0.2 → v0.3.0（30 → 31 条）
+## 4. Knowledge Base v0.
 
-| 新增 | 内容 |
+| New | Content |
 |---|---|
-| K-PRIN-005 | 层级镜像组织：D/B/V 三级独立、仅接口交接、禁止跨层干预 |
-| K-PRIN-006 | 区域调整决策对象=区域，门店归属是派生效果（本轮核心修正） |
-| K-RULE-011/012 | Layer-B 五步定线法 / 线路四原则 |
-| K-BENCH-005 | Layer-B/V 过程基准（拜访达成率红线 90% 等） |
+| K-PRIN-005 | Hierarchical mirror organization: D/B/V three-level independence, interface-only handovers, cross-level interference prohibited |
+| K-PRIN-006 | Region adjustment decision object = region; store assignment is a derived effect (core correction of this round) |
+| K-RULE-011/012 | Layer-B five-step route determination method / four beat-route principles |
+| K-BENCH-005 | Layer-B/V process benchmarks (visit achievement rate redline 90%, etc.) |
 
-`KNOWLEDGE_BASE.md` 人读索引已同步补齐上述条目。
+The human‑readable index of `KNOWLEDGE_BASE.md` has been synchronized and supplemented with the above entries. |
 
-## 5. 坐标系契约（D13，本轮新增）
+## 5. Coordinate System Contract (D13, new in this round) |
 
-数据包（`data/<region>`）按 `meta.crs` 声明坐标系——缺省 **GCJ-02**
-（高德/腾讯系业务数据），`WGS84` 用于前端点选生成的 born-WGS 包
-（杭州测试 / fs）。服务端边界一次性归一：
+Data packages (`data/<region>`) declare the coordinate system via `meta.crs` — default **GCJ-02** |
+(Gaode/Tencent business data), `WGS84` is used for front‑end point‑selection generated born‑WGS packages |
+(Hangzhou test / fs). Server‑side boundaries are normalized in one step: |
 
-- `_load_pack` → `pack_from_disk`：GCJ→WGS（围栏/门店/合同 center/meta center）
-- `_persist_pack` → `pack_for_disk`：WGS→声明系写盘，往返无损
-- 内部几何（四至验证/道路语义/PIP/OSM 比对/地图）= 纯 WGS-84
+- `_load_pack` → `pack_from_disk`: GCJ→WGS (fence/store/contract center/meta center) |
+- `_persist_pack` → `pack_for_disk`: WGS→declared system written to disk, round‑trip lossless |
+- Internal geometry (four‑boundary verification/road semantics/PIP/OSM matching/map) = pure WGS‑84 |
 
-判别证据（广州实测）：GCJ→WGS 系统偏移 ≈623m（东-549/北+293）；
-围栏顶点→OSM 道路中位距离 338m（GCJ 直比）→ 123m（转换后）——
-业务围栏确系高德系绘制，与 OSM 直接混算时四至沿路判定系统性失真。
-门店↔围栏 kind 分类两侧同系，不受影响（kind 计数转换前后一致，实测）。
+Evidence for discrimination (Guangzhou measurement): GCJ→WGS system offset ≈623 m (east −549/north +293); |
+Fence vertex → OSM road median distance 338 m (GCJ direct comparison) → 123 m (after conversion) — |
+The business fence is indeed drawn by the Gaode system; when directly mixed with OSM, the four‑boundary road‑based determination suffers systematic distortion.
+Store↔Fence kind classification on both sides belongs to the same system, unaffected (kind count conversion remains consistent before and after, empirically verified).
 
-## 6. Demo 能力清单（v1.2.2 时点）
+## 6. Demo Capability List (as of v1.2.2)
 
-三步流程：①合同→区域生成（四至重建 + 道路语义 + 视觉终审 + 冲突检测）
-②区域语义调整（@ 全名 + 片区选择器 + 提案证据链 + 应用/拒绝）
-③分析（Q1 围栏健康 / Q2 缺口四分类 / 覆盖缺口）。
-区域数据包热切换（`/api/regions` + `/api/switch`），默认广州
-（38 围栏 / 33,109 门店 / 33 合同），见 `data/README.md`。
+Three‑step process: ① Contract → Region generation (four‑boundary reconstruction + road semantics + visual final review + conflict detection)
+② Region semantic adjustment (@ full name + sub‑area selector + proposal evidence chain + apply/reject)
+③ Analysis (Q1 fence health / Q2 gap four‑class classification / covering gaps).
+Region data package hot switch (`/api/regions` + `/api/switch`), default Guangzhou
+(38 fences / 33,109 stores / 33 contracts), see `data/README.md`.
 
 ---
 
-## 不变项
+## Invariants
 
-- 规范集 00-08 v1.2.1：FROZEN，零改动
-- 层间纪律：调整只产生 Layer-D 提案，I-B/I-V 以 Signal 表达、人审批（GW）
-- 知识治理三铁律、反 Cherry-pick、证据链硬性验收（04/06）
+- Specification set 00-08 v1.2.1: FROZEN, zero changes
+- Layer discipline: adjustments only generate Layer‑D proposals, I‑B/I‑V expressed via Signal, human approval (GW)
+- Knowledge governance three‑iron rules, anti‑Cherry‑pick, evidence chain hard acceptance (04/06)

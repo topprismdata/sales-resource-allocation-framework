@@ -1,11 +1,11 @@
 # SRAF Reference Architecture Specification v1.2
 
-**项目：** Sales Resource Allocation Framework  
-**简称：** SRAF  
-**文档：** `07_REFERENCE_ARCHITECTURE.md`  
-**状态：** Implementation Baseline v1.2  
+**Project:** Sales Resource Allocation Framework
+**Abbreviation:** SRAF
+**Document:** `07_REFERENCE_ARCHITECTURE.md`
+**Status:** Implementation Baseline v1.2
 
-**上位规范：**
+**Upper-level Specifications:**
 
 ```text
 00_PROJECT_CHARTER.md
@@ -19,35 +19,35 @@
 
 ---
 
-# 1. 文档目标
+# 1. Document Objectives
 
-本文件负责把前述业务语义、决策模型与 Benchmark 规范收敛为一个可实施的参考架构。
+This document is responsible for converging the aforementioned business semantics, decision models, and Benchmark specifications into an actionable reference architecture.
 
-它回答：
+It answers:
 
 ```text
-SRAF 需要哪些工程模块？
-各模块之间的边界是什么？
-哪些能力由 SRAF 自己拥有？
-哪些能力应优先复用成熟框架？
-Agent 在哪里？
-Solver 在哪里？
-World Model 如何落地？
-现有 visit-scheduling-optimizer 如何接入？
-第一阶段应按什么顺序实现？
+What engineering modules does SRAF need?
+What are the boundaries between modules?
+Which capabilities are owned by SRAF itself?
+Which capabilities should prioritize reusing mature frameworks?
+Where is the Agent?
+Where is the Solver?
+How is the World Model implemented?
+How does the existing visit-scheduling-optimizer connect?
+What sequence should be implemented in the first phase?
 ```
 
-本文件不是详细代码设计。
+This document is not detailed code design.
 
-它定义：
+It defines:
 
 > **Reference Architecture + Module Boundaries + Integration Contracts + Implementation Sequence。**
 
 ---
 
-# 2. 架构最高原则
+# 2. Architecture Top-level Principles
 
-SRAF 工程实现必须继续遵守：
+SRAF engineering implementation must continue to comply with:
 
 ```text
 World before Optimization
@@ -59,11 +59,11 @@ Decision before Transition
 Observation before Learning
 ```
 
-因此物理架构必须能够体现这些边界，而不是只在文档里存在。
+Therefore, the physical architecture must reflect these boundaries, not just exist in documents.
 
 ---
 
-# 3. SRAF Reference Architecture 总览
+# 3. SRAF Reference Architecture Overview
 
 ```text
 ┌─────────────────────────────────────────────────────────────────┐
@@ -150,9 +150,9 @@ Observation before Learning
 
 ---
 
-# 4. 架构分为四个平面
+# 4. Architecture Divided into Four Planes
 
-为了避免所有组件混在同一个“平台”概念中，v1.2 将 SRAF 分成四个工程平面：
+To avoid all components being mixed in the same "platform" concept, v1.2 divides SRAF into four engineering planes:
 
 ```text
 A. World Plane
@@ -165,11 +165,11 @@ D. Governance & Evidence Plane
 
 # 5. A. World Plane
 
-负责：
+Responsible for:
 
-> **世界现在是什么。**
+> **What the world is now.**
 
-包含：
+Contains:
 
 ```text
 Source Adapter
@@ -183,23 +183,23 @@ Derived State
 Graph Projection
 ```
 
-World Plane 不负责：
+World Plane is not responsible for:
 
 ```text
-候选方案
-数学求解
-审批
+Candidate solutions
+Mathematical solving
+Approval
 ```
 
 ---
 
 # 6. B. Decision Plane
 
-负责：
+Responsible for:
 
-> **哪里有问题、应该决定什么、有哪些候选。**
+> **Where the problems are, what should be decided, what candidates exist.**
 
-包含：
+Contains:
 
 ```text
 Allocation Intelligence
@@ -212,17 +212,17 @@ CandidateDecision
 DeltaEvaluation
 ```
 
-Decision Plane 不拥有具体 Solver 实现。
+Decision Plane does not own specific Solver implementations.
 
 ---
 
 # 7. C. Computation Plane
 
-负责：
+Responsible for:
 
-> **如何计算候选配置与可行性。**
+> **How to calculate candidate configurations and feasibility.**
 
-包含：
+Contains:
 
 ```text
 ProblemProjection
@@ -235,17 +235,17 @@ Routing
 Scheduling
 ```
 
-Computation Plane 不能直接修改真实 World State。
+Computation Plane cannot directly modify the real World State.
 
 ---
 
 # 8. D. Governance & Evidence Plane
 
-负责：
+Responsible for:
 
-> **为什么相信、谁批准、实施后是否有效。**
+> **Why believe it, who approves, and whether it is effective after implementation.**
 
-包含：
+Contains:
 
 ```text
 Provenance
@@ -258,19 +258,19 @@ Benchmark
 Audit
 ```
 
-这一平面贯穿 A/B/C，而不是一个末端模块。
+This plane runs through A/B/C, rather than being an end module.
 
 ---
 
-# 9. v1.2 的核心技术选择
+# 9. v1.2 Core Technology Selection
 
-Reference Implementation 第一阶段建议：
+Reference Implementation first phase recommendation:
 
 ```text
 PostgreSQL + PostGIS
 ```
 
-作为：
+As:
 
 ```text
 Canonical State
@@ -282,29 +282,29 @@ Decision Metadata
 Snapshot Metadata
 ```
 
-的主存储。
+as the primary storage.
 
-原因：
+Reasons:
 
-- 关系模型适合强约束与事务一致性；
-- PostGIS 足够承担第一阶段空间能力；
-- 不需要一开始引入复杂图数据库；
-- 便于 ProblemProjection、Benchmark 和 SQL 审计；
-- 技术成熟、生态成熟。
+- Relational model is suitable for strong constraints and transactional consistency;
+- PostGIS is sufficient for first-phase spatial capabilities;
+- No need to introduce complex graph databases at the beginning;
+- Facilitates ProblemProjection, Benchmark, and SQL auditing;
+- Mature technology and ecosystem.
 
 ---
 
 # 10. Event / Observation Store
 
-v1.2 不建议引入独立 Event Sourcing 平台作为强依赖。
+v1.2 does not recommend introducing an independent Event Sourcing platform as a strong dependency.
 
-第一阶段可使用：
+First phase can use:
 
 ```text
 append-only PostgreSQL tables
 ```
 
-记录：
+Records:
 
 ```text
 Observation
@@ -313,7 +313,7 @@ DecisionEvent
 TransitionEvent
 ```
 
-只要满足：
+As long as it meets:
 
 ```text
 immutable
@@ -323,54 +323,54 @@ correlation
 provenance
 ```
 
-即可。
+it suffices.
 
 ---
 
 # 11. Graph Projection
 
-v1.2 不建议 Graph Database 成为 Source of Truth；Phase 0–3 不把专用 Graph Database 作为依赖。
+v1.2 does not recommend Graph Database as Source of Truth; Phase 0–3 does not use dedicated Graph Database as a dependency.
 
-第一阶段可以采用：
+First phase can adopt:
 
 ```text
 Materialized relational graph view
 ```
 
-或轻量图索引。
+or lightweight graph index.
 
-后续只有在以下需求被验证后再引入专门图数据库：
+Later, only introduce a dedicated graph database after the following requirements are validated:
 
 ```text
-复杂 responsibility traversal
+Complex responsibility traversal
 evidence graph navigation
 agent graph reasoning
 causal graph exploration
 ```
 
-如果引入：
+If introduced:
 
 ```text
 Neo4j / Memgraph / similar
 ```
 
-也只能作为 Projection。
+it can only serve as a Projection.
 
 ---
 
 # 12. Spatial / Routing Infrastructure
 
-SRAF 不自建完整地图与路网引擎。
+SRAF does not build its own complete map and road network engine.
 
-应通过：
+Should through:
 
 ```text
 TravelProvider Adapter
 ```
 
-使用成熟能力。
+use mature capabilities.
 
-例如：
+For example:
 
 ```text
 OSRM
@@ -380,7 +380,7 @@ commercial map APIs
 enterprise GIS services
 ```
 
-World Model 只保存：
+World Model only saves:
 
 ```text
 provider
@@ -389,15 +389,15 @@ routing_profile
 calibration_version
 ```
 
-不把整个道路网络本体塞入 Ontology。
+Do not stuff the entire road network ontology into the Ontology.
 
 ---
 
 # 13. Source Adapter Layer
 
-每个外部数据源通过标准 Adapter 接入。
+Each external data source connects through standard Adapters.
 
-统一职责：
+Unified responsibilities:
 
 ```text
 read
@@ -408,19 +408,19 @@ identity resolution
 provenance attach
 ```
 
-不允许 Source Adapter：
+Source Adapter is not allowed to:
 
 ```text
-直接生成 Territory
-直接判断 Root Cause
-直接修改 Coverage Policy
+Directly generate Territory
+Directly determine Root Cause
+Directly modify Coverage Policy
 ```
 
 ---
 
 # 14. Source Contract
 
-建议：
+Recommendations:
 
 ```yaml
 SourceAdapter:
@@ -443,13 +443,13 @@ SourceAdapter:
 
 # 15. Identity Resolution
 
-SRAF 需要：
+SRAF needs:
 
 ```text
 CanonicalIdentityService
 ```
 
-负责：
+Responsible for:
 
 ```text
 Account
@@ -459,61 +459,61 @@ Organization
 Resource
 ```
 
-跨系统映射。
+Cross-system mapping.
 
-MVP 不要求构建完整企业级 MDM。
+MVP does not require building a complete enterprise-level MDM.
 
-但其**业务语义、判定规则、权限矩阵与 Benchmark** 不在本文件定义，
-由 `08_CANONICAL_IDENTITY_AND_ENTITY_RESOLUTION.md` 拥有。
-本文件只规定它作为工程模块如何落位。
+However, its **business semantics, decision rules, permission matrix, and Benchmark** are not defined in this document,
+owned by `08_CANONICAL_IDENTITY_AND_ENTITY_RESOLUTION.md`.
+This document only specifies how it is positioned as an engineering module.
 
-至少要实现（细则见 08）：
+At minimum must implement (see 08 for details):
 
 ```text
 stable canonical ID + identity_domain      → 08 §5
-SourceRecord / ExternalIdentifier 保留     → 08 §6–7
-三态 MatchDecision + λ/π 阈值              → 08 §11
+SourceRecord / ExternalIdentifier preservation     → 08 §6–7
+Three-state MatchDecision + λ/π thresholds              → 08 §11
 MERGE / UNMERGE / SPLIT / SUPERSEDE        → 08 §12–13
 append-only IdentityResolutionRecord       → 08 §15
-ImpactAnalysis + Trigger 阻断              → 08 §14
+ImpactAnalysis + Trigger blocking              → 08 §14
 ```
 
-工程落位（对应 §70 推荐结构）：
+Engineering positioning (corresponding to §70 recommended structure):
 
 ```text
 src/domain/identity/     CanonicalIdentity / MatchDecision / Resolution
-                         （属 World Plane，不依赖任何 Solver）
-adapters/sources/        提供 SourceRecord 与 ExternalIdentifier
-benchmark/identity/      ID01–ID20 case + 噪声注入器 + ground truth
+(belongs to World Plane, does not depend on any Solver)
+adapters/sources/        provides SourceRecord and ExternalIdentifier
+benchmark/identity/      ID01–ID20 case + noise injector + ground truth
 ```
 
-存储约束：
+Storage constraints:
 
 ```text
-identity_resolution 为 append-only（PostgreSQL 即可，§9–10 选择不变）
-不引入专用图数据库；图仍是 Projection（§11）
-WorldSnapshot 必须固化 applied resolution_id 集合（08 §15.2 TI-2）
+identity_resolution is append-only (PostgreSQL suffices, §9–10 choices remain unchanged)
+Do not introduce dedicated graph database; graph is still Projection (§11)
+WorldSnapshot must solidify the applied resolution_id set (08 §15.2 TI-2)
 ```
 
-若客户已有企业级 MDM，`CanonicalIdentityService` 退化为
-**消费方 + 冲突上报方**（上报走 `05 GW01`），
-SRAF 不得重建第二套主数据；
-但 `08 §23` 的 Identity Gate 仍必须对上游 MDM 的产出跑通，
-否则等价于接受未经检验的身份真值。
+If the customer already has enterprise-level MDM, `CanonicalIdentityService` degrades to
+**Consumer + Conflict Reporter** (reporting goes through `05 GW01`),
+SRAF must not rebuild a second set of master data;
+But the Identity Gate in `08 §23` must still pass through upstream MDM output,
+otherwise it is equivalent to accepting unverified identity truth.
 
 ---
 
 # 16. Canonical World API
 
-所有上层模块不应直接依赖各 Source System。
+All upper modules should not directly depend on each Source System.
 
-统一通过：
+Unified through:
 
 ```text
 Canonical World API
 ```
 
-获取：
+obtain:
 
 ```text
 Current State
@@ -523,19 +523,19 @@ Scenario View
 Evidence
 ```
 
-这样 Source System 更换不会污染 Decision Engine。
+So that Source System replacement does not pollute the Decision Engine.
 
 ---
 
 # 17. Snapshot Service
 
-建议独立：
+Recommend independence:
 
 ```text
 WorldSnapshotService
 ```
 
-职责：
+Responsibilities:
 
 ```text
 freeze decision baseline
@@ -544,19 +544,19 @@ resolve known_time
 track schema/data versions
 ```
 
-所有正式 DecisionCase 必须引用 Snapshot。
+All formal DecisionCase must reference Snapshot.
 
 ---
 
 # 18. Scenario Service
 
-建议：
+Recommendations:
 
 ```text
 ScenarioService
 ```
 
-只做：
+Only do:
 
 ```text
 Baseline
@@ -566,21 +566,21 @@ ScenarioAssumption
 Scenario World View
 ```
 
-禁止复制整套生产数据库。
+Prohibit copying the entire production database.
 
-可以通过：
+Can achieve through:
 
 ```text
 overlay / delta model
 ```
 
-实现。
+implementation.
 
 ---
 
 # 19. Derived State Engine
 
-负责统一计算：
+Responsible for unified calculation:
 
 ```text
 OpportunityCoverage
@@ -592,13 +592,13 @@ TravelBurden
 Stability
 ```
 
-避免每个 Solver 自己重复计算业务指标。
+Avoid each Solver repeatedly calculating business metrics.
 
 ---
 
 # 20. Derived State Contract
 
-每个 Derived Metric 应至少声明：
+Each Derived Metric should at least declare:
 
 ```text
 metric_id
@@ -610,25 +610,25 @@ valid_scope
 confidence_rule
 ```
 
-例如：
+For example:
 
 ```text
 CapacityUtilization
 ```
 
-不能在不同模块中出现三种不同公式。
+Cannot have three different formulas appearing in different modules.
 
 ---
 
 # 21. Metric Registry
 
-建议建立：
+Recommend establishing:
 
 ```text
 MetricRegistry
 ```
 
-统一管理：
+Unified management:
 
 ```text
 OpportunityCoverage
@@ -640,13 +640,13 @@ ServiceLevel
 Stability
 ```
 
-这对 Benchmark 与 Production 一致性很重要。
+This is important for Benchmark and Production consistency.
 
 ---
 
 # 22. Allocation Intelligence Service
 
-建议逻辑上拆成五个组件：
+Recommend logically splitting into five components:
 
 ```text
 HealthEvaluator
@@ -656,28 +656,28 @@ MaterialityEvaluator
 ProblemRouter
 ```
 
-但 v1.2 可以在一个服务/模块中实现。
+But v1.2 can implement in one service/module.
 
-逻辑分离即可。
+Logical separation is sufficient.
 
 ---
 
 # 23. HealthEvaluator
 
-输入：
+Input:
 
 ```text
 WorldSnapshot
 DerivedAllocationState
 ```
 
-输出：
+Output:
 
 ```text
 HealthProfile
 ```
 
-不输出：
+Not output:
 
 ```text
 Decision
@@ -687,7 +687,7 @@ Decision
 
 # 24. GapDetector
 
-输入：
+Input:
 
 ```text
 HealthProfile
@@ -696,19 +696,19 @@ HistoricalBaseline
 PeerBenchmark
 ```
 
-输出：
+Output:
 
 ```text
 GapSet
 ```
 
-必须明确 Reference。
+Reference must be explicit.
 
 ---
 
 # 25. DiagnosticEngine
 
-MVP 采用：
+MVP adopts:
 
 ```text
 DiagnosticTest Library
@@ -718,9 +718,9 @@ Rule / Statistical Comparison
 Counterfactual Calls
 ```
 
-而不是 LLM end-to-end。
+instead of LLM end-to-end.
 
-输出：
+Output:
 
 ```text
 DiagnosticHypothesis[]
@@ -733,7 +733,7 @@ Confidence
 
 # 26. MaterialityEvaluator
 
-输入：
+Input:
 
 ```text
 Gap
@@ -743,7 +743,7 @@ Confidence
 ChangeCostEstimate
 ```
 
-输出：
+Output:
 
 ```text
 Monitor
@@ -756,7 +756,7 @@ Critical
 
 # 27. ProblemRouter
 
-输入：
+Input:
 
 ```text
 DiagnosticHypothesis
@@ -764,7 +764,7 @@ Materiality
 Policy
 ```
 
-输出：
+Output:
 
 ```text
 PrimaryDecisionProblem
@@ -772,13 +772,13 @@ AlternativeDecisionProblems
 NoAction / Monitor / Repair
 ```
 
-ProblemRouter 不选择 Solver。
+ProblemRouter does not select Solver.
 
 ---
 
 # 27A. Resource Deployment Architecture Contract
 
-Reference implementation 必须保持：
+Reference implementation must maintain:
 
 ```text
 ResourceArchetype
@@ -794,15 +794,15 @@ SalesResource
 Person / Team / Partner / Agent
 ```
 
-`DP02 Resource Location` 操作 Deployment；`DP04 Personnel Matching` 操作 DeploymentAssignment。
+`DP02 Resource Location` operates Deployment; `DP04 Personnel Matching` operates DeploymentAssignment.
 
-禁止在 Location Engine 内直接把 `Person` 当成 deployment node。
+Prohibit directly treating `Person` as a deployment node within the Location Engine.
 
 ---
 
 # 28. Decision Case Service
 
-建议统一管理：
+Recommend unified management:
 
 ```text
 DecisionCase
@@ -816,19 +816,19 @@ Approval
 ValidationPlan
 ```
 
-这是 Agent 最主要的结构化接口。
+This is the Agent's primary structured interface.
 
 ---
 
-# 29. Agent Runtime 的定位
+# 29. Agent Runtime Positioning
 
-Agent 不属于 World Plane，也不属于 Solver Plane。
+Agent does not belong to World Plane, nor to Solver Plane.
 
-它位于：
+It is located at:
 
 # Decision Interaction Layer
 
-逻辑上：
+Logically:
 
 ```text
 User / Manager
@@ -842,42 +842,42 @@ Allocation Intelligence / Orchestrator / Tools
 
 ---
 
-# 30. Agent 的主要能力
+# 30. Agent's Main Capabilities
 
-Agent 可以：
+Agent can:
 
 ```text
-解释 Allocation Signal
-查询 Evidence
-提出 Diagnostic Test
-创建 Scenario
-调用允许的 Workflow
-比较 Candidate
-解释 Trade-off
-收集 Human Evidence
-帮助形成 Review
-生成 Transition Narrative
+Explain Allocation Signal
+Query Evidence
+Propose Diagnostic Test
+Create Scenario
+Invoke allowed Workflow
+Compare Candidate
+Explain Trade-off
+Collect Human Evidence
+Assist forming Review
+Generate Transition Narrative
 ```
 
 ---
 
-# 31. Agent 禁止直接做的事情
+# 31. Things Agent is prohibited from doing directly
 
 ```text
-写 Canonical World State
-创建无来源 Hard Constraint
-静默改变 Objective
-把 Hypothesis 写成 Fact
-直接批准 High-risk Decision
-绕过 Orchestrator 调 Structural Solver
-自动 Relax Hard Constraint
+Write Canonical World State
+Create Hard Constraint without source
+Silently change Objective
+Write Hypothesis as Fact
+Directly approve High-risk Decision
+Bypass Orchestrator to invoke Structural Solver
+Automatically relax Hard Constraint
 ```
 
 ---
 
 # 32. Agent Tool Contract
 
-Agent 只能调用标准能力：
+Agent can only invoke standard capabilities:
 
 ```text
 world.query
@@ -891,23 +891,23 @@ candidate.compare
 review.submit
 ```
 
-实际函数名可以不同。
+Actual function names may differ.
 
-关键原则是：
+Key principle:
 
-> Agent 面向业务 Contract，不面向数据库和 Solver 内部变量。
+> Agent faces Business Contract, not database and Solver internal variables.
 
 ---
 
 # 33. Decision Orchestrator
 
-建议独立模块：
+Recommended independent modules:
 
 ```text
 DecisionOrchestrator
 ```
 
-负责：
+Responsible for:
 
 ```text
 WorkflowTemplate
@@ -919,13 +919,13 @@ HumanCheckpoint
 FailureRouting
 ```
 
-v1.2 不需要自研通用 BPMN 引擎；Phase 0 可以先使用持久化 state machine 证明 Decision Semantics。
+v1.2 does not require self-developed general BPMN engine; Phase 0 can first use a persistent state machine to prove Decision Semantics.
 
 ---
 
-# 34. Workflow Engine 复用原则
+# 34. Workflow Engine Reuse Principle
 
-如果成熟 Workflow 框架能够满足：
+If a mature Workflow framework can meet:
 
 ```text
 state persistence
@@ -935,9 +935,9 @@ versioning
 artifact reference
 ```
 
-应优先采用。
+Should be preferred.
 
-候选方向可以包括：
+Candidate directions may include:
 
 ```text
 Temporal
@@ -947,9 +947,9 @@ Camunda
 existing enterprise workflow infrastructure
 ```
 
-选择应由实施环境决定。
+Selection should be determined by the implementation environment.
 
-SRAF 自己拥有：
+SRAF itself owns:
 
 ```text
 Workflow Semantics
@@ -957,15 +957,15 @@ Decision Step Types
 Failure Semantics
 ```
 
-而不是必须拥有 Workflow Runtime。
+rather than must own the Workflow Runtime.
 
 ---
 
 # 35. Decision Compiler
 
-这是 SRAF 核心自有能力之一。
+This is one of SRAF's core owned capabilities.
 
-建议逻辑拆分：
+Recommended logical split:
 
 ```text
 DecisionCompiler
@@ -980,7 +980,7 @@ DecisionCompiler
 
 # 36. ProjectionBuilder
 
-将：
+Convert:
 
 ```text
 WorldSnapshot
@@ -988,13 +988,13 @@ DecisionCase
 ProblemContract
 ```
 
-转成：
+to:
 
 ```text
 ProblemProjection
 ```
 
-它负责：
+It is responsible for:
 
 ```text
 scope
@@ -1008,7 +1008,7 @@ temporal consistency
 
 # 37. RequirementCompiler
 
-将：
+Convert:
 
 ```text
 Invariant
@@ -1017,45 +1017,45 @@ Guardrail
 Preference
 ```
 
-映射到 Solver 可理解的约束/目标结构。
+Map to Solver-understood constraint/objective structure.
 
-必须保存：
+Must preserve:
 
 ```text
 business requirement ID
 → mathematical constraint ID
 ```
 
-映射。
+Mapping.
 
-这样 Solver Conflict 才能解释回业务语言。
+So that Solver Conflict can explain back to business language.
 
 ---
 
 # 38. Constraint Provenance
 
-如果 Solver 报告：
+If Solver reports:
 
 ```text
 constraint C882 conflicts
 ```
 
-系统必须能够映射到：
+The system must be able to map to:
 
 ```text
 Policy P17
 "Distributor boundary cannot be crossed"
 ```
 
-而不是只给工程人员一个数学 constraint ID。
+instead of just giving engineers a math constraint ID.
 
 ---
 
 # 39. DecompositionPlanner
 
-负责大规模 / Composite Problem 的求解策略。
+Responsible for large-scale / Composite Problem solving strategies.
 
-它选择：
+It chooses:
 
 ```text
 Sequential
@@ -1065,13 +1065,13 @@ Aggregation
 Multi-stage
 ```
 
-而不是具体 Solver。
+instead of a specific Solver.
 
 ---
 
 # 40. MathematicalModelBuilder
 
-负责：
+Responsible for:
 
 ```text
 business variables
@@ -1079,48 +1079,48 @@ business variables
 x / y / z
 ```
 
-并生成 Solver-specific Model。
+and generate Solver-specific Model.
 
-这一层是 Solver Adapter 前最后一个 SRAF-owned semantic boundary。
+This layer is the last SRAF-owned semantic boundary before Solver Adapter.
 
 ---
 
 # 41. SolutionInterpreter
 
-负责：
+Responsible for:
 
 ```text
 x_17_92 = 1
 ```
 
-恢复为：
+Restore to:
 
 ```text
 Responsibility R92
 assigned to Deployment D17
 ```
 
-然后形成：
+Then form:
 
 ```text
 CandidateDecision
 ```
 
-SolverSolution 本身永远不直接暴露为业务结果。
+SolverSolution itself is never directly exposed as a business result.
 
 ---
 
 # 42. Solver Registry
 
-建议：
+Recommend:
 
 ```text
 SolverRegistry
 ```
 
-维护所有可用 Solver Capability。
+Maintain all available Solver capabilities.
 
-每个 Adapter 声明：
+Each Adapter declares:
 
 ```text
 supported_problem_types
@@ -1135,28 +1135,28 @@ license
 
 ---
 
-# 43. v1.2 优先复用的 Solver / Library
+# 43. v1.2 priority reuse Solver / Library
 
-不绑定具体实现，但建议优先评估：
+Do not bind to a specific implementation, but recommend evaluating first:
 
 ```text
 OR-Tools CP-SAT
 SCIP
 HiGHS
-Gurobi（若客户环境许可）
+Gurobi (if the customer environment permits)
 Pyomo / OR-Tools modeling
 NetworkX / graph tooling
 H3
 mature routing engines
 ```
 
-不应第一阶段自研通用 Solver。
+Should not develop a generic Solver in-house in the first phase.
 
 ---
 
 # 44. Solver Adapter
 
-统一接口概念：
+Unified interface concept:
 
 ```yaml
 SolverAdapter:
@@ -1173,7 +1173,7 @@ SolverAdapter:
 
 # 45. Solver Status Standardization
 
-所有 Adapter 必须统一映射到：
+All Adapters must map uniformly to:
 
 ```text
 OPTIMAL
@@ -1186,25 +1186,25 @@ NUMERICAL_FAILURE
 UNKNOWN
 ```
 
-并与：
+and with:
 
 ```text
 BusinessInfeasibility
 ```
 
-完全分开。
+completely separate.
 
 ---
 
 # 46. Feasibility Oracle Registry
 
-与 SolverRegistry 分开维护：
+Maintain separately from SolverRegistry:
 
 ```text
 OracleRegistry
 ```
 
-典型：
+Typical:
 
 ```text
 CapacityFeasibilityOracle
@@ -1216,27 +1216,27 @@ PolicyFeasibilityOracle
 
 ---
 
-# 47. 一个 Engine 可以兼任 Solver 与 Oracle
+# 47. An Engine can serve as both Solver and Oracle
 
-例如：
+For example:
 
 ```text
 visit-scheduling-optimizer
 ```
 
-可以同时注册：
+Can register simultaneously:
 
 ```text
 DP06 VisitScheduling Engine
 ```
 
-和：
+and:
 
 ```text
 SchedulingFeasibilityOracle
 ```
 
-但两个调用模式必须有不同：
+but the two invocation modes must be different:
 
 ```text
 run_purpose
@@ -1246,9 +1246,9 @@ runtime_budget
 
 ---
 
-# 48. visit-scheduling-optimizer 的正式接入位置
+# 48. Formal integration point of visit-scheduling-optimizer
 
-建议：
+Recommend:
 
 ```text
 Reference Engine ID:
@@ -1266,19 +1266,19 @@ SchedulingFeasibilityTest
 
 ---
 
-# 49. visit-scheduling-optimizer 不再拥有上游语义
+# 49. visit-scheduling-optimizer no longer owns upstream semantics
 
-未来应逐步把以下逻辑移出或收敛：
+In the future, the following logic should be gradually moved out or consolidated:
 
 ```text
-客户是否值得拜访
+whether a customer is worth a visit
 Coverage frequency policy
 Territory ownership
 Headcount decision
 Resource location decision
 ```
 
-这些由 SRAF 上游 Contract 提供。
+These are provided by SRAF upstream Contract.
 
 ---
 
@@ -1319,13 +1319,13 @@ RunProvenance
 
 # 52. Candidate Evaluation Service
 
-所有 Candidate 无论来自哪个 Solver，都进入统一：
+All Candidates regardless of which Solver they come from enter the unified:
 
 ```text
 CandidateEvaluationService
 ```
 
-负责：
+Responsible for:
 
 ```text
 Baseline Delta
@@ -1340,7 +1340,7 @@ Downstream Feasibility
 
 # 53. Shared Evaluation Space
 
-统一：
+unified:
 
 ```text
 OpportunityCoverage
@@ -1355,19 +1355,19 @@ ImplementationComplexity
 DecisionConfidence
 ```
 
-不能直接比较不同 Solver 的 objective_value。
+Cannot directly compare objective_value of different Solvers.
 
 ---
 
 # 54. Change Cost Service
 
-建议独立逻辑：
+Recommend independent logic:
 
 ```text
 ChangeCostEvaluator
 ```
 
-第一阶段可以规则化计算：
+In the first phase, rule-based calculation can be used:
 
 ```text
 accounts moved
@@ -1377,13 +1377,13 @@ relationship risk
 handover volume
 ```
 
-后续再扩展模型化估计。
+Later expand to model-based estimation.
 
 ---
 
 # 55. Human Governance Service
 
-至少管理：
+At least manage:
 
 ```text
 HumanReview
@@ -1392,21 +1392,21 @@ ExceptionApproval
 FinalApproval
 ```
 
-不需要一开始自建复杂组织审批平台。
+There is no need to build a complex organizational approval platform from the start.
 
-可以通过：
+Can be through:
 
 ```text
 enterprise approval/workflow adapter
 ```
 
-接入现有系统。
+Integrate with existing systems.
 
 ---
 
 # 56. Human Override Versioning
 
-必须：
+Must:
 
 ```text
 Candidate V1
@@ -1415,25 +1415,25 @@ Candidate V1
 → Re-evaluation
 ```
 
-不能覆盖 V1。
+Cannot overwrite V1.
 
 ---
 
 # 57. Transition Service
 
-负责把：
+Responsible for turning:
 
 ```text
 ApprovedDecision
 ```
 
-变成：
+into:
 
 ```text
 TransitionPlan
 ```
 
-然后按阶段生成：
+Then generate per stage:
 
 ```text
 WorldEvent
@@ -1441,9 +1441,9 @@ WorldEvent
 
 ---
 
-# 58. Transition 不是数据同步
+# 58. Transition is not data synchronization
 
-结构调整可能需要：
+Structural adjustment may require:
 
 ```text
 handover
@@ -1454,7 +1454,7 @@ communication
 freeze window
 ```
 
-因此 Transition 不能简化成：
+Therefore Transition cannot be simplified to:
 
 ```text
 update territory table
@@ -1464,9 +1464,9 @@ update territory table
 
 # 59. Execution Connector
 
-SRAF 本身不是 SFA。
+SRAF itself is not SFA.
 
-实际执行通常发生在：
+Actual execution usually occurs at:
 
 ```text
 CRM
@@ -1477,19 +1477,19 @@ route app
 mobile sales app
 ```
 
-SRAF 通过：
+SRAF via:
 
 ```text
 ExecutionConnector
 ```
 
-推送已批准的结构/计划。
+Push approved structure/plan.
 
 ---
 
-# 60. Execution 写入原则
+# 60. Execution write principle
 
-只有：
+Only:
 
 ```text
 Approved
@@ -1497,15 +1497,15 @@ Approved
 TransitionReady
 ```
 
-状态才能产生外部写入。
+Only a status can produce external writes.
 
-Solver / Candidate / Scenario 一律不能写。
+Solver / Candidate / Scenario must never write.
 
 ---
 
 # 61. Observation Connector
 
-执行后从业务系统回流：
+After execution, flow back from business system:
 
 ```text
 visit completion
@@ -1516,25 +1516,25 @@ resource availability
 ownership changes
 ```
 
-形成：
+Form:
 
 ```text
 Observation
 ```
 
-再经过验证进入 World State。
+After validation, enter World State.
 
 ---
 
 # 62. Validation Service
 
-负责执行：
+Responsible for execution:
 
 ```text
 DecisionValidationPlan
 ```
 
-支持：
+Support:
 
 ```text
 BeforeAfter
@@ -1544,13 +1544,13 @@ StaggeredRollout
 A/B
 ```
 
-具体分析模块可复用成熟统计库。
+Specific analysis modules can reuse mature statistical libraries.
 
 ---
 
 # 63. Benchmark Service
 
-Production 与 Benchmark 使用同一：
+Production and Benchmark use the same:
 
 ```text
 WorldSnapshot
@@ -1559,7 +1559,7 @@ SolverAdapter
 Evaluation
 ```
 
-Benchmark Service 只负责：
+Benchmark Service only responsible for:
 
 ```text
 case management
@@ -1572,9 +1572,9 @@ reporting
 
 ---
 
-# 64. Benchmark 不应该另建一套研究代码
+# 64. Benchmark should not build a separate set of research code
 
-禁止：
+Forbidden:
 
 ```text
 notebook implementation
@@ -1582,9 +1582,9 @@ notebook implementation
 production implementation
 ```
 
-核心 Contract 与 Engine 必须复用生产实现。
+Core Contract and Engine must reuse production implementation.
 
-可以在 Benchmark 侧增加：
+Can add on the Benchmark side:
 
 ```text
 synthetic generator
@@ -1597,13 +1597,13 @@ evaluation harness
 
 # 65. Audit / Provenance
 
-建议统一：
+Recommend unifying:
 
 ```text
 RunProvenance
 ```
 
-关联：
+Association:
 
 ```text
 WorldSnapshot
@@ -1624,25 +1624,25 @@ Outcome
 
 # 66. Observability
 
-除了技术日志，需要 Decision Observability。
+Besides technical logs, Decision Observability is required.
 
-至少能够回答：
+At least be able to answer:
 
 ```text
-为什么创建了这个 DecisionCase？
-为什么路由到 DP03？
-为什么选择这个 Solver？
-为什么 Candidate B 排在 A 前面？
-谁修改了 Candidate？
-哪些数据版本被使用？
-最终效果如何？
+Why was this DecisionCase created?
+Why was it routed to DP03?
+Why was this Solver selected?
+Why is Candidate B ranked before A?
+Who modified the Candidate?
+Which data versions were used?
+What is the final effect?
 ```
 
 ---
 
-# 67. 技术日志与业务证据分开
+# 67. Technical logs and business evidence are separated
 
-例如：
+For example:
 
 ```text
 CPU usage
@@ -1650,9 +1650,9 @@ stack trace
 HTTP error
 ```
 
-属于 Technical Observability。
+Belongs to Technical Observability.
 
-而：
+While:
 
 ```text
 CoverageGap evidence
@@ -1661,50 +1661,50 @@ Candidate trade-off
 Human override reason
 ```
 
-属于 Decision Evidence。
+Belongs to Decision Evidence.
 
-两者不能混为一种 log。
+The two cannot be mixed as one log.
 
 ---
 
 # 68. API Boundary
 
-SRAF v1.2 推荐使用清晰的 domain APIs / service interfaces。
+SRAF v1.2 recommends using clear domain APIs / service interfaces.
 
-不要求第一阶段全部微服务化。
+It is not required to fully microservice in the first phase.
 
-可以先：
+Can first:
 
 ```text
 modular monolith
 ```
 
-但模块边界必须清楚。
+But module boundaries must be clear.
 
 ---
 
-# 69. 不建议 v1.2 直接微服务化
+# 69. Not recommended to directly microservice in v1.2
 
-原因：
+Reasons:
 
-- World / Decision Contract 仍在快速演进；
-- 过早拆微服务会固化错误边界；
-- 增加运维复杂度；
-- Benchmark 与本地开发更困难。
+- World / Decision Contract is still evolving rapidly;
+- Prematurely splitting microservices will solidify erroneous boundaries;
+- Increases operational complexity;
+- Benchmark and local development become more difficult.
 
-推荐：
+Recommend:
 
 # Modular Monolith First
 
-成熟后再按负载与组织边界拆分。
+After maturity, split according to load and organizational boundaries.
 
 ---
 
-# 70. 推荐 Repo 结构
+# 70. Recommended Repo structure
 
-07 中的逻辑模块仍然保留，但 **MVP 不按逻辑模块机械拆成十几个服务**。
+The logical modules in 07 are still retained, but **MVP is not mechanically split into a dozen services according to logical modules**.
 
-v1.2 推荐先收敛为六个 package：
+v1.2 recommends first converging to six packages:
 
 ```text
 sales-resource-allocation-framework/
@@ -1753,45 +1753,45 @@ sales-resource-allocation-framework/
 └── tests/
 ```
 
-原则：
+Principles:
 
 > **Logical module boundary ≠ deployment service boundary。**
 
-第一阶段仍采用 Modular Monolith First。
+The first phase still adopts Modular Monolith First.
 
 
 ---
 
-# 71. 是否与现有 visit-scheduling-optimizer 合仓
+# 71. Whether to share with the existing visit-scheduling-optimizer
 
-v1.2 建议：
+v1.2 recommends:
 
-> **不要立即合仓。**
+> **Do not merge immediately.**
 
-SRAF 作为 Framework 维护：
+SRAF maintains as a Framework:
 
 ```text
 VisitSchedulingAdapter
 ```
 
-通过标准 Contract 调用现有仓库。
+Call existing repositories through standard Contract.
 
-原因：
+Reasons:
 
-- 先验证边界；
-- 避免重写稳定能力；
-- 保留 solver 独立演进；
-- 验证“Decision Problem ≠ Solver”。
+- Validate boundaries first;
+- Avoid rewriting stable capabilities;
+- Keep solver evolving independently;
+- Verify "Decision Problem ≠ Solver".
 
-只有后续确有工程收益再考虑 monorepo。
+Only consider monorepo if subsequent engineering benefits exist.
 
 ---
 
-# 72. 现有项目改造原则
+# 72. Principles for existing project transformation
 
-对 `visit-scheduling-optimizer` 第一阶段不建议大规模重构。
+For `visit-scheduling-optimizer`, large-scale refactoring is not recommended in the first phase.
 
-优先做：
+Prioritize:
 
 ```text
 Adapter
@@ -1802,17 +1802,17 @@ Run Provenance
 Feasibility Mode
 ```
 
-这五项。
+These five items.
 
-先让它成为 SRAF-compliant Decision Engine。
+First make it a SRAF-compliant Decision Engine.
 
 ---
 
-# 73. Territory Engine 的策略
+# 73. Strategy for Territory Engine
 
-SRAF v1.2 不应第一阶段立即自研大型 Territory Optimizer。
+SRAF v1.2 should not self-develop a large Territory Optimizer immediately in the first phase.
 
-建议顺序：
+Suggested order:
 
 ```text
 1. Simple baseline heuristic
@@ -1822,13 +1822,13 @@ SRAF v1.2 不应第一阶段立即自研大型 Territory Optimizer。
 5. Routing-in-the-loop evaluation
 ```
 
-先证明 Decision Framework，再追求算法领先。
+First prove the Decision Framework, then pursue algorithmic leadership.
 
 ---
 
 # 74. Territory Engine Baseline
 
-第一版甚至可以使用：
+The first version can even use:
 
 ```text
 balanced clustering
@@ -1836,9 +1836,9 @@ graph partitioning
 local swap heuristic
 ```
 
-作为 Candidate Generator。
+as a Candidate Generator.
 
-只要：
+As long as:
 
 ```text
 Contract
@@ -1849,21 +1849,21 @@ Opportunity
 Evaluation
 ```
 
-完整。
+Complete.
 
 ---
 
-# 75. DP01 Sizing Engine 策略
+# 75. Strategy for DP01 Sizing Engine
 
-第一阶段优先输出：
+In the first phase, prioritize outputting:
 
 ```text
 Resource-Coverage Frontier
 ```
 
-而不是唯一 Headcount。
+rather than the sole Headcount.
 
-可先使用：
+Can initially use:
 
 ```text
 workload/capacity model
@@ -1873,13 +1873,13 @@ geographic travel approximation
 scenario enumeration
 ```
 
-后续再增强 location-allocation joint model。
+Later enhance the location-allocation joint model.
 
 ---
 
-# 76. DP02 Location Engine 策略
+# 76. Strategy for DP02 Location Engine
 
-优先复用：
+Prioritize reusing:
 
 ```text
 facility location
@@ -1887,9 +1887,9 @@ p-median
 location-allocation
 ```
 
-成熟 OR 建模思路。
+Mature OR modeling approaches.
 
-SRAF 自己增加：
+SRAF itself adds:
 
 ```text
 personnel feasibility
@@ -1899,17 +1899,17 @@ responsibility semantics
 
 ---
 
-# 77. DP04 Personnel Matching 策略
+# 77. Strategy for DP04 Personnel Matching
 
-可以从：
+Can start from:
 
 ```text
 assignment / matching
 ```
 
-模型开始。
+model.
 
-优先保证：
+Prioritize ensuring:
 
 ```text
 capability
@@ -1919,15 +1919,15 @@ relationship
 fairness
 ```
 
-语义正确。
+Semantic correctness.
 
-不必先做复杂 ML。
+No need to do complex ML first.
 
 ---
 
-# 78. DP05 Coverage Allocation 策略
+# 78. Strategy for DP05 Coverage Allocation
 
-可能需要：
+May need:
 
 ```text
 response curves
@@ -1935,7 +1935,7 @@ priority rules
 resource substitution
 ```
 
-MVP 可以从：
+MVP can start from:
 
 ```text
 minimum/preferred/maximum
@@ -1945,22 +1945,22 @@ opportunity priority
 capacity envelope
 ```
 
-开始。
+Start.
 
 ---
 
-# 79. DP07 Routing Engine 策略
+# 79. Strategy for DP07 Routing Engine
 
-SRAF 不自研路由核心。
+SRAF does not self-develop routing core.
 
-优先复用：
+Prioritize reusing:
 
 ```text
 OR-Tools routing
 OSRM/Valhalla/GraphHopper network
 ```
 
-将其作为：
+Use it as:
 
 ```text
 Decision Engine
@@ -1970,9 +1970,9 @@ Oracle
 
 ---
 
-# 80. 依赖方向
+# 80. Dependency direction
 
-工程上必须保持：
+Engineering must keep:
 
 ```text
 World
@@ -1986,33 +1986,33 @@ Compiler
 Solver Adapter
 ```
 
-更准确说：
+More precisely:
 
-> 下层计算模块依赖上层定义的 Contract，但不能反向拥有业务语义。
+> Lower-layer computing modules depend on Contracts defined by upper layers, but must not reversely have business semantics.
 
 ---
 
-# 81. 禁止反向依赖
+# 81. Prohibit reverse dependencies
 
-例如：
+For example:
 
 ```text
 world.Account
 ```
 
-不能出现：
+Must not have:
 
 ```text
 cp_sat_variable_index
 ```
 
-同理：
+Similarly:
 
 ```text
 DecisionCase
 ```
 
-不应知道：
+Should not know:
 
 ```text
 GurobiModel
@@ -2022,7 +2022,7 @@ GurobiModel
 
 # 82. Contract-first Development
 
-每新增一个 Engine，顺序固定：
+For each new Engine, the order is fixed:
 
 ```text
 1. Define Decision Problem Contract
@@ -2033,28 +2033,28 @@ GurobiModel
 6. Implement Adapter / Solver
 ```
 
-禁止：
+Prohibit:
 
 ```text
-先写算法
-→ 再想它算的是什么
+Writing algorithm first
+→ then think about what it computes
 ```
 
 ---
 
 # 83. Schema-first / Type-safe
 
-建议核心对象定义统一 schema。
+It is recommended that core object definitions use a unified schema.
 
-例如可以采用：
+For example, can adopt:
 
 ```text
 Pydantic / JSON Schema / protobuf
 ```
 
-具体取决于技术栈。
+Depends on the technology stack.
 
-重点是：
+The key point is:
 
 ```text
 WorldSnapshot
@@ -2064,13 +2064,13 @@ CandidateDecision
 OracleResult
 ```
 
-必须是明确 Contract，而不是任意 dict。
+Must be an explicit Contract, not an arbitrary dict.
 
 ---
 
-# 84. 版本策略
+# 84. Versioning strategy
 
-所有核心 Contract：
+All core Contracts:
 
 ```text
 World Schema
@@ -2082,13 +2082,13 @@ Metric Definition
 Benchmark Case
 ```
 
-都必须版本化。
+Must be versioned.
 
 ---
 
 # 85. Compatibility Policy
 
-建议：
+Recommendation:
 
 ```text
 patch:
@@ -2101,19 +2101,19 @@ major:
 semantic meaning changed
 ```
 
-例如：
+For example:
 
 ```text
 CoverageNeed.frequency
 ```
 
-含义改变必须 major version。
+Semantic changes must increment the major version.
 
 ---
 
 # 86. Migration
 
-World Schema 升级时必须提供：
+When upgrading World Schema, must provide:
 
 ```text
 migration
@@ -2121,17 +2121,17 @@ backfill
 version compatibility
 ```
 
-历史 Snapshot 不应该被静默重新解释。
+Historical Snapshots should not be silently reinterpreted.
 
 ---
 
 # 87. Historical Reproducibility
 
-当 v2.0 出现时，仍应能够回答：
+When v2.0 appears, still should be able to answer:
 
-> v1.2 当时为什么做出这个 Decision？
+> Why did v1.2 make this Decision?
 
-因此历史 Run 引用：
+Therefore historical Run references:
 
 ```text
 schema_version
@@ -2140,15 +2140,15 @@ compiler_version
 solver_version
 ```
 
-必须保留。
+Must be retained.
 
 ---
 
 # 88. Security / Authorization
 
-SRAF Decision Risk 不同，权限不同。
+SRAF Decision Risks differ, permissions differ.
 
-例如：
+For example:
 
 ```text
 View health
@@ -2160,17 +2160,17 @@ Approve downsizing
 Execute transition
 ```
 
-应分别授权。
+Should be authorized separately.
 
 ---
 
 # 89. Agent Permission
 
-Agent 权限通过 Tool Policy 控制。
+Agent permissions are controlled by Tool Policy.
 
-Agent 不应继承用户所有数据库权限。
+Agent should not inherit all database permissions of the user.
 
-例如：
+For example:
 
 ```text
 Agent may:
@@ -2187,17 +2187,17 @@ activate territory
 
 # 90. Data Privacy
 
-Sales Resource 与 Person 分离还有工程价值：
+Separating Sales Resource and Person still has engineering value:
 
-> Solver 很多时候只需要 Resource Capacity / Capability，不需要员工全部个人信息。
+> Solver often only needs Resource Capacity / Capability, not all personal information of employees.
 
-ProblemProjection 应遵循最小数据原则。
+ProblemProjection should follow the minimum data principle.
 
 ---
 
 # 91. Personal Data Minimization
 
-例如 Territory Solver 可能只需要：
+For example, Territory Solver may only need:
 
 ```text
 deployment location
@@ -2205,7 +2205,7 @@ capability
 relocation feasibility
 ```
 
-不需要：
+Does not need:
 
 ```text
 full HR profile
@@ -2217,7 +2217,7 @@ personal address details
 
 # 92. Performance Architecture
 
-v1.2 优先考虑：
+v1.2 prioritizes:
 
 ```text
 Snapshot
@@ -2227,13 +2227,13 @@ Derived state cache
 Scenario artifact reuse
 ```
 
-而不是过早分布式计算。
+rather than premature distributed computing.
 
 ---
 
 # 93. Projection Cache
 
-Cache Key 至少包括：
+Cache Key must include at least:
 
 ```text
 snapshot_id
@@ -2243,38 +2243,38 @@ projection_version
 scope
 ```
 
-避免使用过期 Projection。
+Avoid using stale Projection.
 
 ---
 
 # 94. Artifact Invalidation
 
-当依赖对象变化：
+When dependent objects change:
 
 ```text
 CoverageCommitment changed
 ```
 
-自动使：
+Automatically invalidate:
 
 ```text
 ScheduleCandidate
 RouteCandidate
 ```
 
-标记：
+Mark:
 
 ```text
 STALE
 ```
 
-Orchestrator 不允许继续审批 stale artifact。
+Orchestrator must not continue approving stale artifact.
 
 ---
 
 # 95. Travel Matrix Cache
 
-应绑定：
+Should bind:
 
 ```text
 network_version
@@ -2283,15 +2283,15 @@ time context
 location_version
 ```
 
-否则会发生：
+Otherwise:
 
-> 地点变化但仍使用旧 travel matrix。
+> Location changes but still uses old travel matrix.
 
 ---
 
-# 96. Deployment 模式
+# 96. Deployment mode
 
-第一阶段建议：
+First phase recommendation:
 
 ```text
 single service
@@ -2300,21 +2300,21 @@ or modular monolith
 external solver workers
 ```
 
-复杂 Solver 可使用独立 Worker。
+Complex Solver can use independent Worker.
 
-不要求全模块独立部署。
+No requirement for full modules to be independently deployed.
 
 ---
 
 # 97. Long-running Solver
 
-Structural Solver 可以：
+Structural Solver can:
 
 ```text
 async job
 ```
 
-Orchestrator 保存：
+Orchestrator keeps:
 
 ```text
 run_id
@@ -2322,13 +2322,13 @@ status
 artifact
 ```
 
-Agent 不需要保持长连接。
+Agent does not need to maintain long connections.
 
 ---
 
 # 98. Interactive What-if
 
-Interactive Mode 可以选择：
+Interactive Mode can choose:
 
 ```text
 fast heuristic
@@ -2336,20 +2336,20 @@ cached projection
 reduced fidelity
 ```
 
-输出必须标记：
+Output must be marked:
 
 ```text
 evaluation_fidelity
 optimality_claim
 ```
 
-不能把 5 秒 heuristic 结果包装成最终全国方案。
+Cannot wrap a 5-second heuristic result as the final nationwide plan.
 
 ---
 
 # 99. Production Structural Run
 
-可使用：
+Can use:
 
 ```text
 higher fidelity
@@ -2363,7 +2363,7 @@ human review
 
 # 100. Benchmark Environment
 
-Benchmark 应支持：
+Benchmark should support:
 
 ```text
 fixed seed
@@ -2372,15 +2372,15 @@ fixed dependency version
 isolated run
 ```
 
-保证可复现。
+Ensure reproducibility.
 
 ---
 
 # 101. CI Architecture Gates
 
-建议把前面文档中的关键 Architecture Gates 转成自动检查。
+It is recommended to convert key Architecture Gates in the preceding document into automated checks.
 
-例如：
+For example:
 
 ```text
 Schema check
@@ -2396,33 +2396,33 @@ Candidate isolation
 
 # 102. Static Dependency Gate
 
-可以明确禁止：
+Can explicitly prohibit:
 
 ```text
 world/
 ```
 
-依赖：
+Dependencies:
 
 ```text
 solver_registry/
 ```
 
-或者：
+Or:
 
 ```text
 decision/
 ```
 
-import 某具体 Solver SDK。
+import a specific Solver SDK.
 
-具体可通过模块依赖测试实现。
+This can be realized through module dependency testing.
 
 ---
 
 # 103. Contract Compliance Test
 
-每个 Engine Adapter 必须运行：
+Each Engine Adapter must run:
 
 ```text
 standard input test
@@ -2432,13 +2432,13 @@ failure mapping test
 provenance test
 ```
 
-才能注册 SolverRegistry。
+to register SolverRegistry.
 
 ---
 
 # 104. Reference Vertical Slice v1
 
-SRAF 第一个真正实现的 Vertical Slice 应固定为：
+The first truly implemented Vertical Slice of SRAF should be fixed as:
 
 ```text
 Source Data
@@ -2460,11 +2460,11 @@ Delta / Feasibility
 
 ---
 
-# 105. Vertical Slice v1 的目标
+# 105. Goals of Vertical Slice v1
 
-不是提高排班算法性能。
+Not to improve scheduling algorithm performance.
 
-而是证明：
+But to prove:
 
 ```text
 World Contract
@@ -2474,13 +2474,13 @@ World Contract
 → Evaluation
 ```
 
-全链正确。
+End
 
 ---
 
 # 106. Vertical Slice v2
 
-加入：
+Add:
 
 ```text
 Allocation Health
@@ -2489,15 +2489,15 @@ Diagnosis
 Problem Router
 ```
 
-目标：
+Goal:
 
-> 当排班失败时，系统能判断是否应该继续 DP06，还是升级到 Coverage / Territory / Sizing。
+> When scheduling fails, the system can determine whether to continue DP06 or escalate to Coverage / Territory / Sizing.
 
 ---
 
 # 107. Vertical Slice v3
 
-加入：
+Add:
 
 ```text
 Coverage ↔ Scheduling
@@ -2505,7 +2505,7 @@ Coverage ↔ Scheduling
 
 Iterative Coupling。
 
-证明：
+Proof:
 
 ```text
 Oracle feedback
@@ -2517,13 +2517,13 @@ stopping rule
 
 # 108. Vertical Slice v4
 
-加入简版：
+Add simplified version:
 
 ```text
 Territory Rebalancing
 ```
 
-只需要：
+Only need:
 
 ```text
 Baseline
@@ -2535,19 +2535,19 @@ Opportunity
 ChangeCost
 ```
 
-先不追求先进算法。
+Do not pursue advanced algorithms for now.
 
 ---
 
 # 109. Vertical Slice v5
 
-加入：
+Add:
 
 ```text
 Resource Location / Sizing
 ```
 
-开始形成完整：
+Start forming a complete:
 
 ```text
 Greenfield / Expansion
@@ -2557,11 +2557,11 @@ Composite Workflow。
 
 ---
 
-# 110. 实施阶段建议
+# 110. Implementation Phase Recommendations
 
 ## Phase 0 — Contracts & Harness
 
-目标：
+Goal:
 
 ```text
 schemas
@@ -2571,13 +2571,13 @@ problem projection
 benchmark harness
 ```
 
-先让所有核心对象可序列化、可测试。
+First make all core objects serializable and testable.
 
 ---
 
 ## Phase 1 — Scheduling Reference Integration
 
-目标：
+Goal:
 
 ```text
 DP06 adapter
@@ -2585,13 +2585,13 @@ failure semantics
 candidate interpreter
 ```
 
-复用现有引擎。
+Reuse existing engine.
 
 ---
 
 ## Phase 2 — Allocation Intelligence MVP
 
-目标：
+Goal:
 
 ```text
 5 diagnostic cases
@@ -2603,7 +2603,7 @@ false expansion benchmark
 
 ## Phase 3 — Structural Decision MVP
 
-目标：
+Goal:
 
 ```text
 DP03 baseline
@@ -2616,7 +2616,7 @@ human override
 
 ## Phase 4 — Composite Decision
 
-目标：
+Goal:
 
 ```text
 Coverage ↔ Scheduling
@@ -2624,13 +2624,13 @@ Expansion
 Greenfield
 ```
 
-逐步增加 Coupling。
+Gradually increase Coupling.
 
 ---
 
 ## Phase 5 — Production Validation
 
-目标：
+Goal:
 
 ```text
 shadow
@@ -2640,68 +2640,68 @@ decision validation
 
 ---
 
-## 110A. v1 Engineering Envelope（Phase 0–3 规模与 SLA）
+## 110A. v1 Engineering Envelope (Phase 0–3 Scale and SLA)
 
-这不是系统上限声明，而是给 `DecompositionPlanner / SolverRegistry /
-Projection Cache / Benchmark` 的工程契约：
+This is not a system upper limit statement, but an engineering contract for `DecompositionPlanner / SolverRegistry /
+Projection Cache / Benchmark` engineering contract:
 
-> 在什么规模档位下，期待什么计算策略和响应时间。
+> Under what scale tier, what compute strategy and response time is expected.
 
-| 档位 | Responsibility Units | Resources | 目标响应 | 典型场景 |
+| Tier | Responsibility Units | Resources | Target Response | Typical Scenario |
 |---|---|---|---|---|
-| **S — Interactive** | ≤ 5k | ≤ 50 | seconds | What-if、局部 Rebalance、DP06/DP07 |
-| **M — City/Regional Planning** | 5k–50k | 50–300 | minutes | DP01/DP02/DP03 规划批次 |
-| **L — Structural Batch** | 50k–200k | 300–1,000 | tens of minutes–hours | CP01/CP02 结构批处理 |
+| **S — Interactive** | ≤ 5k | ≤ 50 | seconds | What-if, local Rebalance, DP06/DP07 |
+| **M — City/Regional Planning** | 5k–50k | 50–300 | minutes | DP01/DP02/DP03 planning batch |
+| **L — Structural Batch** | 50k–200k | 300–1,000 | tens of minutes–hours | CP01/CP02 structural batch processing |
 
-各 Phase 的最低承诺档位：
-
-```text
-Phase 0  Contracts        S（schema/snapshot 正确性优先，不设性能要求）
-Phase 1  DP06 Reference   S 必达；M 尽力（报告 time-to-first-feasible）
-Phase 2  Intelligence     S–M（Health/Gap/Router 全量派生，minutes）
-Phase 3  Structural MVP   M 必达；L 允许 Iterative/Multi-stage 分解
-```
-
-计算策略随档位切换（必须显式声明 `evaluation_fidelity`）：
+Minimum committed tier for each Phase:
 
 ```text
-S   精确 Solver 或高迭代 heuristic；全量 L2 Network Travel
-M   CP-SAT/MILP + warm start；L1 粗筛 + L2 复评漏斗
-L   Macro 聚合 → 分解求解 → Micro 回填；禁止天真 Joint；
-    Travel 走预计算矩阵缓存（绑定 network_version）
+Phase 0  Contracts        S (schema/snapshot correctness first, no performance requirement)
+Phase 1  DP06 Reference   S must meet; M best effort (report time-to-first-feasible)
+Phase 2  Intelligence     S–M (Health/Gap/Router full derivation, minutes)
+Phase 3  Structural MVP   M must meet; L allowed Iterative/Multi-stage decomposition
 ```
 
-工程含义：
+Compute strategy switches with tier (must explicitly declare `evaluation_fidelity`):
 
-1. Benchmark 规模测试（06 §55）的 reported scale 必须覆盖对应 Phase 档位上界，
-   不得只在玩具实例报性能。
-2. Projection Cache / Travel Matrix Cache 的内存与失效预算按 L 档容量设计。
-3. 超出 L 档不视为 SRAF 失败，而是触发
-   `Aggregation / Sampling Strategy` 评审（新增 ProblemProjection 语义，
-   走 §84 版本策略）；在此之前不得静默降精度。
+```text
+S   exact Solver or high-iteration heuristic; full L2 Network Travel
+M   CP-SAT/MILP + warm start; L1 coarse filter + L2 re-evaluation funnel
+L   Macro aggregation → decomposition solving → Micro backfill; prohibit naive joint;
+Travel uses precomputed matrix cache (bound to network_version)
+```
+
+Engineering implications:
+
+1. Benchmark scale test (06 §55) reported scale must cover the corresponding Phase tier upper bound,
+Must not report performance only on toy instances.
+2. Projection Cache / Travel Matrix Cache memory and invalidation budget designed for L tier capacity.
+3. Exceeding L tier is not considered SRAF failure, but triggers
+`Aggregation / Sampling Strategy` review (new ProblemProjection semantics,
+follow §84 version strategy); before that, must not silently degrade accuracy.
 
 ---
-# 111. 不建议第一阶段做的工作
+# 111. Work not recommended for the first phase
 
 ```text
-自研通用 Workflow Engine
-自研图数据库
-自研路由引擎
-自研 MILP Solver
-复杂 RDF/OWL reasoner
-端到端 LLM 决策
-全国实时 Territory 自动重划
-复杂多智能体社会
-全量 MLOps 平台
+Self-developed general-purpose Workflow Engine
+Self-developed graph database
+Self-developed routing engine
+Self-developed MILP Solver
+Complex RDF/OWL reasoner
+End-to-end LLM decision-making
+Nationwide real-time Territory automatic rebalancing
+Complex multi-agent society
+Full MLOps platform
 ```
 
-这些都不是 SRAF v1.2 核心。
+None of these are SRAF v1.2 core.
 
 ---
 
-# 112. SRAF 自有核心资产
+# 112. SRAF's own core assets
 
-必须自己掌握：
+Must be owned internally:
 
 ```text
 Sales World Ontology
@@ -2716,13 +2716,13 @@ Decision Governance
 Benchmark Cases
 ```
 
-这些才是 Framework 的真正 IP。
+These are the true IP of the Framework.
 
 ---
 
-# 113. 优先复用资产
+# 113. Prioritize reuse of assets
 
-应优先集成：
+Should first integrate:
 
 ```text
 Database
@@ -2735,29 +2735,29 @@ Visualization
 LLM Runtime
 ```
 
-成熟能力。
+Mature capabilities.
 
 ---
 
-# 114. Agentic 架构原则
+# 114. Agentic architecture principles
 
-Agentic 不意味着：
+Agentic does not mean:
 
-> 所有模块都 Agent 化。
+> All modules are agentified.
 
-真正 Agentic 的地方是：
+Where it truly is Agentic:
 
 ```text
-理解 DecisionCase
-组织 Evidence
-提出 Hypothesis
-选择允许的 Tool
-创建 Scenario
-比较 Candidate
-与 Human 协作
+Understanding DecisionCase
+Organizing Evidence
+Proposing Hypothesis
+Choosing allowed Tool
+Creating Scenario
+Comparing Candidate
+Collaborating with Human
 ```
 
-而：
+Whereas:
 
 ```text
 constraint validation
@@ -2767,13 +2767,13 @@ MILP solve
 snapshot semantics
 ```
 
-应保持 deterministic / governed。
+Should remain deterministic/governed.
 
 ---
 
 # 115. Deterministic Core + Agentic Shell
 
-SRAF 推荐：
+SRAF recommends:
 
 ```text
               AGENTIC INTERACTION
@@ -2792,13 +2792,13 @@ SRAF 推荐：
 └───────────────────────────────────────┘
 ```
 
-这是 v1.2 推荐架构。
+This is the v1.2 recommended architecture.
 
 ---
 
-# 116. 为什么不是“Agent 直接调用数据库 + Solver”
+# 116. Why not "Agent directly calls database + Solver"
 
-因为那会导致：
+Because that would lead to:
 
 ```text
 business semantics
@@ -2817,17 +2817,17 @@ decision evidence
 unreproducible
 ```
 
-这与 SRAF 目标相反。
+This is contrary to SRAF goals.
 
 ---
 
-# 117. API / UI 不是 v1.2 核心
+# 117. API / UI is not v1.2 core
 
-v1.2 首先做 Framework / Agent-callable APIs。
+v1.2 first delivers Framework / Agent-callable APIs.
 
-管理 UI、地图 UI 可以后续构建。
+Management UI, map UI can be built later.
 
-但输出对象应天然支持：
+But output objects should natively support:
 
 ```text
 map projection
@@ -2839,35 +2839,35 @@ decision explanation
 
 # 118. Territory Visualization
 
-地图只是：
+Map is only:
 
 ```text
 TerritoryProjection
 ```
 
-的视觉表达。
+a visual representation.
 
-UI 不能通过拖 Polygon 直接修改 Canonical Territory。
+UI cannot directly modify Canonical Territory by dragging Polygon.
 
-拖动结果应生成：
+Drag result should generate:
 
 ```text
 HumanOverride
 ```
 
-或：
+or:
 
 ```text
 CandidateChange
 ```
 
-再重新评价。
+Then re-evaluate.
 
 ---
 
 # 119. Reference Deployment Example
 
-最小生产架构可为：
+Minimal production architecture can be:
 
 ```text
 PostgreSQL/PostGIS
@@ -2889,47 +2889,47 @@ Agent / API
 Human Review
 ```
 
-不需要大量基础设施。
+No need for massive infrastructure.
 
 ---
 
-# 120. 架构演进条件
+# 120. Architecture evolution conditions
 
-只有出现明确证据时再拆分：
+Only split when clear evidence appears:
 
-### 独立 Graph DB
+### Independent Graph DB
 
-当：
+When:
 
 ```text
 relationship traversal
 ```
 
-成为主要性能瓶颈。
+becomes the main performance bottleneck.
 
-### 独立 Event Platform
+### Independent Event Platform
 
-当：
+When:
 
 ```text
 event volume / integration
 ```
 
-超出关系库能力。
+exceeds relational DB capabilities.
 
-### 分布式 Solver Platform
+### Distributed Solver Platform
 
-当：
+When:
 
 ```text
 concurrent structural optimization
 ```
 
-成为瓶颈。
+becomes a bottleneck.
 
-### 独立 Workflow Platform
+### Independent Workflow Platform
 
-当：
+When:
 
 ```text
 long-running workflows
@@ -2937,19 +2937,19 @@ human tasks
 enterprise integration
 ```
 
-证明现有能力不足。
+proves existing capabilities insufficient.
 
 ---
 
 # 121. Architecture Decision Record
 
-所有重要技术选型建议使用：
+All important technology selections are recommended to use:
 
 ```text
 ADR
 ```
 
-例如：
+For example:
 
 ```text
 ADR-001 Canonical State uses PostgreSQL
@@ -2958,61 +2958,61 @@ ADR-003 Existing scheduling engine integrated via adapter
 ADR-004 Modular monolith before microservices
 ```
 
-避免后续团队不知道“为什么”。
+Avoid future teams not understanding "why".
 
 ---
 
-# 122. 关键 Architecture Gates
+# 122. Critical Architecture Gates
 
-出现以下设计，应原则上拒绝：
+If the following designs appear, they should be rejected in principle:
 
 ```text
-Solver 直接读 Source System
+Solver reads Source System directly
 
-Agent 直接写 Canonical World
+Agent writes Canonical World directly
 
 Territory = Polygon table
 
-Account.owner_id 作为唯一责任模型
+Account.owner_id as the sole responsibility model
 
-Opportunity score 无 provenance
+Opportunity score without provenance
 
-DecisionCase 无 Snapshot
+DecisionCase without Snapshot
 
-Scenario 复制并修改生产状态
+Scenario copies and modifies production state
 
-Decision Engine 自己计算一套不同指标
+Decision Engine computes a separate set of metrics
 
-Solver-specific variable 写入 World schema
+Solver-specific variable writes into World schema
 
-Problem Router 直接绑定 Solver
+Problem Router directly binds Solver
 
-Workflow State 存在 Agent 对话中
+Workflow State resides in Agent dialogue
 
-HumanOverride 覆盖原 Candidate
+HumanOverride overrides original Candidate
 
-Candidate 直接推送 SFA
+Candidate directly pushes to SFA
 
-Approval 后无 TransitionPlan
+Approval without TransitionPlan
 
-Benchmark 使用另一套业务 Schema
+Benchmark uses a different business Schema
 
-Graph 成为唯一 Source of Truth
+Graph becomes the sole Source of Truth
 
-新增基础设施却没有经过能力缺口验证
+New infrastructure added without capability gap verification
 ```
 
 ---
 
 # 123. Definition of Done
 
-`07_REFERENCE_ARCHITECTURE.md` 的第一阶段落地不能以：
+`07_REFERENCE_ARCHITECTURE.md` first-phase rollout cannot be considered complete with:
 
-> “服务框架搭好了”
+> "Service framework is ready"
 
-为完成。
+as completion.
 
-至少必须证明：
+At minimum must prove:
 
 ```text
 1. World Snapshot can be created
@@ -3031,9 +3031,9 @@ Graph 成为唯一 Source of Truth
 
 ---
 
-# 124. v1.2 Reference Architecture 最终收敛
+# 124. v1.2 Reference Architecture final convergence
 
-SRAF 不应该被实现成：
+SRAF should not be implemented as:
 
 ```text
 Territory SaaS
@@ -3043,11 +3043,11 @@ Scheduler
 Agent Chatbot
 ```
 
-而应该实现成：
+but should be implemented as:
 
 # **Sales Resource Allocation Decision Infrastructure**
 
-其真正稳定的核心是：
+Its truly stable core is:
 
 ```text
 World Semantics
@@ -3069,29 +3069,29 @@ Observed Outcome
 
 ---
 
-# 125. 与现有能力的最终关系
+# 125. Final relationship with existing capabilities
 
-现有 `visit-scheduling-optimizer`：
-
-```text
-不是 SRAF
-```
-
-而是：
+Existing `visit-scheduling-optimizer`:
 
 ```text
-SRAF 的第一个 Reference Decision Engine
+is not SRAF
 ```
 
-未来 Territory、Sizing、Location、Coverage、Routing 也都遵循同样原则：
+but:
 
-> **Engine 可替换，Decision Semantics 不可被 Engine 定义。**
+```text
+SRAF's first Reference Decision Engine
+```
+
+Future Territory, Sizing, Location, Coverage, Routing also follow the same principles:
+
+> **Engine is replaceable, Decision Semantics cannot be defined by Engine.**
 
 ---
 
-# 126. 项目进入工程阶段的最低条件
+# 126. Minimum conditions for project to enter engineering phase
 
-当以下文档和 Vertical Slice 都具备后，才建议正式进入大规模实现：
+When the following documents and Vertical Slice are both available, it is recommended to formally enter large-scale implementation:
 
 ```text
 01 World Model
@@ -3108,19 +3108,19 @@ Scheduling Reference Vertical Slice
 5-case Diagnostic Benchmark
 ```
 
-此后算法扩展才有稳定上层语义。
+After that, algorithm extensions will have stable upper-layer semantics.
 
 ---
 
-# 127. v1.2 主架构结论
+# 127. v1.2 main architecture conclusion
 
-SRAF 最终不以某个算法作为中心，而以：
+SRAF ultimately does not center on a specific algorithm, but on:
 
 # `Decision Case`
 
-作为系统的核心工作单元。
+as the core work unit of the system.
 
-完整闭环：
+Complete closed loop:
 
 ```text
 Observed World
@@ -3142,4 +3142,4 @@ Evidence
 Next Decision
 ```
 
-这就是 SRAF v1.2 的 Reference Architecture 基线。
+This is the S1.2 Reference Architecture baseline.

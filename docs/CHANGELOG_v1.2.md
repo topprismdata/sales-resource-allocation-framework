@@ -1,75 +1,75 @@
 # SRAF Specification Changelog — v1.2
 
-v1.2 是 v1.1 Implementation Baseline 经过外部评审后的**第二版实施基线**。
+v1.2 is the **second implementation baseline** after external review of v1.1 Implementation Baseline.
 
-本版不扩充功能，而是补地基与修硬错误。
+This version does not add features, but fills foundations and fixes hard errors.
 
 ---
 
 ## P0 changes applied
 
-### 1. 新增 `08_CANONICAL_IDENTITY_AND_ENTITY_RESOLUTION.md`
+### 1. New addition `08_CANONICAL_IDENTITY_AND_ENTITY_RESOLUTION.md`
 
-World Model 的「身份真值」地基。核心内容：
+World Model's "identity truth" foundation. Core content:
 
 ```text
-四条不可混淆分界
+Four unconfusable boundaries
     Identity Resolution  != Deduplication
     Entity Merge         != Source Record Merge
     Account              != ServiceLocation
     Identity Confidence  != Business Truth
 
-概念分层 L1 Evidence / L2 Linkage / L3 Semantic / L4 Governance
+Conceptual hierarchy L1 Evidence / L2 Linkage / L3 Semantic / L4 Governance
 
-八种真实情形的判定规则
+Decision rules for eight real-world scenarios
     Same Entity / Duplicate / Same Account+Different Location
     Relocation / Rename / Split / Merge / False Match(Unmerge)
 
-Supersede vs Merge 分离
-层级与集团身份（连锁：Group / store / location 三层 + PART_OF 时效）
+Supersede vs Merge separation
+Hierarchical and group identity (chain: Group / store / location three layers + PART_OF temporal validity)
 
-MatchDecision 三态 + 以错误率(λ/π)而非裸分数定义阈值
-Survivorship 与身份解耦（字段可自动，身份不可自动）
-反 chaining 约束（禁止无约束传递闭包建簇）
-Temporal Identity（resolution append-only + snapshot 固化身份决策集）
-IdentityConfidence 组成化 + 禁止 confidence 在派生链上丢失
+MatchDecision three-state + threshold defined by error rate (λ/π) instead of raw score
+Survivorship decoupled from identity (fields can be automatic, identity cannot be automatic)
+Anti-chaining constraint (prohibiting unconstrained transitive closure clustering)
+Temporal Identity (resolution append-only + snapshot solidifies identity decision set)
+IdentityConfidence compositionalization + prohibiting confidence loss on derivation chain
 
-Identity Invariants I20–I30（并入 B0，违反即 Benchmark 失败）
+Identity Invariants I20–I30 (merged into B0, violation means Benchmark failure)
 Identity Benchmark ID01–ID20 + Identity Gate
 ```
 
-关键设计后果：**`04` 的 H-DATA 假设从不可检验变为可检验**。
-在此之前，`DataQualityIssue` 是垃圾桶标签；
-现在有 subtype、有测试、有阈值、有阻断规则。
+Key design consequence: **`04`'s H-DATA assumption changes from unverifiable to verifiable**.
+Before this, `DataQualityIssue` was a catch-all label;
+Now there are subtypes, tests, thresholds, and blocking rules.
 
-### 2. 修正 schema 级笔误
+### 2. Fix schema-level typos
 
 ```text
 02 §80  approved_approved_decision_id
      -> approved_decision_id
 ```
 
-### 3. 版本措辞统一
+### 3. Unify version wording
 
-消除正文中 `v1.0` / `v1.1` 混杂（00/01/02/04/05/06/07 共 46 处），
-规范性表述统一为当前基线版本。
+Eliminate mixed `v1.0` / `v1.1` in body text (46 occurrences across 00/01/02/04/05/06/07),
+Normative statements unified to current baseline version.
 
-保留的 `v1.0` 字样只有两类，均为正确用法：
+Retained `v1.0` mentions are only in two categories, both correct usage:
 
 ```text
-CHANGELOG / README / CONSISTENCY REPORT 中的历史性指代
-06 §108 的 Benchmark Case 自身版本示例（case v1.0 -> case v1.1），
-    并加注说明它与规范文档版本无关
+Historical references in CHANGELOG / README / CONSISTENCY REPORT
+06 §108 Benchmark Case's own version example (case v1.0 -> case v1.1),
+with note explaining it is unrelated to specification document version
 ```
 
 ---
 
 ## P1 changes applied
 
-### 4. 补 `v1 Engineering Envelope`（07 §110A）
+### 4. Supplement `v1 Engineering Envelope` (07 §110A)
 
-不是系统上限，而是给 DecompositionPlanner / SolverRegistry /
-Projection Cache / Benchmark 的工程契约：
+Not a system upper limit, but an engineering contract for DecompositionPlanner / SolverRegistry /
+Projection Cache / Benchmark:
 
 ```text
 S  Interactive            <=5k Resp Units / <=50 Res      seconds
@@ -77,13 +77,13 @@ M  City/Regional Planning 5k-50k / 50-300                 minutes
 L  Structural Batch       50k-200k / 300-1,000             tens of min - hours
 ```
 
-并绑定 Phase 0–3 的最低承诺档位、各档计算策略切换、
-以及「超出 L 档触发 Aggregation/Sampling 评审而非静默降精度」。
+Also binding Phase 0–3 minimum commitment tiers, each tier's computation strategy switching,
+and "exceeding L tier triggers Aggregation/Sampling review instead of silently degrading precision".
 
-`06 §55 Scale Benchmark` 增加约束：
-reported scale 必须覆盖对应 Phase 档位上界。
+`06 §55 Scale Benchmark` adds constraint:
+reported scale must cover corresponding Phase tier upper bound.
 
-### 5. 补 3 个 Governance Workflow 最低语义（05 §14A）
+### 5. Supplement 3 Governance Workflow minimum semantics (05 §14A)
 
 ```text
 GW01 WorldModelRepair
@@ -91,41 +91,41 @@ GW02 ModelGovernance
 GW03 PolicyReview
 ```
 
-统一纪律：默认 A0/A1、禁止 A2/A3、不得直接改 Canonical World、
-产出「修正提案 + 治理决定」而非资源配置 Candidate、
-必须触发下游 Artifact STALE。
+Unified discipline: default A0/A1, prohibit A2/A3, no direct modification to Canonical World,
+output "correction proposal + governance decision" instead of resource allocation Candidate,
+must trigger downstream Artifact STALE.
 
-明确 `GW03` 与 `RequirementExceptionProposal` 的分界：
-Proposal 是单 Case 内例外，GW03 是跨 Case 的 Policy 语义修订入口。
+Clarify boundary between `GW03` and `RequirementExceptionProposal`:
+Proposal is exception within single Case, GW03 is cross-Case Policy semantic revision entry point.
 
-`02 §93/§94` 路由表同步补 `ModelGovernance` 并指向 §14A。
+`02 §93/§94` routing table synchronously supplements `ModelGovernance` and points to §14A.
 
-### 6. 交叉引用闭环
+### 6. Cross-reference closure
 
 ```text
-00 P21        归属表加入 08
+00 P21        Assignment table joins 08
 01 §1.1       ExternalIdentifier / IdentityResolutionRecord -> 08
-01 §9/§10     Canonical ID 原则保留，schema 去重并指向 08（消除 P21 违例）
-01 §71        新增 IdentityConfidence / IdentityStatus 质量状态
-01 §72        AssertionConflict 的身份冲突形态 -> 08
-02 §21        拥有 4 个 DataQualityIssue 身份 subtype
-03 §3         Contract 新增 identity_snapshot_id / min_identity_confidence
-03 §10        F1 DATA_INFEASIBLE 的身份成因 + 禁止误判为 F4
-04 §10        H6 新增 IdentityConfidence（且为其他置信度的前提）
-04 §22        H-DATA 引用 02/08，不重复定义
-04 §24        新增 IdentityIntegrityTest（4 项子检验）+ Materiality 联动
-05 §1A        所有权加入 GovernanceWorkflow GW01–GW03
-06 §5         新增 I20–I30 指针 + §6 判定细则归属说明
-06 §55        引用 07 §110A
-06 §86        补 Matched Control 工业实证出处（见 §7）
-07 §15        指向 08 + 模块落位 + 存储约束 + 已有 MDM 时的退化规则
+01 §9/§10     Canonical ID principle retained, schema deduplication and points to 08 (eliminating P21 violation)
+01 §71        New addition IdentityConfidence / IdentityStatus quality status
+01 §72        AssertionConflict's identity conflict form -> 08
+02 §21        Has 4 DataQualityIssue identity subtypes
+03 §3         Contract new addition identity_snapshot_id / min_identity_confidence
+03 §10        F1 DATA_INFEASIBLE's identity cause + prohibit misdiagnosis as F4
+04 §10        H6 new addition IdentityConfidence (and prerequisite for other confidences)
+04 §22        H-DATA references 02/08, no redundant definition
+04 §24        Add IdentityIntegrityTest (4 sub-tests) + Materiality linkage
+05 §1A        Ownership added to GovernanceWorkflow GW01–GW03
+06 §5         Add I20–I30 pointer + §6 decision rule attribution description
+06 §55        Reference 07 §110A
+06 §86        Supplement Matched Control industrial empirical source (see §7)
+07 §15        Point to 08 + module placement + storage constraints + degradation rules when MDM already exists
 ```
 
 ---
 
-## 7. 文献锚定（新增，提升可辩护性）
+## 7. Literature Anchoring (new, improve defensibility)
 
-`06 §86` 补入一条真实工业对照研究作为规范依据：
+`06 §86` supplement a real industrial comparative study as normative basis:
 
 ```text
 Zoltners, Sinha & Lorimer,
@@ -133,78 +133,78 @@ Sales Force Design for Strategic Advantage (Palgrave Macmillan, 2004),
 Table 8.3 + p.318-319
 ```
 
-该研究以 realignment 后「更换负责人」的 test 账户组 vs
-未更换的 control 账户组测量 disruption 冲击，
-结果显示影响**仅集中于中等体量账户**（$50–100k），
-小账户与超大账户均不显著。
+This study uses after realignment the 'change of responsible person' test account group vs
+unreplaced control account group measures disruption impact,
+Results show impact **only concentrated in medium-sized accounts** ($50–100k),
+Small accounts and super-large accounts are not significant.
 
-由此产生两条规范含义：
+Thus two normative implications arise:
 
 ```text
-1. Matched Control（V1 证据设计）在销售区域决策中真实可行，
-   不是纯理论要求。
-2. ChangeCost.CustomerRelationshipCost 必须按 account size /
-   relationship strength 分段估计，禁止单一全局 disruption 系数。
+1. Matched Control (V1 evidence design) is truly feasible in sales territory decisions,
+not a purely theoretical requirement.
+2. ChangeCost.CustomerRelationshipCost must be estimated by account size /
+relationship strength segmented estimation, prohibiting a single global disruption coefficient.
 ```
 
-`08 §26` 另附本规范的外部依据清单：
-Fellegi–Sunter 三态决策与错误率上界、Papadakis/Christen ER 综述、
-Papadakis 2023 对「过易」ER 基准的批评（→ 强制难负例）、
-MDM golden-record survivorship / unmerge lineage 惯例、
-Snodgrass 双时态与 Kimball late-arriving dimension。
+`08 §26` additionally provides the external reference list for this specification:
+Fellegi–Sunter three-state decision and error rate upper bound, Papadakis/Christen ER review,
+Papadakis 2023 criticism of 'overly easy' ER benchmarks (→ enforce hard negative examples),
+MDM golden-record survivorship / unmerge lineage practice,
+Snodgrass bitemporal and Kimball late-arriving dimension.
 
 ---
 
-## 8. 已知缺口（v1.3 候选，本版仅登记不实施）
+## 8. Known Gaps (v1.3 candidate, this version only registers, does not implement)
 
-精读上述专著后发现两项 SRAF 目前缺件，与 Identity 无关，
-故不并入本版，但必须显式挂账以免丢失：
+After detailed reading of the above monograph, two SRAF missing components were found, unrelated to Identity,
+Therefore not merged into this version, but must be explicitly charged to avoid loss:
 
-> 更新（v1.2.1）：这两项已在 `CHANGELOG_v1.2.1.md` 重新分级——
-> G1 升级为 DP01 前置 Gate，G2 推迟到 DP04 production。本节保留为历史记录。
-
-```text
-G1 Carryover / 响应滞后未建模
-   专著 Ch7（Fig 7.3, Table 7.3/7.9）：
-   本年销量 = 本年努力 + 往年结转；
-   高结转环境下只看单年 impact 会系统性低估 size 变动的长期效应。
-   风险：SalesResponseEstimate 若把「去年努力的产出」记到
-        本年 Candidate 名下 -> DP01/DP05 增益虚高，
-        B4 Validation 观察窗错配（把滞后效应当成无效）。
-   建议：OpportunityEstimate / SalesResponseEstimate 增加
-        impact_horizon 与 carryover_share 声明；
-        DecisionValidationPlan 强制 minimum_lag_window。
-
-G2 DP04 公平性与合规风险等级不足
-   专著 p.329-330 明确：人员匹配必须使用
-   「一致、客观、可辩护」的标准，并点名法律风险。
-   SRAF 现把 fairness 归为 Preference（03 DP04 / 02 §43）。
-   建议：把「禁止未经 territory 校正的 raw performance 作目标」
-        从约定升为 DP04 Invariant 示例，
-        并要求 protected-attribute 相关规则进入 Requirement 层
-        而非散落在 heuristic。
-```
-
----
-
-## 9. 本轮未做（明确排除）
+> Update (v1.2.1): these two items have been re-graded in `CHANGELOG_v1.2.1.md`——
+> G1 upgraded to DP01 pre-gate, G2 postponed to DP04 production. This section remains as historical record.
 
 ```text
-未进入 visit-scheduling-optimizer 代码 Gap Analysis（Step 4）
-未新增 DP08 或任何新 Atomic Decision Problem
-未引入新存储组件（identity 仍落 PostgreSQL）
-未修改 00 Charter 的原则集合（仅补归属表第 08 行）
+G1 Carryover / response lag not modeled
+Monograph Ch7 (Fig 7.3, Table 7.3/7.9):
+This year's sales = this year's effort + prior-year carryover;
+In high carryover environment, only looking at single-year impact systematically underestimates the long-term effect of size changes.
+Risk: If SalesResponseEstimate attributes 'last year's effort output' to
+this year's Candidate -> DP01/DP05 gain inflated,
+B4 Validation observation window mismatch (treating lag effect as invalid).
+Suggestion: OpportunityEstimate / SalesResponseEstimate add
+impact_horizon and carryover_share declarations;
+DecisionValidationPlan enforces minimum_lag_window.
+
+G2 DP04 fairness and compliance risk level insufficient
+Monograph p.329-330 explicitly: personnel matching must use
+'consistent, objective, defensible' standards, and point out legal risk.
+SRAF currently classifies fairness as Preference (03 DP04 / 02 §43).
+Suggestion: raise 'prohibit raw performance without territory correction as target'
+from convention to DP04 Invariant example,
+and require protected-attribute related rules to enter the Requirement layer
+rather than scattered in heuristics.
 ```
 
 ---
 
-## Implementation restraint（继承 v1.1 并强化）
+## 9. Not Done This Round (explicitly excluded)
+
+```text
+Not entering visit-scheduling-optimizer code Gap Analysis (Step 4)
+No new DP08 or any new Atomic Decision Problem added
+No new storage component introduced (identity still resides in PostgreSQL)
+No modification to the principle set of 00 Charter (only supplemented row 08 of the attribution table)
+```
+
+---
+
+## Implementation restraint (inherits v1.1 and strengthens)
 
 ```text
 Modular Monolith First
 No dedicated graph DB in Phase 0–3
 No generic BPMN requirement in Phase 0
 No new solver platform before the vertical slice proves need
-No enterprise MDM rebuild: 已有 MDM 时 SRAF 为消费方，
-    但 Identity Gate 仍必须对上游产出跑通（07 §15 / 08 §23.4）
+No enterprise MDM rebuild: When an MDM already exists, SRAF acts as a consumer.
+But Identity Gate still must run through upstream outputs (07 §15 / 08 §23.4)
 ```

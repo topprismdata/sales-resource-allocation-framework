@@ -1,11 +1,11 @@
 # SRAF Evaluation & Benchmark Specification v1.2
 
-**项目：** Sales Resource Allocation Framework  
-**简称：** SRAF  
-**文档：** `06_EVALUATION_AND_BENCHMARK.md`  
-**状态：** Implementation Baseline v1.2  
+**Project:** Sales Resource Allocation Framework
+**Abbreviation:** SRAF
+**Document:** `06_EVALUATION_AND_BENCHMARK.md`
+**Status:** Implementation Baseline v1.2
 
-**上位规范：**
+**Upper-level Specification:**
 
 ```text
 00_PROJECT_CHARTER.md
@@ -18,13 +18,13 @@
 
 ---
 
-## 1. 文档目标
+## 1. Document Objectives
 
-SRAF 的评价目标不是证明：
+SRAF's evaluation goal is not to prove:
 
-> “Solver 能跑出一个结果。”
+> "Solver can produce a result."
 
-而是证明整个决策链：
+but to prove the entire decision chain:
 
 ```text
 World
@@ -42,9 +42,9 @@ Execution
 Observed Outcome
 ```
 
-在语义、诊断、数学、决策和业务结果五个层面都具有可验证性。
+It is verifiable at five levels: semantic, diagnostic, mathematical, decision, and business result.
 
-因此 SRAF v1.2 固定五级 Benchmark：
+Therefore SRAF v1.2 fixes a five-level Benchmark:
 
 ```text
 B0 Semantic Correctness
@@ -54,7 +54,7 @@ B3 Decision Quality
 B4 Business Outcome Validation
 ```
 
-并增加一个贯穿所有层级的横向维度：
+and adds a horizontal dimension that traverses all levels:
 
 ```text
 G — Governance / Auditability / Safety
@@ -62,27 +62,27 @@ G — Governance / Auditability / Safety
 
 ---
 
-## 2. 为什么不能只做 Solver Benchmark
+## 2. Why Can't We Only Do a Solver Benchmark
 
-一个销售资源配置系统可能出现：
+A sales resource allocation system may exhibit:
 
 ```text
 Solver status = OPTIMAL
 ```
 
-但业务决策仍然错误。
+but business decisions remain incorrect.
 
-例如：
+For example:
 
-- 把 Coverage Policy 问题误诊为 Headcount Shortage；
-- 将错误经纬度导致的 Travel Gap 当成 Territory Gap；
-- 数学上更平衡，但大量高价值客户被换负责人；
-- Candidate objective 改善 2%，但 ChangeCost 高于收益；
-- 历史回测使用了当时尚未知的数据，产生 Look-ahead Bias；
-- 周期 workload 可行，但真实日期约束导致 Scheduling 无解；
-- Territory 更紧凑，但道路网络导致实际 Travel 更差。
+- Misdiagnosing a Coverage Policy issue as a Headcount Shortage;
+- Treating a Travel Gap caused by erroneous latitude/longitude as a Territory Gap;
+- Being mathematically more balanced, but many high-value customers are reassigned;
+- Candidate objective improves by 2%, but ChangeCost exceeds the benefit;
+- Historical backtesting uses data that was not yet known at the time, causing Look-ahead Bias;
+- Periodic workload is feasible, but real-date constraints lead to Scheduling being unsolvable;
+- Territory is more compact, but the road network results in worse actual Travel.
 
-因此：
+Therefore:
 
 \[
 SolverCorrectness
@@ -90,7 +90,7 @@ SolverCorrectness
 DecisionCorrectness
 \]
 
-更不等于：
+does not equal:
 
 \[
 BusinessOutcomeImprovement
@@ -98,7 +98,7 @@ BusinessOutcomeImprovement
 
 ---
 
-## 3. Benchmark 总体架构
+## 3. Benchmark Overall Architecture
 
 ```text
                    SRAF BENCHMARK STACK
@@ -124,36 +124,36 @@ Cross-cutting:
 Governance / Evidence / Reproducibility / Safety
 ```
 
-任何高层 Benchmark 失败，都必须能够下钻到低层。
+Any high-level Benchmark failure must be drillable down to lower levels.
 
 ---
 
 # Part I — B0 Semantic Correctness
 
-## 4. B0 的目标
+## 4. B0 Objectives
 
-B0 回答：
+B0 answers:
 
-> **SRAF 是否正确表达了销售世界与决策世界？**
+> **Is SRAF correctly expressing the sales world and decision world?**
 
-它不测试“方案好不好”。
+It does not test "whether the plan is good".
 
-它测试：
+It tests:
 
-- Entity 是否具有正确 identity；
-- Time 是否正确；
-- Fact / Estimate / Assumption 是否区分；
-- Responsibility 是否被错误压扁成 `owner_id`；
-- Territory 是否被错误等同 Polygon；
-- Scenario 是否污染 Observed World；
-- Candidate 是否被错误写成 World Truth；
-- Solver-specific fields 是否污染 Canonical Model。
+- Whether Entity has correct identity;
+- Whether Time is correct;
+- Whether Fact / Estimate / Assumption are distinguished;
+- Whether Responsibility is incorrectly flattened into `owner_id`;
+- Whether Territory is incorrectly equated with Polygon;
+- Whether Scenario pollutes Observed World;
+- Whether Candidate is incorrectly written as World Truth;
+- Solver-specific fields pollute Canonical Model.
 
 ---
 
-## 5. B0 必须达到的原则
+## 5. B0 Must meet the principles
 
-以下属于 Critical Semantic Invariant：
+The following belong to Critical Semantic Invariant:
 
 ```text
 I01 Canonical ID independent from source-system ID
@@ -177,30 +177,30 @@ I18 TerritoryMembership links Territory to Responsibility, not ResponsibilityAss
 I19 LocalAllocationGap != AllocationGap base class
 ```
 
-I20–I30（Canonical Identity 与实体解析）由
-`08_CANONICAL_IDENTITY_AND_ENTITY_RESOLUTION.md` §21 拥有，
-同样属于 Critical Semantic Invariant：违反则 B0 直接失败。
-其配套 Benchmark Case Family `ID01–ID20`、指标
-（FalseMatchRate / BlockingRecall / UnmergeRate /
-IdentityConfoundedGapRate / ReplayIdentityLeakageRate）
-与 Identity Gate 见 08 §23。
+I20–I30 (Canonical Identity and Entity Resolution) are owned by
+`08_CANONICAL_IDENTITY_AND_ENTITY_RESOLUTION.md` §21 owns,
+Also belongs to Critical Semantic Invariant: violation directly fails B0.
+Its associated Benchmark Case Family `ID01–ID20`, metrics
+(FalseMatchRate / BlockingRecall / UnmergeRate /
+IdentityConfoundedGapRate / ReplayIdentityLeakageRate)
+and Identity Gate see 08 §23.
 
-Critical Invariant 违反时：
+When Critical Invariant is violated:
 
-> Benchmark 直接失败，不进入更高层评价。
+> Benchmark fails directly, does not enter higher-level evaluation.
 
-> 注：本文件 §6 Test 6.1–6.3 只规定「必须测什么」；
-> 判定规则、阈值语义（错误率上界 λ/π）与人工权限矩阵由 08 规定。
+> Note: This document §6 Test 6.1–6.3 only specifies 'what must be tested';
+> Judgment rules, threshold semantics (error rate upper bound λ/π) and human permission matrix are specified by 08.
 
 ---
 
 ## 6. Entity Identity Tests
 
-至少测试：
+At least test:
 
 ### Test 6.1 — Multi-source Identity
 
-同一客户存在：
+The same customer exists:
 
 ```text
 CRM_ID = 1001
@@ -208,33 +208,33 @@ ERP_ID = C882
 External_POI_ID = POI_991
 ```
 
-应解析到同一：
+Should resolve to the same:
 
 ```text
 CanonicalAccount
 ```
 
-但保留三个 ExternalIdentifier。
+but keep three ExternalIdentifiers.
 
 ---
 
 ### Test 6.2 — Source ID Collision
 
-两个系统均存在：
+Both systems exist:
 
 ```text
 ID = 1001
 ```
 
-但真实实体不同。
+but the real entities are different.
 
-Canonical ID 不允许冲突。
+Canonical ID must not conflict.
 
 ---
 
 ### Test 6.3 — Location Change
 
-同一 Account 搬迁：
+The same Account is relocated:
 
 ```text
 ServiceLocation A
@@ -242,13 +242,13 @@ ServiceLocation A
 ServiceLocation B
 ```
 
-Account identity 不应改变。
+Account identity should not change.
 
 ---
 
 ## 7. Responsibility Semantic Tests
 
-必须验证：
+Must verify:
 
 ```text
 Account A
@@ -257,9 +257,9 @@ Merchandising → Rep 2
 KA Negotiation → KAM 3
 ```
 
-能够同时成立。
+Can be simultaneously true.
 
-系统不得将其压缩成：
+System must not compress it into:
 
 ```text
 Account A owner = Rep1
@@ -269,7 +269,7 @@ Account A owner = Rep1
 
 ## 7A. Resource Deployment Semantic Tests
 
-必须验证：
+Must verify:
 
 ```text
 ResourceDeployment may exist while vacant
@@ -278,7 +278,7 @@ DeploymentAssignment is temporal
 Person.home_location does not equal Deployment.base_location
 ```
 
-Greenfield Case 中应允许：
+Greenfield case should allow:
 
 ```text
 ResourceRequirement
@@ -290,11 +290,11 @@ ResourceRequirement
 
 ## 8. Territory Semantic Tests
 
-至少测试：
+At least test:
 
 ### Geographic Territory
 
-连续地理区域。
+Continuous geographic area.
 
 ### Non-contiguous KA Territory
 
@@ -305,21 +305,21 @@ Guangzhou
 Chengdu
 ```
 
-仍然必须是合法 Territory。
+Must still be a legal Territory.
 
 ### Overlay Territory
 
-Field / KA / Merchandising / Product Specialist 同时存在。
+Field / KA / Merchandising / Product Specialist must exist simultaneously.
 
-如果 Ontology 无法表达，则 B0 失败。
+If the Ontology cannot express it, B0 fails.
 
 ---
 
 ## 9. Temporal Correctness
 
-必须测试 Bitemporal 行为。
+Must test bitemporal behavior.
 
-案例：
+Case:
 
 ```text
 Actual store close date:
@@ -329,25 +329,25 @@ System learned:
 2026-08-12
 ```
 
-查询：
+Query:
 
 ```text
 knowledge_time = 2026-08-05
 ```
 
-不得看到“门店已经关闭”的未来信息。
+Must not see future information about "store already closed".
 
 ---
 
 ## 10. Look-ahead Leakage Test
 
-历史 Decision Replay 必须使用：
+Historical Decision Replay must use:
 
 ```text
 known_at <= decision_time
 ```
 
-禁止使用：
+Prohibited from using:
 
 ```text
 future closure
@@ -357,26 +357,26 @@ future road update
 future account correction
 ```
 
-这是 B0 与 B4 历史回测共同的强制 Gate。
+This is the mandatory Gate for B0 and B4 historical backtesting.
 
 ---
 
 ## 11. Scenario Isolation Test
 
-创建：
+Create:
 
 ```text
 Scenario:
 +6 resources
 ```
 
-必须验证：
+Must verify:
 
 ```text
 Observed World resource count unchanged
 ```
 
-Scenario 被删除后不能残留：
+Scenario must not leave residuals after deletion:
 
 ```text
 Deployment
@@ -385,21 +385,21 @@ CoverageCommitment
 Territory
 ```
 
-等状态。
+Wait for status.
 
 ---
 
 ## 12. Candidate Isolation Test
 
-Solver 产生：
+Solver generates:
 
 ```text
 CandidateTerritory V1
 ```
 
-Canonical World 中 active Territory 不应变化。
+In the Canonical World, active Territory should not change.
 
-只有：
+Only:
 
 ```text
 Candidate
@@ -408,13 +408,13 @@ Candidate
 → Event
 ```
 
-之后才允许改变。
+Changes are allowed only thereafter.
 
 ---
 
 ## 13. Semantic Status Tests
 
-同一业务陈述必须允许不同状态：
+The same business statement must allow different states:
 
 ```text
 ObservedFact
@@ -428,19 +428,19 @@ DecisionOutput
 ScenarioAssumption
 ```
 
-例如：
+For example:
 
 ```text
 Account A potential = High
 ```
 
-如果来自模型，应标记：
+If coming from the model, should be marked:
 
 ```text
 ModelEstimate
 ```
 
-不能变成：
+Cannot become:
 
 ```text
 MasterDataFact
@@ -450,7 +450,7 @@ MasterDataFact
 
 ## 14. Provenance Completeness
 
-以下对象至少需要 Provenance：
+The following objects require at least Provenance:
 
 ```text
 OpportunityEstimate
@@ -462,27 +462,27 @@ CandidateDecision
 ProblemRun
 ```
 
-Benchmark 报告：
+Benchmark report:
 
 ```text
 ProvenanceCompletenessRate
 ```
 
-Critical production objects 原则上要求完整。
+Critical production objects require completeness in principle.
 
 ---
 
 ## 15. B0 Property-based / Metamorphic Tests
 
-建议加入属性测试。
+Suggest adding attribute tests.
 
 ### Input Order Invariance
 
-改变输入记录顺序，不应改变 deterministic semantic result。
+Changing the order of input records should not change the deterministic semantic result.
 
 ### ID Relabeling Invariance
 
-仅重新命名内部测试 ID，不应改变决策语义。
+Merely renaming internal test IDs should not change decision semantics.
 
 ### Scenario Isolation
 
@@ -490,40 +490,40 @@ Scenario changes must not mutate baseline.
 
 ### Graph Rebuild
 
-删除 Graph Projection 后，应能由 Canonical State 重建。
+After deleting a Graph Projection, it should be reconstructible from the Canonical State.
 
 ### Snapshot Immutability
 
-已建立 WorldSnapshot 后，原引用状态不得被静默修改。
+After a WorldSnapshot is established, the original referenced state must not be silently modified.
 
 ---
 
 # Part II — B1 Diagnostic Correctness
 
-## 16. B1 的目标
+## 16. B1 Goal
 
-B1 回答：
+B1 answers:
 
-> **系统是否正确判断“到底是什么问题”？**
+> **Is the system correctly judging "what exactly is the problem"?**
 
-这是 SRAF 与普通 Territory Optimizer 最重要的 Benchmark 层之一。
+This is one of the most important Benchmark layers of SRAF compared with ordinary Territory Optimizer.
 
-必须特别防止：
+Must specially prevent:
 
 ```text
-销售跑不过来
-→ 缺人
+Sales cannot keep up.
+→ lacking personnel.
 ```
 
-这种未经诊断的直接跳跃。
+This kind of direct jump without diagnosis.
 
 ---
 
-## 17. B1 Benchmark 的 Ground Truth
+## 17. B1 Benchmark Ground Truth
 
-真实业务数据中 Root Cause 往往没有绝对 Ground Truth。
+In real business data, Root Cause often lacks an absolute Ground Truth.
 
-因此 B1 使用三类真值：
+Therefore B1 uses three types of ground truth:
 
 ```text
 T1 Constructed Ground Truth
@@ -535,30 +535,30 @@ T3 Outcome-supported Ground Truth
 
 ## 18. T1 Constructed Ground Truth
 
-通过 synthetic / semi-synthetic 数据主动制造问题。
+Actively create problems via synthetic / semi-synthetic data.
 
-例如：
+For example:
 
 ```text
-保持总 Capacity 不变
-只将 Territory 负载人为打乱
+Keep total Capacity unchanged.
+Only artificially disrupt the Territory load.
 ```
 
-那么 Ground Truth：
+Then the Ground Truth:
 
 ```text
 AllocationImbalance
 ```
 
-是已知的。
+is known.
 
-这种 Benchmark 最适合验证 Problem Router。
+This kind of Benchmark is most suitable for validating the Problem Router.
 
 ---
 
 ## 19. T2 Expert-adjudicated Ground Truth
 
-对于历史真实案例，由多个业务/OR专家独立判断：
+For historical real cases, multiple business/OR experts independently judge:
 
 ```text
 Primary Root Cause
@@ -566,42 +566,42 @@ Contributing Causes
 Not Supported Causes
 ```
 
-若专家不一致：
+If experts disagree:
 
 ```text
 Contested
 ```
 
-而不是强造唯一标签。
+rather than forcing a single label.
 
 ---
 
 ## 20. T3 Outcome-supported Ground Truth
 
-例如历史上：
+For example historically:
 
 ```text
-没有增员
-只调整 Territory
+no staff increase.
+only adjust Territory.
 ```
 
-之后 Gap 显著下降。
+after which Gap drops significantly.
 
-这可以作为：
+This can serve as:
 
 ```text
 TerritoryImbalance
 ```
 
-的支持证据。
+supporting evidence.
 
-但不能视为严格因果真值，除非实验设计足够强。
+However it cannot be regarded as a strict causal ground truth unless the experimental design is strong enough.
 
 ---
 
 ## 21. B1 Canonical Benchmark Cases
 
-v1.2 至少固定以下 Case Family。
+v1.2 must fix at least the following Case Family.
 
 ```text
 D01 True Capacity Shortage
@@ -624,7 +624,7 @@ D14 Unknown / Insufficient Evidence
 
 ## 22. D01 — True Capacity Shortage
 
-构造：
+Construct:
 
 ```text
 All territories:
@@ -642,7 +642,7 @@ sufficient
 No meaningful idle capacity nearby
 ```
 
-期望：
+Expect:
 
 ```text
 Primary route:
@@ -653,7 +653,7 @@ DP01 ResourceSizing / CapacityExpansion
 
 ## 23. D02 — Local Territory Imbalance
 
-构造：
+Construct:
 
 ```text
 Global capacity >= demand
@@ -663,22 +663,22 @@ T2 = 65%
 T3 = 80%
 ```
 
-Travel 正常。
+Travel normal.
 
-期望：
+Expect:
 
 ```text
 Primary:
 DP03 TerritoryAlignment
 ```
 
-而不是 DP01。
+instead of DP01.
 
 ---
 
 ## 24. D03 — Resource Location Mismatch
 
-构造：
+Construct:
 
 ```text
 Total intrinsic workload feasible
@@ -689,13 +689,13 @@ Travel burden = 38%
 Peer = 18%
 ```
 
-替代驻点释放：
+Substitute station release:
 
 ```text
 +0.6 RE
 ```
 
-期望：
+Expect:
 
 ```text
 DP02 ResourceLocation
@@ -705,21 +705,21 @@ DP02 ResourceLocation
 
 ## 25. D04 — Coverage Policy Over-allocation
 
-构造：
+Construct:
 
 ```text
 low opportunity accounts
 consume large field capacity
 ```
 
-Coverage stress scenario：
+Coverage stress scenario: 
 
 ```text
 workload -20%
 opportunity coverage -2%
 ```
 
-期望：
+Expect:
 
 ```text
 DP05 CoverageAllocation
@@ -727,13 +727,13 @@ or
 PolicyReview
 ```
 
-而不是加人。
+instead of adding personnel.
 
 ---
 
 ## 26. D05 — Capability Mismatch
 
-构造：
+Construct:
 
 ```text
 Total capacity = sufficient
@@ -741,7 +741,7 @@ KA eligible capacity = insufficient
 Generalist idle capacity = high
 ```
 
-期望：
+Expect:
 
 ```text
 DP04 PersonnelMatching
@@ -753,13 +753,13 @@ ResourcePool / capability action
 
 ## 27. D06 — Temporal Scheduling Infeasibility
 
-构造：
+Construct:
 
 ```text
 Monthly workload <= monthly capacity
 ```
 
-但：
+However:
 
 ```text
 Tuesday-only
@@ -768,34 +768,34 @@ time windows
 fixed-area day
 ```
 
-冲突。
+conflict.
 
-期望：
+Expect:
 
 ```text
 DP06 VisitScheduling
 TEMPORAL_STRUCTURAL_INFEASIBILITY
 ```
 
-不能诊断为 Global Capacity Shortage。
+Cannot diagnose as Global Capacity Shortage.
 
 ---
 
 ## 28. D07 — Daily Routing Inefficiency
 
-构造：
+Construct:
 
 ```text
 Daily stop set is feasible
 ```
 
-但随机差序导致：
+but random ordering leads to:
 
 ```text
 travel +40%
 ```
 
-期望：
+Expect:
 
 ```text
 DP07 DailyRouting
@@ -805,7 +805,7 @@ DP07 DailyRouting
 
 ## 29. D08 — Data Quality Corruption
 
-例如：
+For example:
 
 ```text
 20% coordinates shifted
@@ -813,26 +813,26 @@ duplicate accounts inserted
 stale service times
 ```
 
-期望：
+Expect:
 
 ```text
 WorldModelRepair
 ```
 
-不能触发 Structural Decision。
+Cannot trigger Structural Decision.
 
 ---
 
 ## 30. D09 — Model Quality Error
 
-数据正确，但：
+Data is correct, but:
 
 ```text
 Opportunity model systematically
 overpredicts remote accounts
 ```
 
-期望：
+Expected:
 
 ```text
 ModelGovernance
@@ -842,71 +842,71 @@ ModelGovernance
 
 ## 31. D10 — Policy Conflict
 
-两条 Hard Policy 无法同时满足。
+Two Hard Policies cannot be satisfied simultaneously.
 
-期望：
+Expected:
 
 ```text
 POLICY_INFEASIBLE
 PolicyReview
 ```
 
-而不是 Solver Failure。
+instead of Solver Failure.
 
 ---
 
 ## 32. D11 — Temporary Seasonal Overload
 
-构造：
+Construct:
 
 ```text
 4-week promotion spike
 ```
 
-历史季节模式说明之后恢复。
+Historical seasonal pattern indicates recovery after.
 
-期望：
+Expected:
 
 ```text
 TemporaryGap
 Monitor / temporary support
 ```
 
-而不是 Territory Realignment。
+instead of Territory Realignment.
 
 ---
 
 ## 33. D12 — High ChangeCost / Maintain Preferred
 
-构造：
+Construct:
 
-Candidate：
+Candidate: 
 
 ```text
 Travel -3%
 Opportunity +1%
 ```
 
-但：
+But:
 
 ```text
 40% key accounts reassigned
 relationship disruption high
 ```
 
-期望：
+Expected:
 
 ```text
 MaintainCurrentState
 ```
 
-至少应该保留为强候选。
+At least should be retained as a strong candidate.
 
 ---
 
 ## 34. D13 — Mixed Cause
 
-例如：
+For example:
 
 ```text
 Capacity shortage 40%
@@ -914,7 +914,7 @@ Travel inefficiency 35%
 Territory imbalance 25%
 ```
 
-系统应允许：
+System should allow:
 
 ```text
 Primary
@@ -922,32 +922,32 @@ Contributing
 Alternative
 ```
 
-而不是强迫一个唯一标签。
+instead of forcing a unique label.
 
 ---
 
 ## 35. D14 — Insufficient Evidence
 
-当：
+When:
 
 ```text
 Opportunity confidence low
 travel data stale
 ```
 
-期望：
+Expected:
 
 ```text
 RequestMoreEvidence
 ```
 
-而不是硬给 Root Cause。
+instead of hard assign Root Cause.
 
 ---
 
-## 36. B1 核心指标
+## 36. B1 Core Metrics
 
-至少报告：
+Report at least:
 
 ```text
 ProblemRoutingAccuracy
@@ -965,30 +965,30 @@ CalibrationByConfidence
 
 ## 37. False Expansion Recommendation Rate
 
-定义：
+Definition:
 
-> 本不需要新增资源的 Case 中，被错误建议进入 Expansion 的比例。
+> In cases that do not require new resources, the proportion incorrectly suggested to enter Expansion.
 
-这是 SRAF v1.2 强制报告指标。
+This is a mandatory reporting metric in SRAF v1.2.
 
-因为：
+Because:
 
 ```text
-忙
-→ 加人
+Busy
+→ Add personnel
 ```
 
-是销售资源配置中高成本的典型误诊。
+It is a typical misdiagnosis of high-cost sales resource allocation.
 
 ---
 
 ## 38. False Structural Trigger Rate
 
-定义：
+Definition:
 
-> 临时、数据、模型或执行问题，被错误升级为 Structural Decision 的比例。
+> Proportion of temporary, data, model, or execution issues incorrectly escalated to Structural Decision.
 
-尤其测试：
+Especially test:
 
 ```text
 seasonality
@@ -1002,29 +1002,29 @@ route delay
 
 ## 39. Confidence Calibration
 
-如果系统输出：
+If the system outputs:
 
 ```text
 TerritoryImbalance confidence = 0.8
 ```
 
-长期来看，类似置信区间的判断质量应与真实正确率大致一致。
+In the long term, the quality of judgments similar to confidence intervals should roughly match the true accuracy.
 
-v1.2 不要求复杂概率校准模型，但必须避免：
+v1.2 does not require complex probability calibration models, but must avoid:
 
-> 所有结论都 0.9 以上。
+> All conclusions above 0.9.
 
 ---
 
 # Part III — B2 Mathematical / Solver Correctness
 
-## 40. B2 的目标
+## 40. B2 Goal
 
-B2 回答：
+B2 answers:
 
-> **在 Decision Problem 已经被正确框定后，数学模型和 Solver 是否正确解决了这个问题？**
+> **After the Decision Problem has been correctly framed, has the mathematical model and Solver correctly solved the problem?**
 
-这里必须严格区分：
+Here must strictly distinguish:
 
 ```text
 Business Feasibility
@@ -1048,9 +1048,9 @@ M4 Stress / Failure Tests
 
 ## 42. M0 — Analytical Toy Cases
 
-手工可计算。
+Manually computable.
 
-例如：
+For example:
 
 ```text
 2 resources
@@ -1059,15 +1059,15 @@ simple workload
 known travel
 ```
 
-人工知道唯一最优解。
+The human knows the unique optimal solution.
 
-要求：
+Requirement:
 
 ```text
 model result == analytical result
 ```
 
-适合检查：
+Suitable for checking:
 
 ```text
 constraint encoding
@@ -1079,13 +1079,13 @@ unit conversion
 
 ## 43. M1 — Exact Small Instances
 
-对小规模问题使用 Exact Solver 得到：
+Use Exact Solver on small-scale problems to obtain:
 
 ```text
 OptimalSolution
 ```
 
-然后比较：
+Then compare:
 
 ```text
 Heuristic
@@ -1094,27 +1094,27 @@ Local Search
 Metaheuristic
 ```
 
-的 gap。
+gap.
 
 ---
 
 ## 44. Optimality Claim Test
 
-如果 Engine 声称：
+If the Engine claims:
 
 ```text
 OPTIMAL
 ```
 
-必须有 Solver proof / exact certificate 或框架认可的证明。
+Must have Solver proof / exact certificate or framework-approved proof.
 
-Heuristic 不允许标记：
+Heuristic is not allowed to mark:
 
 ```text
 optimal
 ```
 
-只能：
+Can only:
 
 ```text
 FEASIBLE_HEURISTIC
@@ -1126,26 +1126,26 @@ BOUNDED_GAP
 
 ## 45. Feasibility Preservation
 
-任何 Candidate 必须重新执行独立 Validation：
+Any Candidate must re-execute independent Validation:
 
 ```text
 InvariantChecker
 HardConstraintChecker
 ```
 
-不能只相信 Solver 自己报告。
+Cannot solely trust the Solver's own report.
 
 ---
 
 ## 46. Independent Constraint Checker
 
-建议 Solver Model 之外实现独立：
+Recommend implementing independent outside the Solver Model:
 
 ```text
 CandidateConstraintValidator
 ```
 
-用于验证：
+Used to verify:
 
 ```text
 coverage
@@ -1156,13 +1156,13 @@ eligibility
 temporal overlap
 ```
 
-这样可发现 Model Encoding Bug。
+This can discover Model Encoding Bug.
 
 ---
 
 ## 47. Infeasibility Classification Benchmark
 
-必须专门测试：
+Must specifically test:
 
 ```text
 DATA_INFEASIBLE
@@ -1174,29 +1174,29 @@ MODEL_INFEASIBLE
 SOLVER_FAILURE
 ```
 
-目标不仅是“发现无解”，还要：
+Goal is not only to 'find infeasibility', but also to:
 
-> 分类正确。
+> Classification correct.
 
 ---
 
 ## 48. Solver Failure ≠ Business Infeasible Test
 
-人为设置：
+Artificially set:
 
 ```text
 runtime = 1 ms
 ```
 
-使 Solver timeout。
+Cause Solver timeout.
 
-系统必须返回：
+System must return:
 
 ```text
 SOLVER_FAILURE / TIME_LIMIT
 ```
 
-不能返回：
+Cannot return:
 
 ```text
 RESOURCE_INFEASIBLE
@@ -1206,11 +1206,11 @@ RESOURCE_INFEASIBLE
 
 ## 49. Policy Conflict Test
 
-构造 mutually exclusive hard policies。
+Construct mutually exclusive hard policies.
 
-Precheck / policy checker 应在 Solver 前发现。
+Precheck / policy checker should be discovered before Solver.
 
-目标：
+Goal:
 
 ```text
 solver_not_called = true
@@ -1220,7 +1220,7 @@ solver_not_called = true
 
 ## 50. Resource Infeasibility Test
 
-构造：
+Construct:
 
 ```text
 required workload = 1000
@@ -1228,13 +1228,13 @@ capacity = 500
 coverage immutable
 ```
 
-应在 Precheck 阶段识别。
+Should be identified in the Precheck phase.
 
 ---
 
 ## 51. Structural Infeasibility Test
 
-全局资源够，但由于：
+Global resources are sufficient, but due to:
 
 ```text
 boundary
@@ -1242,41 +1242,41 @@ capability
 location
 ```
 
-局部无解。
+Locally infeasible.
 
-要求与 Global Capacity Shortage 区分。
+Must be distinguished from Global Capacity Shortage.
 
 ---
 
 ## 52. Mathematical Metamorphic Tests
 
-在满足适用条件时测试。
+Test when applicable conditions are met.
 
 ### Record Order Invariance
 
-输入顺序变化不改变 deterministic optimum。
+Input order changes do not change deterministic optimum.
 
 ### Label Permutation Invariance
 
-资源 ID / Account ID 置换后，结果应同构。
+After swapping Resource ID / Account ID, results should be isomorphic.
 
 ### Constraint Relaxation Monotonicity
 
-仅放松 constraint 时，最优目标不应变差。
+When only relaxing constraints, the optimal objective should not worsen.
 
 ### Optional Capacity Monotonicity
 
-在“新增 capacity 可选择不用”的模型中，增加可用 capacity 不应降低最佳可达 objective。
+In the model where 'new capacity can be optionally unused', increasing available capacity should not reduce the best achievable objective.
 
 ### Feasible-set Restriction
 
-新增 Hard Constraint 后，原 infeasible candidate 不得仍被判定 feasible。
+After adding a new Hard Constraint, the originally infeasible candidate must not still be judged feasible.
 
 ---
 
 ## 53. Random Seed Reproducibility
 
-Heuristic / metaheuristic：
+Heuristic / metaheuristic: 
 
 ```text
 same snapshot
@@ -1286,19 +1286,19 @@ same params
 same seed
 ```
 
-应可复现同一结果或定义的 deterministic trace。
+Should be able to reproduce the same result or defined deterministic trace.
 
 ---
 
 ## 54. Stochastic Stability
 
-不同 seed：
+Different seed:
 
 ```text
 N runs
 ```
 
-报告：
+Report:
 
 ```text
 best
@@ -1308,15 +1308,15 @@ objective distribution
 constraint violation rate
 ```
 
-不能只展示最好的一次。
+Cannot only show the best run.
 
 ---
 
 ## 55. Scale Benchmark
 
-每个 Solver Adapter 必须声明测试规模。
+Each Solver Adapter must declare test scale.
 
-例如：
+For example:
 
 ```text
 accounts:
@@ -1326,7 +1326,7 @@ resources:
 10 / 50 / 200 / 500
 ```
 
-报告：
+Report:
 
 ```text
 runtime
@@ -1336,44 +1336,44 @@ final gap
 candidate quality
 ```
 
-reported scale 必须覆盖 `07_REFERENCE_ARCHITECTURE.md` §110A
-v1 Engineering Envelope 中对应实施 Phase 的档位上界（S/M/L），
-不得只在玩具实例报告性能。
+reported scale must cover `07_REFERENCE_ARCHITECTURE.md` §110A
+In v1 Engineering Envelope, the upper bound of the tier (S/M/L) corresponding to the implementation Phase,
+Must not report performance only on toy instances.
 ---
 
 ## 56. Time-to-First-Feasible
 
-对于业务交互尤其重要。
+Especially important for business interactions.
 
-不仅报告：
+Not only report:
 
 ```text
 time to final
 ```
 
-还应报告：
+Should also report:
 
 ```text
 time_to_first_feasible
 ```
 
-因为季度规划与 Interactive What-if 对响应时间要求不同。
+Because quarterly planning and Interactive What-if have different response time requirements.
 
 ---
 
 ## 57. Oracle Correctness
 
-Feasibility Oracle 本身也需要 Benchmark。
+Feasibility Oracle itself also needs Benchmark.
 
-例如 Scheduling Oracle：
+For example Scheduling Oracle:
 
 ```text
 Oracle says FEASIBLE
 ```
 
-之后完整 Scheduler 应能实际生成可行 schedule。
+Then the full Scheduler should be able to actually generate a feasible schedule.
 
-统计：
+Statistics:
 
 ```text
 FalseFeasibleRate
@@ -1384,7 +1384,7 @@ FalseInfeasibleRate
 
 ## 58. Multi-fidelity Correlation
 
-例如 Territory：
+For example Territory:
 
 ```text
 L1 compactness
@@ -1392,17 +1392,17 @@ L2 network travel
 L3 routing simulation
 ```
 
-应测量：
+Should measure:
 
-> L1 / L2 对 L3 的排序相关性。
+> Correlation of L1 / L2 rankings with L3.
 
-如果 L1 与真实 Routing 几乎无关，就不能作为有效筛选 Proxy。
+If L1 is almost unrelated to the real Routing, it cannot serve as an effective screening Proxy.
 
 ---
 
 ## 59. Solver Adapter Contract Test
 
-每个 Solver Adapter 必须通过：
+Each Solver Adapter must pass:
 
 ```text
 input schema
@@ -1415,19 +1415,19 @@ provenance
 candidate interpretation
 ```
 
-一致性测试。
+Consistency test.
 
 ---
 
 # Part IV — B3 Decision Quality
 
-## 60. B3 的目标
+## 60. B3 Goal
 
-B3 回答：
+B3 answers:
 
-> **即使 Solver 正确，这个 Candidate 相对于 Baseline 是否是值得采用的业务决策？**
+> **Even if the Solver is correct, is this Candidate worth adopting as a business decision relative to the Baseline?**
 
-核心原则：
+Core principle:
 
 ```text
 Candidate
@@ -1435,7 +1435,7 @@ Candidate
 Decision
 ```
 
-以及：
+and:
 
 ```text
 better mathematical score
@@ -1445,9 +1445,9 @@ worth changing
 
 ---
 
-## 61. B3 必须始终有 Baseline
+## 61. B3 Must Always Have a Baseline
 
-Structural / Tactical Decision 至少比较：
+Structural / Tactical Decision at least compare:
 
 ```text
 Baseline
@@ -1457,15 +1457,15 @@ Candidate B
 ...
 ```
 
-如果没有 Baseline：
+If there is no Baseline:
 
-> B3 无法通过。
+> B3 cannot pass.
 
 ---
 
 ## 62. Shared Decision Evaluation Space
 
-不同 Problem 产生的 Candidate 应映射到共享指标：
+Candidates generated from different Problems should be mapped to shared metrics:
 
 ```text
 OpportunityCoverage
@@ -1482,9 +1482,9 @@ DecisionConfidence
 
 ---
 
-## 63. 不允许默认 Universal Score
+## 63. No Default Universal Score Allowed
 
-Benchmark 默认输出：
+Benchmark default output:
 
 ```text
 metric profile
@@ -1493,13 +1493,13 @@ guardrail status
 trade-offs
 ```
 
-不强制：
+Not mandatory:
 
 ```text
 DecisionScore = 86.3
 ```
 
-如果具体项目使用 weighted score，必须：
+If a specific project uses a weighted score, must:
 
 ```text
 document weight source
@@ -1510,26 +1510,26 @@ run sensitivity analysis
 
 ## 64. B3 Feasibility
 
-首先：
+First:
 
 ```text
 Invariant satisfied
 Hard constraints satisfied
 ```
 
-否则：
+Otherwise:
 
 ```text
 Candidate rejected
 ```
 
-不进入后续优劣比较。
+Does not enter subsequent comparative ranking.
 
 ---
 
 ## 65. Guardrail Evaluation
 
-Candidate 可以违反 Guardrail，但必须：
+Candidate may violate Guardrail, but must:
 
 ```text
 flag
@@ -1537,15 +1537,15 @@ quantify impact
 require exception review
 ```
 
-Benchmark 检查：
+Benchmark check:
 
-> Guardrail violation 是否被正确显式暴露。
+> Whether Guardrail violation is correctly explicitly exposed.
 
 ---
 
 ## 66. ChangeCost Evaluation
 
-至少覆盖：
+Cover at least:
 
 ```text
 Account reassignment
@@ -1556,15 +1556,15 @@ Learning / handover
 Transition effort
 ```
 
-没有 ChangeCost 的 Structural Candidate 不允许声称：
+Structural Candidate without ChangeCost is not allowed to claim:
 
-> “业务更优”。
+> "Business is better".
 
 ---
 
 ## 67. Decision Regret
 
-在 Scenario / historical replay 中可以计算：
+Can be calculated in Scenario / historical replay:
 
 \[
 Regret
@@ -1574,7 +1574,7 @@ Value(BestAvailableDecision)
 Value(ChosenDecision)
 \]
 
-尤其用于比较：
+Especially used for comparison:
 
 ```text
 Add Resource
@@ -1590,13 +1590,13 @@ Maintain
 
 ## 68. Robustness under Opportunity Uncertainty
 
-对于：
+For:
 
 ```text
 Low / Base / High
 ```
 
-Opportunity Scenario，Candidate 应报告：
+Opportunity Scenario, Candidate should report:
 
 ```text
 downside
@@ -1604,13 +1604,13 @@ base
 upside
 ```
 
-避免选出只在单一预测点上表现极好的脆弱方案。
+Avoid selecting fragile solutions that perform extremely well only at a single prediction point.
 
 ---
 
 ## 69. Robustness Metric
 
-可以报告：
+Can report:
 
 ```text
 WorstCasePerformance
@@ -1619,13 +1619,13 @@ ProbabilityOfGuardrailViolation
 OpportunityCoverageP10
 ```
 
-具体是否使用概率取决于 Uncertainty Model。
+Whether to use probability depends on the Uncertainty Model.
 
 ---
 
 ## 70. Stability vs Gain Frontier
 
-Structural Candidate 建议画：
+Structural Candidate recommends drawing:
 
 ```text
 Business Gain
@@ -1636,34 +1636,34 @@ Business Gain
       └────────────→ Change / Disruption
 ```
 
-让管理层看到：
+Let management see:
 
-> 为了多 2% Opportunity Coverage，需要牺牲多少稳定性。
+> To gain an additional 2% Opportunity Coverage, how much stability must be sacrificed.
 
 ---
 
 ## 71. Maintain Decision Benchmark
 
-专门构造：
+Specifically construct:
 
 ```text
 small theoretical improvement
 high disruption
 ```
 
-确保系统能够选择：
+Ensure the system can select:
 
 ```text
 MaintainCurrentState
 ```
 
-而不是“只要运行优化器就一定变”。
+Rather than "as long as the optimizer runs it will definitely change".
 
 ---
 
 ## 72. Cross-Problem Alternative Benchmark
 
-同一个 DecisionCase 必须允许比较：
+The same DecisionCase must allow comparison:
 
 ```text
 Territory Rebalance
@@ -1674,15 +1674,15 @@ Hybrid
 Maintain
 ```
 
-这是 SRAF 判断能力是否超越单一 Solver 的重要 Benchmark。
+This is an important benchmark for whether SRAF's decision capability exceeds that of a single Solver.
 
 ---
 
 ## 73. Feasibility Oracle in B3
 
-最终 Candidate 应通过适当下游验证。
+The final Candidate should pass appropriate downstream validation.
 
-例如 Territory：
+For example, Territory:
 
 ```text
 PersonnelFeasibility
@@ -1690,15 +1690,15 @@ SchedulingFeasibility
 RoutingEvaluation
 ```
 
-如果高层 Candidate 在 downstream 无法执行：
+If a high-level Candidate cannot be executed downstream:
 
-> Decision Quality 不合格。
+> Decision Quality is unqualified.
 
 ---
 
 ## 74. Multi-fidelity Candidate Funnel Benchmark
 
-检查：
+Check:
 
 ```text
 Generate N
@@ -1707,9 +1707,9 @@ Generate N
 → L3 final
 ```
 
-是否会过早淘汰真正优质 Candidate。
+Will it prematurely eliminate truly high-quality Candidates.
 
-报告：
+Report:
 
 ```text
 TopKRecall
@@ -1719,7 +1719,7 @@ TopKRecall
 
 ## 75. Human Override Quality
 
-人工 Override 后：
+After manual Override:
 
 ```text
 Candidate V1
@@ -1727,9 +1727,9 @@ Candidate V1
 → Candidate V1.1
 ```
 
-必须重新评价。
+Must be re-evaluated.
 
-Benchmark 检查：
+Benchmark check:
 
 ```text
 feasibility
@@ -1738,13 +1738,13 @@ change cost
 guardrail
 ```
 
-是否全部刷新。
+whether to refresh all.
 
 ---
 
 ## 76. Local Knowledge Value
 
-长期可比较：
+Long-term comparable:
 
 ```text
 Central Candidate
@@ -1752,21 +1752,21 @@ vs
 Local Adjusted Candidate
 ```
 
-在实际结果中的表现。
+performance in actual results.
 
-用于回答：
+Used to answer:
 
-> 哪些类型 Local Override 真正增加价值？
+> Which types of Local Override truly add value?
 
 ---
 
 ## 77. Override Harm Rate
 
-同时需要检测：
+At the same time need to detect:
 
-> 人工 Override 是否反而破坏方案。
+> Does manual Override instead break the solution.
 
-可报告：
+Can report:
 
 ```text
 OverrideBenefitRate
@@ -1774,13 +1774,13 @@ OverrideHarmRate
 OverrideNeutralRate
 ```
 
-这不是为了消灭人工，而是形成 Evidence。
+This is not to eliminate humans, but to form Evidence.
 
 ---
 
 ## 78. Decision Explainability Benchmark
 
-每个 Candidate 至少能回答：
+Each Candidate must be able to answer at least:
 
 ```text
 What changed?
@@ -1792,13 +1792,13 @@ Which guardrails are close?
 What evidence supports this?
 ```
 
-Benchmark 检查 Structured Evidence 是否完整。
+Benchmark checks whether Structured Evidence is complete.
 
 ---
 
 ## 79. Counterfactual Sensitivity
 
-改变关键假设：
+Change key assumptions:
 
 ```text
 Opportunity ±10%
@@ -1807,15 +1807,15 @@ ServiceTime +15%
 ChangeCost ×2
 ```
 
-观察 Candidate ranking 是否剧烈变化。
+Observe whether Candidate ranking changes drastically.
 
-如果是：
+If so:
 
 ```text
 DecisionSensitivity = HIGH
 ```
 
-必须向审批人展示。
+Must be shown to the approver.
 
 ---
 
@@ -1901,21 +1901,21 @@ ExecutionFeasibility
 
 # Part V — B4 Business Outcome Validation
 
-## 81. B4 的目标
+## 81. B4 Goal
 
-B4 回答：
+B4 answers:
 
-> **决策真正实施后，业务是否按照预期改善？**
+> **After the decision is truly implemented, does the business improve as expected?**
 
-这是 SRAF 的最终证据层。
+This is the final evidence layer of SRAF.
 
-Solver Objective 不能替代 B4。
+Solver Objective cannot replace B4.
 
 ---
 
-## 82. DecisionValidationPlan 必须事前定义
+## 82. DecisionValidationPlan must be defined in advance
 
-实施前就应记录：
+Should be recorded before implementation:
 
 ```text
 Hypothesis
@@ -1929,7 +1929,7 @@ Success Threshold
 Failure Threshold
 ```
 
-不能看到结果以后再挑指标。
+Cannot select metrics after seeing results.
 
 ---
 
@@ -1955,13 +1955,13 @@ Distribution
 Market penetration
 ```
 
-Structural Decision 通常先验证 Leading，再等待 Lagging。
+Structural Decision typically validates Leading first, then waits for Lagging.
 
 ---
 
 ## 84. Validation Design Hierarchy
 
-从证据强度由弱到强：
+From weak to strong evidence strength:
 
 ```text
 V0 Before / After
@@ -1972,15 +1972,15 @@ V4 Randomized / A-B where feasible
 V5 Replicated Multi-market Evidence
 ```
 
-不是所有 Territory 决策都适合 Randomized Test。
+Not all Territory decisions are suitable for Randomized Test.
 
-但必须尽量提高证据强度。
+However must try to increase evidence strength as much as possible.
 
 ---
 
-## 85. Before / After 的局限
+## 85. Limitations of Before / After
 
-简单：
+Simple:
 
 ```text
 Before
@@ -1988,7 +1988,7 @@ vs
 After
 ```
 
-容易受到：
+Easily affected by:
 
 ```text
 seasonality
@@ -1998,17 +1998,17 @@ macro changes
 personnel turnover
 ```
 
-影响。
+impact.
 
-所以只适合作为低强度证据。
+So only suitable as low-strength evidence.
 
 ---
 
 ## 86. Matched Control
 
-选择业务特征接近、未调整的区域作为比较。
+Choose regions with similar business characteristics and no adjustment as comparators.
 
-匹配变量可能：
+Matching variables may:
 
 ```text
 market size
@@ -2019,25 +2019,25 @@ seasonality
 resource level
 ```
 
-参考实证：Zoltners / Sinha / Lorimer, *Sales Force Design for Strategic
-Advantage* (2004), Table 8.3 —— 某工业分销商以 test（realignment 后更换
-负责人）vs control（未更换）账户组测量 disruption 冲击，结果显示影响
-**仅集中于中等体量账户**（$50–100k），小账户与超大账户均不显著。
+Reference empirical: Zoltners / Sinha / Lorimer, *Sales Force Design for Strategic
+Advantage* (2004), Table 8.3 — an industrial distributor using test (realignment after replacement
+of the person) vs control (not replaced) account groups measured disruption impact, results show impact.
+**only concentrated in medium-sized accounts** ($50–100k), small accounts and super-large accounts are not significant.
 
-两点规范性含义：
+Two normative implications:
 
 ```text
-1. Matched Control 在销售区域决策中真实可行（V1 证据不是纯理论）。
-2. ChangeCost.CustomerRelationshipCost 必须按 account size /
-   relationship strength 分段估计，
-   禁止使用单一全局 disruption 系数（见 §66、02 §64–65）。
+1. Matched Control is truly feasible in sales territory decisions (V1 evidence is not purely theoretical).
+2. ChangeCost.CustomerRelationshipCost must be estimated by account size /
+relationship strength segmentation,
+Prohibit using a single global disruption coefficient (see §66, 02 §64–65).
 ```
 
 ---
 
 ## 87. Difference-in-Differences
 
-当存在处理组与对照组，并满足合理趋势条件时，可比较：
+When there are treatment and control groups and reasonable trend conditions are met, they can be compared:
 
 \[
 (After-Before)_{Treatment}
@@ -2045,13 +2045,13 @@ Advantage* (2004), Table 8.3 —— 某工业分销商以 test（realignment 后
 (After-Before)_{Control}
 \]
 
-用于降低共同外部冲击影响。
+to reduce the impact of common external shocks.
 
 ---
 
 ## 88. Staggered Rollout
 
-对于多城市推广，可以：
+For multi-city rollout, can:
 
 ```text
 City A first
@@ -2059,13 +2059,13 @@ City B later
 City C later
 ```
 
-既控制实施风险，又形成更好的 Validation Evidence。
+both control implementation risk and form better Validation Evidence.
 
 ---
 
-## 89. A/B 的适用边界
+## 89. Applicability limits of A/B
 
-适合：
+Suitable:
 
 ```text
 Coverage strategy
@@ -2073,7 +2073,7 @@ sales cadence
 some routing/scheduling policy
 ```
 
-但 Territory 结构调整存在：
+However Territory structure adjustment has:
 
 ```text
 spillover
@@ -2081,31 +2081,31 @@ manager interaction
 customer overlap
 ```
 
-因此不能机械套用店级 A/B。
+Therefore cannot mechanically apply store-level A/B.
 
 ---
 
 ## 90. Interference / Spillover
 
-Sales Territory 决策天然存在跨区域影响。
+Sales Territory decisions naturally have cross-regional impact.
 
-例如：
+For example:
 
 ```text
 Rep A territory shrinks
 ```
 
-可能使：
+may cause:
 
 ```text
 Rep B workload grows
 ```
 
-所以实验设计必须考虑：
+Therefore experimental design must consider:
 
-> Treatment Unit 不一定是 Account。
+> Treatment Unit is not necessarily an Account.
 
-可能是：
+May be:
 
 ```text
 territory
@@ -2118,7 +2118,7 @@ region
 
 ## 91. Stabilization Window
 
-结构调整后通常需要：
+After structural adjustment usually requires:
 
 ```text
 handover
@@ -2126,7 +2126,7 @@ learning
 relationship rebuilding
 ```
 
-因此应区分：
+Therefore should distinguish:
 
 ```text
 Transition
@@ -2134,13 +2134,13 @@ Stabilization
 Validation
 ```
 
-不能把过渡期直接当最终效果。
+Cannot treat the transition period directly as the final effect.
 
 ---
 
 ## 92. Validation Outcome
 
-统一：
+Unify:
 
 ```text
 Validated
@@ -2149,27 +2149,27 @@ Failed
 Inconclusive
 ```
 
-`Inconclusive` 是合法结果。
+`Inconclusive` is a legitimate result.
 
-不能为了闭环强迫所有 Decision：
+Cannot force all Decision to be:
 
 ```text
 success / failure
 ```
 
-二元化。
+dichotomized.
 
 ---
 
-## 93. Failed Decision 的价值
+## 93. Value of Failed Decision
 
-失败后应生成：
+After failure, should generate:
 
 ```text
 LearningSignal
 ```
 
-例如：
+For example:
 
 ```text
 OpportunityModelOverestimated
@@ -2180,7 +2180,7 @@ CoverageResponseWeak
 ExecutionNoncompliance
 ```
 
-这些进入：
+These enter:
 
 ```text
 ModelReview
@@ -2190,19 +2190,19 @@ WorldModelImprovement
 
 ---
 
-## 94. 不能把 Decision Failure 等同 Agent Failure
+## 94. Cannot equate Decision Failure with Agent Failure
 
-如果基于当时可得 Evidence：
+If based on evidence available at the time:
 
 ```text
 decision rational
 ```
 
-但未来市场意外变化导致失败，
+but future unexpected market changes cause failure,
 
-它不一定说明 Decision Framework 错误。
+it does not necessarily indicate a Decision Framework error.
 
-所以 B4 应区分：
+Therefore B4 should distinguish:
 
 ```text
 DecisionProcessQuality
@@ -2214,63 +2214,63 @@ ExternalShock
 
 ## 95. Historical Replay Benchmark
 
-对过去时间点：
+for the past time point:
 
 ```text
 t0
 ```
 
-冻结当时可知数据：
+freeze the data that could be known at that time:
 
 ```text
 knowledge_time <= t0
 ```
 
-让 SRAF 重新做决策。
+let SRAF re-decide.
 
-然后使用：
+Then use:
 
 ```text
 t0 + future observations
 ```
 
-进行评价。
+for evaluation.
 
-但 future observations 只能用于 Evaluation，不能进入 t0 输入。
+But future observations can only be used for Evaluation, cannot enter t0 input.
 
 ---
 
-## 96. Replay 的两种问题
+## 96. Two types of problems with Replay
 
 ### Policy Replay
 
-问：
+Question:
 
-> 当时如果使用 SRAF，会建议什么？
+> If SRAF had been used at that time, what would have been recommended?
 
 ### Candidate Outcome Replay
 
-问：
+Question:
 
-> 某类 Candidate 在类似历史条件下是否更合理？
+> Is a certain type of Candidate more reasonable under similar historical conditions?
 
-由于真实 Counterfactual 不可直接观察，第二类只能谨慎解释。
+Since real Counterfactual cannot be directly observed, the second type can only be interpreted with caution.
 
 ---
 
 ## 97. Shadow Validation
 
-Production 中：
+In Production:
 
 ```text
 SRAF generates candidate
 ```
 
-但不执行。
+but does not execute.
 
-之后观察真实世界。
+Then observe the real world.
 
-Shadow 可验证：
+Shadow can verify:
 
 ```text
 feasibility
@@ -2280,15 +2280,15 @@ capacity estimate
 diagnosis stability
 ```
 
-但不能直接证明：
+but cannot directly prove:
 
-> Candidate 实施后一定更好。
+> Candidate will definitely be better after implementation.
 
 ---
 
 ## 98. Pilot Validation
 
-重要 Structural Decision 建议：
+Important Structural Decision recommendation:
 
 ```text
 1–2 pilot markets
@@ -2297,15 +2297,15 @@ diagnosis stability
 → scale
 ```
 
-尤其适合新 Territory / Coverage methodology。
+Especially suitable for new Territory / Coverage methodology.
 
 ---
 
 ## 99. Replication
 
-单一城市成功不能直接证明 Framework 可推广。
+A single city success cannot directly prove that the Framework is scalable.
 
-应测试：
+Should test:
 
 ```text
 different market density
@@ -2315,15 +2315,15 @@ different sales model
 different data quality
 ```
 
-观察 Decision Logic 是否保持有效。
+Observe whether the Decision Logic remains effective.
 
 ---
 
 # Part VI — Benchmark Dataset Strategy
 
-## 100. Benchmark 数据分层
+## 100. Benchmark Data Layering
 
-建议固定六级：
+Suggest fixed six levels:
 
 ```text
 L0 Toy Deterministic
@@ -2338,7 +2338,7 @@ L5 Pilot / Production
 
 ## 101. L0 Toy Deterministic
 
-目标：
+Objective:
 
 ```text
 semantic
@@ -2346,15 +2346,15 @@ constraint
 analytical correctness
 ```
 
-数据规模很小。
+The data scale is very small.
 
-结果人工可验证。
+Results can be manually verified.
 
 ---
 
 ## 102. L1 Fully Synthetic
 
-生成：
+Generate:
 
 ```text
 accounts
@@ -2365,19 +2365,19 @@ travel
 policies
 ```
 
-并主动植入 Root Cause。
+And proactively inject Root Cause.
 
-优势：
+Advantage:
 
-> Ground Truth 已知。
+> Ground Truth is known.
 
 ---
 
 ## 103. L2 Semi-synthetic
 
-使用真实/匿名化空间与业务结构，
+Using real/anonymized space and business structure,
 
-人为注入：
+Manual injection:
 
 ```text
 capacity shortage
@@ -2387,22 +2387,22 @@ coverage excess
 data corruption
 ```
 
-比纯 synthetic 更接近现实。
+More realistic than pure synthetic.
 
 ---
 
 ## 104. L3 Historical Replay
 
-使用历史 Snapshot。
+Use historical Snapshot.
 
-要求：
+Requirement:
 
 ```text
 bitemporal integrity
 no look-ahead
 ```
 
-适合测试：
+Suitable for testing:
 
 ```text
 diagnosis
@@ -2414,9 +2414,9 @@ forecast calibration
 
 ## 105. L4 Shadow Production
 
-真实当前数据、真实工作流，但 Candidate 不执行。
+Real current data, real workflow, but Candidate does not execute.
 
-重点：
+Focus:
 
 ```text
 operational reliability
@@ -2429,11 +2429,11 @@ prediction calibration
 
 ## 106. L5 Pilot / Production
 
-真实 Decision 实施。
+Real Decision implementation.
 
-用于 B4。
+Used for B4.
 
-所有重大实验必须有：
+All major experiments must have:
 
 ```text
 DecisionValidationPlan
@@ -2445,7 +2445,7 @@ DecisionValidationPlan
 
 ## 107. Benchmark Case Schema
 
-建议：
+Recommendation:
 
 ```yaml
 benchmark_case:
@@ -2478,9 +2478,9 @@ benchmark_case:
 
 ---
 
-## 108. Case 必须版本化
+## 108. Case must be versioned
 
-如果数据或预期标签变化：
+If data or expected label changes:
 
 ```text
 case v1.0
@@ -2488,18 +2488,18 @@ case v1.0
 case v1.1
 ```
 
-此处版本号是 **Benchmark Case 自身版本**，
-与规范文档版本无关，不随文档 bump 而改变。
+Here the version number is **Benchmark Case's own version**,
+Unrelated to the specification document version, does not change with document bumps.
 
-不能静默修改。
+Cannot be silently modified.
 
-否则历史 Benchmark 不可比较。
+Otherwise historical Benchmark cannot be compared.
 
 ---
 
 ## 109. Case Families
 
-建议第一版目录：
+Recommend the first version directory:
 
 ```text
 semantic/
@@ -2520,11 +2520,11 @@ historical_replay/
 
 ## 110. Negative Cases
 
-Benchmark 不能只有：
+Benchmark cannot have only:
 
-> “这里有问题，请找问题。”
+> "There is a problem here, please find the problem."
 
-必须包含大量：
+Must contain a large amount of:
 
 ```text
 Healthy
@@ -2535,17 +2535,17 @@ InsufficientEvidence
 
 Case。
 
-否则系统会形成：
+Otherwise the system will form:
 
-> 只要测试就必须发现问题
+> As long as testing must find problems
 
-的偏差。
+deviation.
 
 ---
 
 ## 111. Adversarial Cases
 
-需要主动测试：
+Need proactive testing:
 
 ```text
 corrupt location
@@ -2562,7 +2562,7 @@ near-threshold flapping
 
 ## 112. Boundary Cases
 
-例如：
+For example:
 
 ```text
 utilization = 109.9%
@@ -2570,7 +2570,7 @@ utilization = 109.9%
 110.1%
 ```
 
-结合：
+Combine:
 
 ```text
 hysteresis
@@ -2578,7 +2578,7 @@ persistence
 cooldown
 ```
 
-测试 Decision Trigger 是否稳定。
+Test whether the Decision Trigger is stable.
 
 ---
 
@@ -2586,7 +2586,7 @@ cooldown
 
 ## 113. Workflow Correctness
 
-至少测试：
+At least test:
 
 ```text
 CorrectWorkflowRouting
@@ -2603,44 +2603,44 @@ SolverFallback
 
 ## 114. Artifact Invalidation Test
 
-如果：
+If:
 
 ```text
 CoverageCommitment changes
 ```
 
-已有：
+Already have:
 
 ```text
 ScheduleCandidate
 RouteCandidate
 ```
 
-必须标记：
+Must mark:
 
 ```text
 STALE
 ```
 
-不能继续用于 Approval。
+Cannot continue to be used for Approval.
 
 ---
 
 ## 115. Failure Routing Test
 
-例如：
+For example:
 
 ```text
 RESOURCE_INFEASIBLE
 ```
 
-Orchestrator 应：
+Orchestrator should:
 
 ```text
 route upstream
 ```
 
-而不是：
+instead of:
 
 ```text
 retry scheduler 3 times
@@ -2650,19 +2650,19 @@ retry scheduler 3 times
 
 ## 116. Generic Retry Prohibition Test
 
-对：
+For:
 
 ```text
 POLICY_INFEASIBLE
 ```
 
-验证系统不会重试 Solver。
+Verify that the system will not retry Solver.
 
 ---
 
 ## 117. Iterative Convergence Test
 
-Coverage ↔ Scheduling：
+Coverage ↔ Scheduling: 
 
 ```text
 max_iterations
@@ -2670,15 +2670,15 @@ business_delta_threshold
 runtime_budget
 ```
 
-必须能触发停止。
+Must be able to trigger stop.
 
-不能无限循环。
+Cannot loop infinitely.
 
 ---
 
 ## 118. Human Override Re-evaluation Test
 
-修改 Candidate 后：
+After modifying Candidate:
 
 ```text
 constraint
@@ -2688,15 +2688,15 @@ opportunity
 change cost
 ```
 
-必须重新计算。
+Must recalculate.
 
 ---
 
 # Part IX — Governance / Safety Benchmark
 
-## 119. Governance 是横向 Benchmark
+## 119. Governance is a horizontal Benchmark
 
-所有层级都必须测试：
+All levels must be tested:
 
 ```text
 Auditability
@@ -2711,7 +2711,7 @@ Transition Safety
 
 ## 120. Agent Authority Test
 
-Agent 不允许：
+Agent not allowed:
 
 ```text
 create hard constraint without policy
@@ -2724,9 +2724,9 @@ write world state directly
 
 ## 121. Human Approval Test
 
-High-risk Structural Decision 必须经过规定 Approval。
+High-risk Structural Decision must go through the prescribed Approval.
 
-如果缺失：
+If missing:
 
 ```text
 Transition blocked
@@ -2736,62 +2736,62 @@ Transition blocked
 
 ## 122. Guardrail Exception Test
 
-Candidate 超过 Guardrail：
+Candidate exceeds Guardrail:
 
 ```text
 ReassignedRevenue = 13%
 limit = 10%
 ```
 
-必须：
+Must:
 
 ```text
 ExceptionReview
 ```
 
-不能自动通过。
+Cannot pass automatically.
 
 ---
 
 ## 123. Transition Safety Test
 
-Approved Decision 不得：
+Approved Decision must not:
 
 ```text
 directly overwrite all assignments
 ```
 
-必须通过：
+Must go through:
 
 ```text
 TransitionPlan
 ```
 
-产生明确 World Event。
+Produce a clear World Event.
 
 ---
 
 ## 124. Rollback Test
 
-模拟：
+Simulate:
 
 ```text
 critical post-transition issue
 ```
 
-确保：
+Ensure:
 
 ```text
 Rollback Decision / Transition
 ```
 
-可被创建和审计。
+Can be created and audited.
 
 ---
 
 ## 125. Reproducibility Package
 
-每次 Benchmark Run 至少保存：
+Each Benchmark Run must save at least:
 
 ```text
 WorldSnapshot ID
@@ -2814,7 +2814,7 @@ Evaluation Version
 
 ## 126. Gate 0 — Semantic Gate
 
-进入任何 Solver Benchmark 前：
+Before entering any Solver Benchmark:
 
 ```text
 Critical semantic invariants = PASS
@@ -2826,7 +2826,7 @@ Temporal replay = PASS
 
 ## 127. Gate 1 — Diagnosis Gate
 
-进入 Structural Candidate Benchmark 前，至少证明：
+Before entering Structural Candidate Benchmark, prove at least:
 
 ```text
 True shortage
@@ -2836,11 +2836,11 @@ Coverage mismatch
 Data problem
 ```
 
-五类能被正确区分。
+Five categories can be correctly distinguished.
 
-不建议 v1.2 直接设置一个全局百分比阈值。
+It is not recommended for v1.2 to directly set a global percentage threshold.
 
-但必须完整报告：
+But must fully report:
 
 ```text
 confusion matrix
@@ -2853,7 +2853,7 @@ no-action correctness
 
 ## 128. Gate 2 — Solver Gate
 
-至少：
+At least:
 
 ```text
 toy analytical cases exact
@@ -2863,7 +2863,7 @@ failure semantics pass
 reproducibility pass
 ```
 
-Heuristic 必须披露：
+Heuristic must disclose:
 
 ```text
 optimality claim
@@ -2873,7 +2873,7 @@ optimality claim
 
 ## 129. Gate 3 — Decision Gate
 
-Structural Candidate 必须：
+Structural Candidate must:
 
 ```text
 have baseline
@@ -2884,15 +2884,15 @@ report uncertainty
 pass downstream feasibility
 ```
 
-否则不允许进入正式 Human Approval。
+Otherwise not allowed to enter formal Human Approval.
 
 ---
 
 ## 130. Gate 4 — Production Evidence Gate
 
-从 Shadow 进入 Pilot：
+From Shadow to Pilot:
 
-必须有：
+Must have:
 
 ```text
 stable workflow
@@ -2902,23 +2902,23 @@ human review process
 rollback plan
 ```
 
-从 Pilot 进入 Scale：
+From Pilot to Scale:
 
-必须存在：
+Must exist:
 
 ```text
 DecisionValidation result
 ```
 
-而不是只看模型回测。
+Instead of only looking at model backtest.
 
 ---
 
 # Part XI — Benchmark Report
 
-## 131. 标准 Benchmark Report
+## 131. Standard Benchmark Report
 
-每轮必须输出：
+Each round must output:
 
 ```text
 1. Scope
@@ -2938,9 +2938,9 @@ DecisionValidation result
 
 ---
 
-## 132. 不允许 Cherry-pick
+## 132. No Cherry-pick allowed
 
-若同一算法运行多次：
+If the same algorithm runs multiple times:
 
 ```text
 best
@@ -2948,19 +2948,19 @@ median
 worst / P90
 ```
 
-都应报告适用指标。
+All should report applicable metrics.
 
-不能只展示最好 Seed。
+Cannot only show the best Seed.
 
 ---
 
 ## 133. Regression Benchmark
 
-每次重要版本升级必须重跑固定：
+Each significant version upgrade must rerun the fixed:
 
 # `SRAF Core Benchmark Suite`
 
-至少包含：
+At least include:
 
 ```text
 semantic core
@@ -2974,17 +2974,17 @@ governance core
 
 ## 134. Decision Regression
 
-不仅测试：
+Not only test:
 
 ```text
 code output changed?
 ```
 
-还要测试：
+Also test:
 
-> Candidate recommendation 是否发生业务级变化？
+> Has the Candidate recommendation changed at the business level?
 
-例如：
+For example:
 
 ```text
 v1:
@@ -2994,13 +2994,13 @@ v2:
 Add 2 reps
 ```
 
-即使两版代码都“通过单元测试”，也必须触发 Decision Regression Review。
+Even if both versions of the code "pass unit tests", they must trigger a Decision Regression Review.
 
 ---
 
 ## 135. Explanation Regression
 
-若核心 Recommendation 不变，但解释 Evidence 改变，也应检查：
+If the core Recommendation remains unchanged but the explanation Evidence changes, also check:
 
 ```text
 provenance
@@ -3008,21 +3008,21 @@ hypothesis ranking
 trade-off
 ```
 
-是否合理。
+Whether it is reasonable.
 
 ---
 
 # Part XII — v1.2 MVP Benchmark Plan
 
-## 136. 第一阶段不要测试全部 7 个 Engine
+## 136. Do not test all 7 Engines in the first phase
 
-建议以已经具备基础能力的 Visit Scheduling vertical slice 为第一条线。
+It is recommended to use the Visit Scheduling vertical slice that already has basic capabilities as the first line.
 
 ---
 
 ## 137. MVP Benchmark Slice A — Scheduling
 
-测试：
+Test:
 
 ```text
 CoverageCommitment
@@ -3032,7 +3032,7 @@ CoverageCommitment
 → UnfulfilledCommitment
 ```
 
-Cases：
+Cases: 
 
 ```text
 A feasible
@@ -3042,15 +3042,15 @@ D policy conflict
 E solver timeout
 ```
 
-重点：
+Focus:
 
-> 五种状态必须正确区分。
+> Five states must be correctly distinguished.
 
 ---
 
 ## 138. MVP Benchmark Slice B — Diagnosis
 
-使用 5 个 Canonical Case：
+Use 5 canonical cases:
 
 ```text
 True Capacity Shortage
@@ -3060,7 +3060,7 @@ Coverage Over-allocation
 Data Corruption
 ```
 
-重点：
+Focus:
 
 ```text
 Problem Router
@@ -3071,9 +3071,9 @@ False Expansion Recommendation
 
 ## 139. MVP Benchmark Slice C — Structural Rebalance
 
-先不追求先进 Territory Solver。
+Do not pursue advanced Territory Solver first.
 
-使用：
+Use:
 
 ```text
 Baseline
@@ -3081,7 +3081,7 @@ Maintain
 Simple Rebalance
 ```
 
-比较：
+Compare:
 
 ```text
 workload
@@ -3090,7 +3090,7 @@ travel
 change cost
 ```
 
-重点验证：
+Focus on verifying:
 
 ```text
 Decision Contract
@@ -3103,7 +3103,7 @@ Human Override
 
 ## 140. MVP Benchmark Slice D — Orchestration
 
-验证：
+Verify:
 
 ```text
 Sequential
@@ -3120,7 +3120,7 @@ Human Override
 
 ## 141. Evidence Level
 
-建议以后每一个 SRAF 能力都标注其证据等级：
+It is recommended that each SRAF capability be annotated with its evidence level in the future:
 
 ```text
 E0 Conceptual
@@ -3134,97 +3134,97 @@ E6 Replicated Production
 
 ---
 
-## 142. E0 不允许宣传为“已验证业务能力”
+## 142. E0 must not be advertised as "verified business capability"
 
-例如：
+For example:
 
 ```text
 Territory Solver prototype
 ```
 
-如果只有 E1：
+If only E1 is present:
 
-> 可以说“算法在 synthetic benchmark 通过”。
+> It can be said "the algorithm passed the synthetic benchmark".
 
-不能说：
+Cannot say:
 
-> “已证明提升销售”。
+> "It has been proven to increase sales".
 
 ---
 
-## 143. E5 与 E6
+## 143. E5 and E6
 
 ### E5 Pilot Validated
 
-一个真实市场验证。
+A real market verification.
 
 ### E6 Replicated Production
 
-在多个不同市场重复验证。
+Repeated verification across multiple different markets.
 
-这才接近：
+This is close to:
 
-> 可复用方法论
+> A reusable methodology
 
-的证据标准。
+evidence standard.
 
 ---
 
 # Part XIV — Architecture Gates
 
-## 144. 以下情况直接视为 Evaluation 架构问题
+## 144. The following situations are directly considered Evaluation architecture problems
 
 ```text
-只做 Solver objective benchmark
+Only perform Solver objective benchmark
 
-没有 B0 Semantic Test
+No B0 Semantic Test
 
-历史回测使用未来信息
+Historical backtest uses future information
 
-Diagnostic Benchmark 没有 NoAction Case
+Diagnostic Benchmark lacks NoAction Case
 
-所有测试案例都存在问题
+All test cases have problems
 
-没有 DataQuality Root Cause Case
+No DataQuality Root Cause Case
 
-没有 Policy Conflict Case
+No Policy Conflict Case
 
-不区分 Resource Infeasible 与 Solver Failure
+Do not differentiate Resource Infeasible from Solver Failure
 
-Heuristic 被称为 Optimal
+Heuristic is called Optimal
 
-只汇报最好 Seed
+Only report the best Seed
 
-Candidate 没有 Baseline
+Candidate lacks Baseline
 
-Structural Benchmark 不包含 Maintain Candidate
+Structural Benchmark does not include Maintain Candidate
 
-没有 ChangeCost 就评价 Territory
+No ChangeCost when evaluating Territory
 
-只用 compactness 评价 travel
+Only use compactness to evaluate travel
 
-Oracle 自己没有正确率 Benchmark
+Oracle itself has no accuracy Benchmark
 
-HumanOverride 后不重新评估
+No re-evaluation after HumanOverride
 
-Business Outcome 只做 Before / After 却声称因果
+Business Outcome only does Before/After but claims causality
 
-Pilot 没有 ValidationPlan
+Pilot lacks ValidationPlan
 
-Failed Decision 被删除
+Failed Decision is deleted
 
-Benchmark 与 Production 使用不同 Contract
+Benchmark and Production use different Contracts
 
-版本升级后不做 Decision Regression
+No Decision Regression after version upgrade
 ```
 
 ---
 
 # Part XV — Definition of Done
 
-## 145. `06_EVALUATION_AND_BENCHMARK.md` v1.2 的实现 DoD
+## 145. Implementation DoD of `06_EVALUATION_AND_BENCHMARK.md` v1.2
 
-第一阶段必须至少完成：
+The first phase must at least complete:
 
 ### B0
 
@@ -3236,11 +3236,11 @@ Candidate Isolation
 Semantic Status
 ```
 
-测试。
+Testing.
 
 ### B1
 
-正确区分：
+Correctly distinguish:
 
 ```text
 True Capacity Shortage
@@ -3252,7 +3252,7 @@ Data Quality Issue
 
 ### B2
 
-正确区分：
+Correctly distinguish:
 
 ```text
 Business Infeasible
@@ -3260,11 +3260,11 @@ Model Infeasible
 Solver Failure
 ```
 
-并在 toy instances 验证数学正确性。
+And verify mathematical correctness on toy instances.
 
 ### B3
 
-至少对：
+At least for:
 
 ```text
 Maintain
@@ -3272,23 +3272,23 @@ Rebalance
 Add Capacity
 ```
 
-做统一 Delta Evaluation。
+Perform a unified Delta Evaluation.
 
 ### B4
 
-至少定义一个真实 Pilot 的：
+At least define a real Pilot's:
 
 ```text
 DecisionValidationPlan
 ```
 
-即使 v1.2 尚未真正完成 Pilot。
+Even if v1.2 has not yet truly completed the Pilot.
 
 ---
 
-## 146. 最终评价原则
+## 146. Final Evaluation Principles
 
-SRAF 的证据链应该是：
+The evidence chain of SRAF should be:
 
 ```text
 Semantic Correct
@@ -3302,31 +3302,31 @@ Decision Better Than Baseline
 Observed Business Outcome Supports It
 ```
 
-缺任何一层，都不能把：
+Missing any layer, one cannot equate:
 
-> “系统运行成功”
+> "System runs successfully"
 
-等同于：
+with:
 
-> “销售资源配置决策正确”。
+> "Sales resource allocation decision is correct".
 
 ---
 
-## 147. v1.2 核心结论
+## 147. v1.2 Core Conclusion
 
-SRAF Benchmark 的核心问题不是：
+The core issue of SRAF Benchmark is not:
 
-> “算法比 Baseline 快多少？”
+> "How much faster is the algorithm than the Baseline?"
 
-而是：
+But rather:
 
-> **系统是否在正确理解世界的前提下，识别了正确的问题，调用了正确的决策模型，生成了值得改变的方案，并最终被真实业务结果支持。**
+> **Whether the system, under the premise of correctly understanding the world, identifies the correct problem, invokes the correct decision model, generates a plan worth changing, and is ultimately supported by real business outcomes.**
 
-因此 SRAF 的核心 Benchmark 单位不是单个 Solver Run，而应该逐步升级为：
+Therefore, the core benchmark unit of SRAF is not a single Solver Run, but should be gradually upgraded to:
 
 # `Decision Case`
 
-完整评价：
+Comprehensive evaluation:
 
 ```text
 World Snapshot
@@ -3337,4 +3337,4 @@ World Snapshot
 → Outcome
 ```
 
-这才是 Sales Resource Allocation Decision Intelligence Framework 应有的验证对象。
+This is the proper validation object of the Sales Resource Allocation Decision Intelligence Framework.
