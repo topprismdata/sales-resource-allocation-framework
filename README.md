@@ -4,6 +4,11 @@
 
 # SRAF — 经销商区域分配智能决策框架
 
+> **语言 / Language:** 中文为主 · English overview follows。
+>
+> **English overview:** SRAF is a dealer-territory decision design framework combining a business world model, governed knowledge, and evidence-linked recommendations. Recommendations remain subject to human review.
+
+
 > SRAF = 给经销商区域管理装大脑。围栏绘制/门店归类/排班引擎是"怎么做"的肌肉；
 > 本框架补上"为什么"的大脑：哪个店是谁的（身份）、缺口是真的还是假的（诊断）、
 > 改了会怎样（影响预测）、该怎么改（带证据链的建议）。
