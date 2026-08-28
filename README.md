@@ -45,3 +45,13 @@
 
 不做 LLM 端到端诊断；不自动执行（建议止于人审）；不跨层开方子；
 v0 不做在线学习。业务数据与凭证一律不入库。
+
+## TopPrism status
+
+| Field | Value |
+|---|---|
+| Purpose | Customer Decision · Integrated Framework |
+| Maturity | Implementation phase / demonstrator |
+| Evidence | Published specifications, operational snapshot artifacts and test/demo paths; scenario-bound, not a universal performance claim |
+| Boundary | Produces evidence-linked recommendations for human review; does not silently auto-decide or cross layer contracts |
+| Related | `market-partition`, `visit-scheduling-optimizer` |
