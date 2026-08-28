@@ -1,7 +1,7 @@
 # SRAF Overall Design Document (Living Document)
 - Status: v0.6 (overall design for implementation phase, updated as implementation progresses)
 - Date: 2026-08-28
-- Specification Baseline: docs/ 00-08 Specification Set **v1.2.1 FROZEN** (this document does not modify specifications; it records implementation status and design decisions built upon the specifications)
+- Specification Baseline: 00-08 Specification Set (this directory) **v1.2.1 FROZEN** (this document does not modify specifications; it records implementation status and design decisions built upon the specifications)
 - Implementation Baseline Update: docs/CHANGELOG_v1.2.2.md (regional priority semantics + logical fence merge, 2026-08-28)
 - Governance: Specification changes follow CHANGELOG + NORMATIVE_OWNERSHIP; implementation decisions are recorded in §5 of this document
 
@@ -167,7 +167,7 @@ Data switching guide: `data/README.md`.
 ```text
 docs/ Specification set v1.2.1 FROZEN (00 Charter … 08 Identity) + governance documents
 CHANGELOG_v1.2.2 = implementation baseline update record (no spec changes)
-DESIGN.md This file — overall design for the implementation phase (living document)
+`DESIGN.md` (moved to `docs/DESIGN.md`) This file — overall design for the implementation phase (living document)
 knowledge_base/ Knowledge Base v0.3.0 (31 entries; json machine-readable + md human-readable index)
 analysis/ World Model v2.1 · 04 Implementation Design · DP06 Gap Analysis v2 · Contract Package
 Fence characteristics · Industry gaps · Three-round review · CN market reality · intel_reports_v0

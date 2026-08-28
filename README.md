@@ -1,4 +1,11 @@
+<p align="center">
+  <img src="https://raw.githubusercontent.com/topprismdata/.github/main/assets/brand/topprism-repo-header.png" alt="TopPrism dual-prism visual" width="100%" />
+</p>
+
 # Sales Resource Allocation Framework
+
+> **Language:** English (all repository documentation normalized to
+> English per `docs/CHANGELOG_v1.2.3.md`).
 
 **An allocation-intelligence layer for distributor territory management:
 world model + evidence-governed knowledge base + reasoning that proposes
@@ -102,7 +109,7 @@ contract).
 | Path | Contents |
 |---|---|
 | `docs/` | Normative specs 00–08 (**v1.2.1 FROZEN**) + governance files; language normalization per `CHANGELOG_v1.2.3.md` |
-| `DESIGN.md` | Living implementation design + ADR log (D1–D13) |
+| `docs/DESIGN.md` | Living implementation design + ADR log (D1–D13) |
 | `intelligence/` | World-model slice, area-first adjust engine, GCJ⇄WGS boundary, road semantics, vision verification, LLM parse |
 | `dealer_territory/` | Layer-D fence split / allocation / four-bounds / analysis |
 | `knowledge_base/` | 31 knowledge entries (JSON machine-readable + human index) |
