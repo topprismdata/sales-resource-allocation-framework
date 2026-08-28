@@ -1,0 +1,11 @@
+# 业务数据与凭证一律不入库（GitHub 推送契约）
+data/*
+!data/README.md
+__pycache__/
+*.pyc
+*.sqlite*
+.env
+*.key
+*.pem
+sraf_secrets*
+analysis/

@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>SRAF 分配智能 Demo — 合同→区域→语义调整→分析</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+  * { box-sizing: border-box; margin: 0; }
+  body { font: 13px/1.5 -apple-system, "PingFang SC", sans-serif; display: flex; height: 100vh; }
+  #side { width: 440px; min-width: 440px; display: flex; flex-direction: column;
+          border-right: 1px solid #ddd; background: #fafafa; }
+  header { padding: 10px 14px; background: #1a237e; color: #fff; }
+  header h1 { font-size: 15px; font-weight: 600; }
+  header .sub { font-size: 11px; opacity: .8; margin-top: 2px; }
+  #regionbar { padding: 6px 14px; background: #283593; display: flex; align-items: center; gap: 8px; }
+  #regionbar span { color: #c5cae9; font-size: 11px; }
+  #regionSel { flex: 1; padding: 4px 6px; border-radius: 6px; border: 0; font-size: 12px; }
+  nav { display: flex; background: #283593; }
+  nav button { flex: 1; padding: 8px 0; border: 0; background: transparent; color: #c5cae9;
+               font-size: 13px; cursor: pointer; }
+  nav button.on { background: #fafafa; color: #1a237e; font-weight: 600; }
+  .pane { flex: 1; overflow-y: auto; padding: 10px 12px; display: none; }
+  .pane.on { display: block; }
+  .card { background: #fff; border: 1px solid #e0e0e0; border-radius: 8px;
+          padding: 8px 10px; margin-bottom: 8px; }
+  .card h3 { font-size: 13px; color: #1a237e; margin-bottom: 4px; }
+  .card.conflict { border-left: 4px solid #c62828; background: #fff8f8; }
+  .card.newzone { border-left: 4px solid #e65100; background: #fffdf7; }
+  .muted { color: #777; font-size: 11px; }
+  .warn { color: #c62828; font-size: 11px; }
+  .ok-c { color: #2e7d32; font-size: 11px; }
+  .btn { display: inline-block; border: 0; border-radius: 6px; padding: 5px 12px;
+         background: #1a237e; color: #fff; cursor: pointer; font-size: 12px; margin: 4px 4px 0 0; }
+  .btn.gray { background: #757575; }
+  .btn.amber { background: #e65100; }
+  .btn:disabled { opacity: .5; cursor: default; }
+  #chat { border: 1px solid #ddd; border-radius: 8px; background: #fff; padding: 8px;
+          height: 42%; overflow-y: auto; margin-bottom: 8px; }
+  .msg { margin-bottom: 8px; padding: 6px 9px; border-radius: 8px; max-width: 95%; }
+  .msg.user { background: #e8eaf6; margin-left: auto; }
+  .msg.sys { background: #fff; border: 1px solid #e0e0e0; }
+  .msg.err { background: #ffebee; border: 1px solid #ef9a9a; }
+  .msg .kv { font-size: 11px; color: #555; margin: 2px 0; }
+  .msg .sig { font-size: 11px; color: #e65100; }
+  .msg .risk { font-size: 11px; color: #6a1b9a; }
+  .msg .conf { font-size: 11px; color: #c62828; }
+  .chip { display: inline-block; font-size: 11px; background: #e8eaf6; color: #283593;
+          border-radius: 10px; padding: 2px 8px; margin: 2px 3px 2px 0; cursor: pointer; }
+  input[type=text], input[type=number], textarea, select {
+    width: 100%; padding: 6px 8px; border: 1px solid #bbb; border-radius: 6px;
+    font: inherit; font-size: 12px; }
+  textarea { resize: vertical; min-height: 46px; }
+  label.fl { display: block; font-size: 11px; color: #555; margin: 5px 0 1px; }
+  .row2 { display: flex; gap: 6px; }
+  .row2 > div { flex: 1; }
+  .kpi { display: inline-block; text-align: center; background: #fff; border: 1px solid #e0e0e0;
+         border-radius: 8px; padding: 6px 10px; margin: 0 6px 6px 0; }
+  .kpi b { display: block; font-size: 17px; }
+  .kpi span { font-size: 10px; color: #777; }
+  table { width: 100%; border-collapse: collapse; font-size: 11px; background: #fff; }
+  th, td { border-bottom: 1px solid #eee; padding: 4px 5px; text-align: left; }
+  tr.rowlink { cursor: pointer; } tr.rowlink:hover { background: #e8eaf6; }
+  #map { flex: 1; position: relative; }
+  .legend { position: absolute; bottom: 14px; right: 10px; z-index: 1000; background: #fffce8;
+            border: 1px solid #ccc; border-radius: 6px; padding: 6px 9px; font-size: 11px;
+            max-width: 250px; max-height: 320px; overflow-y: auto; }
+  .legend i { display: inline-block; border-radius: 2px; margin-right: 4px;
+              vertical-align: middle; border: 1px solid #fff; }
+  .legend .t { font-weight: 600; color: #555; margin-bottom: 3px; }
+  #focusBar { position: absolute; top: 10px; left: 50px; z-index: 1000; display: none;
+              background: #1a237e; color: #fff; border-radius: 8px; padding: 7px 12px;
+              font-size: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.3); }
+  #focusBar b { color: #ffcc80; }
+  #focusBar .sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px;
+                  margin-right: 4px; vertical-align: middle; border: 1px solid #fff; }
+  #focusBar .x { cursor: pointer; margin-left: 8px; background: #c62828; border-radius: 4px;
+                 padding: 1px 7px; font-size: 11px; }
+  #toast { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 2000;
+           background: #2e7d32; color: #fff; padding: 7px 16px; border-radius: 6px;
+           display: none; font-size: 12px; max-width: 70%; }
+  .leaflet-tile-pane { filter: grayscale(.92) brightness(1.06) contrast(.82); opacity: .55; }
+  .tag { font-size: 10px; border-radius: 4px; padding: 1px 5px; margin-right: 4px; }
+  .tag.Review { background: #fff3e0; color: #e65100; }
+  .tag.Monitor { background: #e8f5e9; color: #2e7d32; }
+  .tag.llm { background: #e8eaf6; color: #283593; }
+  details.vsum { font-size: 11px; margin-top: 4px; }
+  details.vsum summary { cursor: pointer; color: #283593; }
+  .verdict-badge { font-weight: 700; padding: 2px 8px; border-radius: 6px; font-size: 12px; }
+  .verdict-通过 { background: #e8f5e9; color: #2e7d32; }
+  .verdict-存疑 { background: #fff3e0; color: #e65100; }
+  .verdict-不通过 { background: #ffebee; color: #c62828; }
+  img.vthumb { max-width: 100%; border: 1px solid #ddd; border-radius: 6px; margin-top: 4px; }
+  .picked { font-size: 11px; color: #1565c0; }
+  #mentionBox { position: absolute; z-index: 3000; background: #fff; display: none;
+    border: 1px solid #bbb; border-radius: 6px; max-height: 220px; overflow-y: auto;
+    box-shadow: 0 4px 14px rgba(0,0,0,.18); min-width: 220px; }
+  #mentionBox .mi { padding: 5px 9px; font-size: 12px; cursor: pointer; display: flex;
+    gap: 6px; align-items: center; }
+  #mentionBox .mi:hover, #mentionBox .mi.sel { background: #e8eaf6; }
+  #mentionBox .mi .sw { width: 9px; height: 9px; border-radius: 2px; border: 1px solid #fff; }
+  #mentionBox .mi .hd { color: #1a237e; font-weight: 600; white-space: nowrap; }
+  #mentionBox .mi .full { color: #999; font-size: 11px; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap; }
+  #cmd { font-size: 13px; }
+  .atbtn { background: #e65100 !important; }
+</style>
+</head>
+<body>
+<div id="side">
+  <header>
+    <h1>SRAF 分配智能 Demo</h1>
+    <div class="sub" id="subinfo">加载中…</div>
+  </header>
+  <div id="regionbar">
+    <span>区域数据包</span>
+    <select id="regionSel" onchange="switchRegion(this.value)"></select>
+  </div>
+  <nav>
+    <button class="on" data-t="gen">① 合同→区域</button>
+    <button data-t="adj">② 语义调整</button>
+    <button data-t="ana">③ 分析</button>
+  </nav>
+
+  <div class="pane on" id="p-gen">
+    <!-- 新建区域 -->
+    <div class="card newzone">
+      <h3>🆕 新建区域</h3>
+      <div class="row2">
+        <div>
+          <label class="fl">区域名</label>
+          <input type="text" id="nrName" placeholder="例：杭州">
+        </div>
+        <div>
+          <label class="fl">快速选择</label>
+          <select id="nrPreset" onchange="applyPreset()">
+            <option value="">自定义范围</option>
+            <option value="30.05,119.85,30.45,120.45">杭州</option>
+            <option value="31.05,121.2,31.5,121.75">上海</option>
+            <option value="22.9,113.0,23.4,113.6">广州</option>
+            <option value="30.5,114.15,30.85,114.5">武汉</option>
+            <option value="31.9,118.6,32.2,118.95">南京</option>
+            <option value="39.7,116.2,40.1,116.65">北京</option>
+          </select>
+        </div>
+      </div>
+      <label class="fl">范围 bbox（南,西,北,东）</label>
+      <input type="text" id="nrBbox" placeholder="30.05,119.85,30.45,120.45">
+      <button class="btn amber" id="nrCreate" onclick="createRegion()">创建并抓取 OSM</button>
+      <span class="muted" id="nrStat"></span>
+    </div>
+
+    <!-- 录入合同 -->
+    <div class="card newzone">
+      <h3>📝 录入合同（自然语言四至）</h3>
+      <label class="fl">经销商名</label>
+      <input type="text" id="ncDealer" placeholder="例：杭州康桥半山渠道贸易有限公司">
+      <label class="fl">合同描述（支持：方向反转 / 街道区域 / 渠道条款）</label>
+      <textarea id="ncText" placeholder="G2504以南，上塘高架以东，留石高架以北，康桥街道、半山街道以及五金大世界批发市场传统渠道"></textarea>
+      <div class="row2">
+        <div>
+          <label class="fl">模拟门店数</label>
+          <input type="number" id="ncCount" value="120" min="0">
+        </div>
+        <div>
+          <label class="fl">中心点（地图点选，可选）</label>
+          <input type="text" id="ncCenter" placeholder="自动推断" readonly>
+        </div>
+      </div>
+      <button class="btn" id="ncSubmit" onclick="addContract()">解析 → 生成围栏 → 视觉终审</button>
+      <button class="btn gray" id="ncPick" onclick="armPick()">📍 地图选中心</button>
+    </div>
+
+    <div id="genResult"></div>
+
+    <div class="muted" style="margin-bottom:6px">
+      已有合同卡（点击生成区域）：
+      <button class="btn amber" id="genAll">⚡ 一键生成全部</button>
+      <span class="muted" id="genAllStat"></span>
+    </div>
+    <div id="contracts"></div>
+  </div>
+
+  <div class="pane" id="p-adj">
+    <div id="mentionBox"></div>
+    <div id="focusCtx" style="display:none"></div>
+    <div id="chat"></div>
+    <div style="margin-bottom:5px">
+      <span class="chip">@甲商贸 的东部片区 划给 @乙商行</span>
+      <span class="chip">@甲商贸 不做了，区域都给 @丙企业</span>
+      <span class="chip">@乙商行 的增城区 划给 @丙企业</span>
+    </div>
+    <input type="text" id="cmd" autocomplete="off"
+           placeholder='输入 @ 唤起经销商名单，例：@甲商贸 的店都给 @乙商行'>
+    <div style="margin-top:4px">
+      <button class="btn" id="send">提出调整</button>
+      <button class="btn gray" id="reset">重置全部</button>
+    </div>
+  </div>
+
+  <div class="pane" id="p-ana">
+    <div id="kpis"></div>
+    <div id="gapblock"></div>
+    <h3 style="font-size:12px;color:#1a237e;margin:6px 0 4px">围栏健康排名（点行定位）</h3>
+    <table id="rank"><thead><tr>
+      <th>围栏</th><th>店</th><th>OK</th><th>OOF</th><th>判定</th></tr></thead>
+      <tbody></tbody></table>
+  </div>
+</div>
+<div id="map"></div>
+<div id="focusBar"></div>
+<div class="legend" id="legend"></div>
+<div id="toast"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const KIND_STYLE = {
+  OK:        {r: 2.2, color: "#7cab7c", op: .60, stroke: false,  z: 0},
+  DIRECT:    {r: 2.4, color: "#8d8d8d", op: .70, stroke: false,  z: 1},
+  DIRECT_IN: {r: 3.0, color: "#1565c0", op: .90, stroke: false,  z: 2},
+  OOF:       {r: 3.6, color: "#ef6c00", op: .95, stroke: true,   z: 3},
+  MULTI:     {r: 4.4, color: "#6a1b9a", op: 1,   stroke: true,   z: 4},
+  GAP:       {r: 4.4, color: "#c62828", op: 1,   stroke: true,   z: 5},
+};
+const KIND_NAME = {OK:"围栏内一致", OOF:"非围栏供货", DIRECT_IN:"直供KA(内)",
+                   DIRECT:"直供KA(外)", GAP:"覆盖缺口", MULTI:"多围栏"};
+
+const canvasR = L.canvas({padding: 0.3});
+const map = L.map("map", {zoomSnap: 0.25}).setView([23.05, 113.35], 10);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+            {attribution:"© OpenStreetMap"}).addTo(map);
+const storeLayer = L.layerGroup().addTo(map);
+const fenceLayer = L.layerGroup().addTo(map);
+const draftLayer = L.layerGroup().addTo(map);
+const proposalLayer = L.layerGroup().addTo(map);
+let BOOT = null, focusDealer = null, picking = false;
+const generated = new Set();
+const filt = Object.fromEntries(Object.keys(KIND_STYLE).map(k=>[k,true]));
+const dealerColor = d => { const f = BOOT && BOOT.fences.find(x=>x.dealer===d);
+  return f ? f.color : "#4E79A7"; };
+const fenceOf = d => BOOT && BOOT.fences.find(x=>x.dealer===d);
+const neighborsOf = d => { const f = fenceOf(d); return f ? (f.neighbors||[]) : []; };
+
+function toast(t){ const e=document.getElementById("toast"); e.textContent=t;
+  e.style.display="block"; clearTimeout(toast._t);
+  toast._t=setTimeout(()=>e.style.display="none", 4500); }
+function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
+
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll("nav button").forEach(x=>x.classList.remove("on"));
+  document.querySelectorAll(".pane").forEach(x=>x.classList.remove("on"));
+  b.classList.add("on"); document.getElementById("p-"+b.dataset.t).classList.add("on");
+});
+
+// ---------- 围栏存在性：生成后才有 ----------
+function drawFences(fences, dimExcept){
+  fenceLayer.clearLayers();
+  for (const f of fences){
+    if (!generated.has(f.dealer)) continue;
+    const focused = dimExcept && f.dealer === dimExcept;
+    const poly = L.polygon(f.ring.map(p=>[p[1],p[0]]), {
+      color: "#ffffff", weight: focused ? 2.5 : 1.2,
+      fillColor: f.color, fillOpacity: focused ? .55 : (dimExcept? .12 : .42)});
+    poly.bindTooltip(`<i style="display:inline-block;width:9px;height:9px;background:${f.color};border-radius:2px;margin-right:4px"></i>${esc(f.dealer)}<br>${f.area_km2} km² · 点击聚焦`);
+    poly.on("click", ()=> focusDealer===f.dealer ? clearFocus() : showFenceAnalysis(f.dealer));
+    fenceLayer.addLayer(poly);
+  }
+}
+function renderFocusStores(){
+  storeLayer.clearLayers();
+  if (!focusDealer) return;
+  const nbrs = neighborsOf(focusDealer);
+  const inSet = new Set([focusDealer, ...nbrs]);
+  for (const s of BOOT.stores){
+    const mine = (s.dealers||[]).find(d=> inSet.has(d));
+    if (!mine) continue;
+    const st = KIND_STYLE[s.kind] || {r:2.4, color:"#999", op:.7, stroke:false};
+    const isFocus = mine === focusDealer;
+    const m = L.circleMarker([s.lat, s.lon], {
+      renderer: canvasR, radius: isFocus ? st.r+0.6 : st.r,
+      stroke: st.stroke, weight: 1.1, color: "#fff",
+      fillColor: isFocus ? dealerColor(focusDealer) : st.color,
+      fillOpacity: isFocus ? .85 : .5});
+    m.bindTooltip(`${esc(s.n)}<br><b>${KIND_NAME[s.kind]}</b> · 归属 ${esc(mine)}<br>上游: ${esc(s.u||"—")}`);
+    storeLayer.addLayer(m);
+  }
+}
+function setFocusDealer(dealer){
+  focusDealer = dealer || null;
+  drawFences(BOOT.fences, focusDealer);
+  renderFocusStores();
+  const b = document.getElementById("focusBar");
+  const ctx = document.getElementById("focusCtx");
+  if (focusDealer){
+    const n = BOOT.stores.filter(s=>(s.dealers||[]).includes(focusDealer)).length;
+    const nbrs = neighborsOf(focusDealer);
+    b.innerHTML = `<span class="sw" style="background:${dealerColor(focusDealer)}"></span>`+
+      `<b>${esc(focusDealer)}</b> · ${n} 店` +
+      `<span class="x" onclick="clearFocus()">✕ 退出聚焦</span>`;
+    b.style.display = "block";
+    renderLegend();
+  } else { b.style.display = "none"; ctx.style.display="none"; renderLegend(); }
+}
+function clearFocus(){ setFocusDealer(null); }
+function renderLegend(){
+  const el = document.getElementById("legend");
+  if (!focusDealer){
+    el.innerHTML = `<div class="t">图例</div>
+      <div class="muted">点击围栏聚焦门店；生成区域后围栏才出现</div>`;
+    return;
+  }
+  const nbrs = neighborsOf(focusDealer);
+  el.innerHTML = `<div class="t">当前视野门店归属</div>
+    <div><i style="background:${dealerColor(focusDealer)};width:11px;height:11px"></i>
+      <b>${esc(focusDealer.slice(0,14))}</b>（聚焦）</div>` +
+    nbrs.map(d=>`<div><i style="background:${dealerColor(d)};width:10px;height:10px"></i>${esc(d.slice(0,16))}</div>`).join("");
+}
+
+// ---------- 启动 ----------
+async function boot(){
+  BOOT = await (await fetch("/api/bootstrap")).json();
+  const regs = await (await fetch("/api/regions")).json();
+  const sel = document.getElementById("regionSel");
+  sel.innerHTML = regs.regions.map(r=>{
+    const nm = (BOOT.meta && r.id===BOOT.meta.data_dir) ? r.region_name : r.region_name;
+    return `<option value="${r.id}" ${r.id===regs.current?"selected":""}>${esc(nm)}（${r.fences}围栏/${r.stores}店）</option>`;
+  }).join("");
+  const meta = BOOT.meta || {region_name:"", center:[23.05,113.35], zoom:10};
+  map.setView([meta.center[1], meta.center[0]], meta.zoom);
+  if (BOOT.fences && BOOT.fences.length) fitAllFences(BOOT.fences);
+  document.querySelector("header h1").textContent = "SRAF 分配智能 Demo · " + meta.region_name;
+  document.getElementById("genAll").textContent = "⚡ 一键生成全部（"+BOOT.contracts.length+"）";
+  document.getElementById("subinfo").textContent =
+    `${BOOT.fences.length} 围栏 / ${BOOT.stores.length} 门店 ｜ 点围栏聚焦 ｜ 空白地图=未生成`;
+  renderContracts(); renderAnalysis(); renderLegend();
+}
+
+function renderContracts(){
+  const el = document.getElementById("contracts");
+  if (!BOOT.contracts.length){
+    el.innerHTML = `<div class="muted">此区域暂无合同。用上方「录入合同」或「新建区域」。</div>`;
+    return;
+  }
+  el.innerHTML = BOOT.contracts.map((c,i)=>{
+    const col = dealerColor(c.dealer_id);
+    return `<div class="card" style="cursor:pointer" onclick="genContract(${i})">
+      <h3><span style="display:inline-block;width:10px;height:10px;background:${col};
+        border-radius:2px;margin-right:5px;vertical-align:middle"></span>${esc(c.dealer_id)}</h3>
+      <div class="muted">${esc(c.district||"")} · 合同店数 ${c.store_count}
+        ${c.reserved_channels&&c.reserved_channels.length? " · 保留渠道 "+c.reserved_channels.length:""}</div>
+      <div class="muted">北:${esc(c.four_bounds&&c.four_bounds["北"]||"—")} 南:${esc(c.four_bounds&&c.four_bounds["南"]||"—")} 东:${esc(c.four_bounds&&c.four_bounds["东"]||"—")} 西:${esc(c.four_bounds&&c.four_bounds["西"]||"—")}</div>
+      <span class="muted" id="gr-${i}">${generated.has(c.dealer_id)?"已生成":"点击生成区域 →"}</span>
+    </div>`;}).join("");
+}
+function conflictHtml(cf){
+  if (!cf) return "";
+  const total = (cf.oof_n||0)+(cf.multi_n||0)+(cf.gap_n||0);
+  if (!total) return `<div class="ok-c">✓ 无冲突</div>`;
+  return `<div class="warn">⚠ 冲突 ${total}：错位 ${cf.oof_n} · 重叠 ${cf.multi_n} · 缺口 ${cf.gap_n}
+    <br>处置：登记矛盾簿 → 08 核验 / GW 审批，不自动裁决</div>`;
+}
+async function genContract(i){
+  const c = BOOT.contracts[i];
+  const sp = document.getElementById("gr-"+i); sp.textContent = "生成中…";
+  const r = await (await fetch("/api/generate",{method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({bounds:c.four_bounds, center:c.center, dealer:c.dealer_id})})).json();
+  if (r.error){ sp.textContent = "✗ "+esc(r.error); return; }
+  drawDraft(r);
+  sp.textContent = "已生成";
+}
+function drawDraft(r){
+  draftLayer.clearLayers();
+  const col = dealerColor(r.dealer);
+  const accepted = r.interpretation === "accepted";
+  const ring = r.ring.map(p=>[p[1],p[0]]);
+  L.polygon(ring, accepted
+    ? {color:"#fff", weight:2.5, fillColor:col, fillOpacity:.45}
+    : {color: r.draft_quality==="low" ? "#c62828" : col,
+       weight:2.5, dashArray:"6 4", fillColor:col, fillOpacity:.28}).addTo(draftLayer);
+  for (const [d, pts] of Object.entries(r.bounds_geometry||{})){
+    L.polyline(pts.map(p=>[p[1],p[0]]), {color:"#f9a825", weight:4, opacity:.95})
+      .bindTooltip("界线·"+d).addTo(draftLayer);
+  }
+  generated.add(r.dealer);
+  setFocusDealer(r.dealer);
+  map.fitBounds(L.polygon(ring).getBounds().pad(0.15));
+}
+
+// ---------- 新建区域 ----------
+function applyPreset(){
+  const v = document.getElementById("nrPreset").value;
+  if (v) document.getElementById("nrBbox").value = v;
+}
+async function createRegion(){
+  const name = document.getElementById("nrName").value.trim();
+  const bbox = document.getElementById("nrBbox").value.trim()
+    .split(",").map(Number);
+  const stat = document.getElementById("nrStat");
+  const btn = document.getElementById("nrCreate");
+  if (!name || bbox.length!==4 || bbox.some(isNaN)){
+    stat.textContent = "需填区域名 + 4 个 bbox 数字"; return; }
+  btn.disabled = true;
+  const r = await (await fetch("/api/create_region",{method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({name, bbox})})).json();
+  if (r.error){ stat.textContent = "✗ "+r.error; btn.disabled=false; return; }
+  stat.textContent = r.note || "已创建";
+  pollRegionReady(r.id, 0);
+}
+async function pollRegionReady(id, tries){
+  const stat = document.getElementById("nrStat");
+  const r = await (await fetch("/api/regions")).json();
+  const cur = r.regions.find(x=>x.id===id);
+  const st = await (await fetch("/api/pack_status?region="+encodeURIComponent(id))).json().catch(()=>({}));
+  if (st.status === "ready" || (cur && !st.status)){
+    stat.textContent = "✓ 就绪，自动切换";
+    document.getElementById("nrCreate").disabled = false;
+    await switchRegion(id); return;
+  }
+  if (st.status === "failed"){ stat.textContent = "✗ OSM 抓取失败";
+    document.getElementById("nrCreate").disabled=false; return; }
+  stat.textContent = "后台抓取 OSM 中… "+(st.log||"").slice(0,40);
+  if (tries < 40) setTimeout(()=>pollRegionReady(id, tries+1), 5000);
+}
+
+// ---------- 录入合同 ----------
+function armPick(){
+  picking = true; toast("在地图上点击设置中心点");
+  document.getElementById("ncPick").disabled = true;
+}
+map.on("click", e=>{
+  if (!picking) return;
+  document.getElementById("ncCenter").value =
+    e.latlng.lng.toFixed(5) + "," + e.latlng.lat.toFixed(5);
+  picking = false; document.getElementById("ncPick").disabled = false;
+});
+async function addContract(){
+  const dealer = document.getElementById("ncDealer").value.trim();
+  const text = document.getElementById("ncText").value.trim();
+  const count = parseInt(document.getElementById("ncCount").value||"0",10);
+  const centerRaw = document.getElementById("ncCenter").value.trim();
+  const btn = document.getElementById("ncSubmit");
+  const box = document.getElementById("genResult");
+  if (!dealer || !text){ toast("经销商名和合同描述都要填"); return; }
+  btn.disabled = true;
+  box.innerHTML = `<div class="card"><h3>⏳ LLM 语义解析 + 几何构建中…</h3>
+    <div class="muted">方向反转 / 街道区域 / 渠道条款正在处理，约 10-40 秒</div></div>`;
+  const body = {dealer_id:dealer, text, store_count:count};
+  if (centerRaw){ const [lon,lat] = centerRaw.split(",").map(Number); body.center=[lon,lat]; }
+  const r = await (await fetch("/api/add_contract",{method:"POST",
+    headers:{"Content-Type":"application/json"}, body: JSON.stringify(body)})).json();
+  btn.disabled = false;
+  if (r.error){ box.innerHTML = `<div class="card conflict"><h3>✗ 失败</h3>
+    <div class="warn">${esc(r.error)}</div></div>`; return; }
+  drawDraft(r);
+  // 视觉终审
+  box.innerHTML = `<div class="card"><h3>📐 草案已生成 <span class="verdict-badge verdict-存疑">视觉终审中…</span></h3>
+    <div class="muted">面积 ${r.area_km2} km² · ${esc(r.built_from)} · 模拟门店 ${r.synth_stores}</div>
+    <div class="muted">语义: ${esc(r.bounds?JSON.stringify(r.bounds):"")}</div>
+    <div class="muted">街道区域: ${esc((r.areas||[]).join("、")||"—")} · 渠道条款: ${esc((r.channels||[]).join("、")||"—")}</div>
+    <details class="vsum"><summary>切分明细</summary><div class="muted">${
+      (r.clipped||[]).map(esc).join("<br>")}</div><div class="muted">${
+      (r.recorded||[]).map(esc).join("<br>")}</div></details>
+    <div id="visionBox"><div class="muted">⏳ 正在渲染并送视觉模型终审…</div></div></div>`;
+  runVision(r);
+  await reloadAfterAdd();
+}
+async function runVision(r){
+  const v = await (await fetch("/api/verify_vision",{method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({dealer:r.dealer, ring:r.ring,
+      bounds_geometry:r.bounds_geometry||{}, lines_used:r.bounds||{},
+      text:document.getElementById("ncText").value.trim()})})).json();
+  const vb = document.getElementById("visionBox");
+  if (!vb) return;
+  const verdict = v.verdict || "存疑";
+  const cls = verdict==="通过"?"verdict-通过":verdict==="不通过"?"verdict-不通过":"verdict-存疑";
+  vb.innerHTML = `<hr style="margin:6px 0;border:none;border-top:1px dashed #ccc">
+    <h4 style="font-size:12px">🔍 视觉终审
+      <span class="verdict-badge ${cls}">${esc(verdict)}</span></h4>
+    ${(v.findings||[]).map(f=>`<div class="muted">• ${esc(f)}</div>`).join("")}
+    ${v.note?`<div class="muted" style="margin-top:3px">${esc(v.note)}</div>`:""}
+    ${v.image?`<img class="vthumb" src="${v.image}" title="视觉模型所见的渲染图">`:""}`;
+  const badge = document.querySelector("#genResult .verdict-badge");
+  if (badge){ badge.textContent = "视觉终审: "+verdict; badge.className = "verdict-badge "+cls; }
+}
+async function reloadAfterAdd(){
+  BOOT = await (await fetch("/api/bootstrap")).json();
+  const regs = await (await fetch("/api/regions")).json();
+  document.getElementById("regionSel").innerHTML = regs.regions.map(r=>
+    `<option value="${r.id}" ${r.id===regs.current?"selected":""}>${esc(r.region_name)}（${r.fences}围栏/${r.stores}店）</option>`).join("");
+  renderContracts(); renderAnalysis();
+}
+
+// ---------- 一键生成 ----------
+document.getElementById("genAll").onclick = async ()=>{
+  const stat = document.getElementById("genAllStat");
+  draftLayer.clearLayers();
+  let done=0, conf=0;
+  for (let i=0;i<BOOT.contracts.length;i++){
+    const c = BOOT.contracts[i];
+    stat.textContent = `生成中 ${done+1}/${BOOT.contracts.length}`;
+    const r = await (await fetch("/api/generate",{method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({bounds:c.four_bounds, center:c.center, dealer:c.dealer_id})})).json();
+    done++;
+    if (r.error) continue;
+    generated.add(c.dealer_id);
+    const col = dealerColor(c.dealer_id);
+    L.polygon(r.ring.map(p=>[p[1],p[0]]), {color:"#fff", weight:1.5,
+      fillColor:col, fillOpacity:.38}).addTo(draftLayer);
+    const cf = r.conflicts||{};
+    if ((cf.oof_n||0)+(cf.multi_n||0)+(cf.gap_n||0)) conf++;
+    const g = document.getElementById("gr-"+i);
+    if (g) g.innerHTML = `<span class="ok-c">✓ 已生成</span>`;
+  }
+  stat.textContent = `完成 ${done} 份，${conf} 份有冲突`;
+  if (draftLayer.getLayers().length)
+    map.fitBounds(L.featureGroup(draftLayer.getLayers()).getBounds().pad(0.05));
+  drawFences(BOOT.fences);
+};
+
+// ---------- 语义调整 ----------
+function pushMsg(cls, html){
+  const d = document.createElement("div"); d.className="msg "+cls; d.innerHTML=html;
+  document.getElementById("chat").appendChild(d);
+  const box = document.getElementById("chat"); box.scrollTop = box.scrollHeight;
+}
+// ---------- @ 经销商唤起 ----------
+function dealerList(){ return BOOT ? [...new Set(BOOT.fences.map(f=>f.dealer))] : []; }
+function shortName(d){
+  let t = d.replace(/(供应链管理|贸易|商贸|科技|食品|百货)?(有限公司|有限责任公司)$/,"");
+  if (t.length > 12) t = t.slice(0, 12);
+  return t;
+}
+function resolveAtMentions(text){
+  // @短名 / @全名 → 展开为完整经销商名（确定性替换，LLM 只见全名）
+  let out = text, hits = [];
+  for (const d of dealerList()){
+    const sn = shortName(d);
+    for (const cand of [d, sn]){
+      if (!cand) continue;
+      const re = new RegExp("@"+cand.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"), "g");
+      if (re.test(out)){ out = out.replace(re, d); hits.push(cand+"→"+d.slice(0,10)); break; }
+    }
+  }
+  // 残留 @：按前缀唯一匹配尝试展开
+  out = out.replace(/@([\w\u4e00-\u9fff]{2,14})/g, (m, frag) => {
+    const ms = dealerList().filter(d => d.includes(frag) || shortName(d).includes(frag));
+    if (ms.length === 1) return ms[0];
+    return m;
+  });
+  return {text: out, hits};
+}
+const mb = document.getElementById("mentionBox");
+let mentionOpen = false, mentionItems = [], mentionSel = 0, mentionFrom = -1;
+function queryAt(){
+  const el = document.getElementById("cmd");
+  const v = el.value, pos = el.selectionStart;
+  const at = v.lastIndexOf("@", pos-1);
+  if (at < 0 || /\s/.test(v.slice(at+1, pos))) return null;
+  return {at, frag: v.slice(at+1, pos)};
+}
+function updateMention(){
+  const q = queryAt();
+  if (!q){ closeMention(); return; }
+  const list = [...new Set(dealerList().map(d=>[shortName(d), d]))]
+    .filter(([sn]) => sn.includes(q.frag) || q.frag==="" )
+    .slice(0, 12);
+  mentionItems = list; mentionFrom = q.at; mentionSel = 0;
+  if (!list.length){ closeMention(); return; }
+  const el = document.getElementById("cmd"), r = el.getBoundingClientRect(), side=document.querySelector("#side").getBoundingClientRect();
+  mb.style.left = (r.left - side.left + 6)+"px";
+  mb.style.bottom = (document.querySelector("#side").getBoundingClientRect().bottom - r.top + 4)+"px";
+  mb.style.width = (r.width-12)+"px";
+  mb.style.display = "block";
+  renderMention();
+  mentionOpen = true;
+}
+function renderMention(){
+  mb.innerHTML = mentionItems.map(([sn, full], i)=>{
+    const col = dealerColor(full);
+    return `<div class="mi${i===mentionSel?" sel":""}" onmousedown="pickMention(${i});return false;">
+      <span class="sw" style="background:${col}"></span>
+      <span class="hd">@${esc(sn)}</span><span class="full">${esc(full)}</span></div>`;
+  }).join("") + `<div class="muted" style="padding:3px 9px">↑↓选择 · Enter/Tab 插入 · Esc 关闭</div>`;
+}
+function pickMention(i){
+  const el = document.getElementById("cmd");
+  const [sn, full] = mentionItems[i]||[]; if (!full) return;
+  const v = el.value;
+  el.value = v.slice(0, mentionFrom) + "@" + full + " " + v.slice(mentionFrom+1+(el.selectionStart-mentionFrom-1));
+  const caret = mentionFrom + full.length + 2;
+  el.setSelectionRange(caret, caret); el.focus();
+  closeMention();
+}
+function closeMention(){ mb.style.display="none"; mentionOpen=false; }
+function onCmdKey(e){
+  if (!mentionOpen){
+    if (e.key==="@" ) setTimeout(updateMention, 0);
+    return;
+  }
+  if (e.key==="ArrowDown"){ mentionSel=(mentionSel+1)%mentionItems.length; renderMention(); e.preventDefault(); }
+  else if (e.key==="ArrowUp"){ mentionSel=(mentionSel-1+mentionItems.length)%mentionItems.length; renderMention(); e.preventDefault(); }
+  else if (e.key==="Enter"||e.key==="Tab"){ pickMention(mentionSel); e.preventDefault(); }
+  else if (e.key==="Escape"){ closeMention(); }
+}
+const cmdEl = document.getElementById("cmd");
+cmdEl.addEventListener("input", updateMention);
+cmdEl.addEventListener("keyup", e=>{ if(!["ArrowDown","ArrowUp","Enter","Tab","Escape"].includes(e.key)) updateMention(); });
+cmdEl.addEventListener("keydown", onCmdKey);
+cmdEl.addEventListener("blur", ()=>setTimeout(closeMention, 200));
+cmdEl.addEventListener("click", updateMention);
+
+document.querySelectorAll(".chip").forEach(ch=>ch.onclick=()=>{
+  document.getElementById("cmd").value = ch.textContent;});
+document.getElementById("send").onclick = doAdjust;
+document.getElementById("cmd").addEventListener("keydown", e=>{ if(e.key==="Enter") doAdjust(); });
+async function doAdjust(){
+  const raw = document.getElementById("cmd").value.trim();
+  if (!raw) return;
+  closeMention();
+  const res = resolveAtMentions(raw);
+  const t = res.text;
+  if (res.hits.length)
+    pushMsg("user", esc(raw) + `<div class="kv">↳ 展开: ${esc(res.hits.join("  "))}</div>`);
+  else if (t !== raw) pushMsg("user", esc(raw) + `<div class="kv">↳ ${esc(t)}</div>`);
+  else pushMsg("user", esc(t));
+  const btn = document.getElementById("send"); btn.disabled=true;
+  try{
+    const r = await (await fetch("/api/adjust",{method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({text:t})})).json();
+    if (r.error){ pushMsg("err","✗ "+esc(r.error)); return; }
+    const tag = r.parser==="llm"?"LLM·M3":"规则兜底";
+    const ar = r.area||{};
+    let h = `<b>区域划转提案</b> <span class="tag llm">${tag}</span>
+      「${esc(r.proposal.src.slice(0,14))}」的 <b>${esc(r.proposal.area||"整个区域")}</b>
+      （${ar.sub_km2??"?"} km²）划给「${esc(r.proposal.dst.slice(0,14))}」
+      <span class="tag ${r.materiality}">${r.materiality}</span>`;
+    h += `<div class="kv">📐 面积: ${esc(r.proposal.src.slice(0,8))} ${(ar.src_km2||[]).join("→")} km²
+      ｜ ${esc(r.proposal.dst.slice(0,8))} ${(ar.dst_km2||[]).join("→")} km²
+      ${ar.src_fragmented?" · ⚠原区域被切碎":""}${ar.dst_disjoint?" · ⚠目标区域不连片":""}</div>`;
+    h += `<div class="kv">🏪 附带效果: ${r.proposal.moved} 家门店随片区变更归属</div>`;
+    const cf = r.conflicts||{};
+    if (cf.become_oof_n||cf.multi_in_moved)
+      h += `<div class="conf">⚠ 冲突：${cf.become_oof_n} 家划转后错位${cf.multi_in_moved?` · ${cf.multi_in_moved} 家矛盾簿`:""}</div>`;
+    h += r.signals.map(s=>`<div class="sig">▶ ${esc(s.signal)}</div>`).join("");
+    h += r.risks.map(x=>`<div class="risk">⚠ [${esc(x.kb_id||"")}] ${esc((x.statement||"").slice(0,60))}…</div>`).join("");
+    h += `<button class="btn" onclick="applyIt(this)">确认应用</button>
+          <button class="btn gray" onclick="rejectProposal()">拒绝</button>`;
+    drawProposalArea(r);
+    pushMsg("sys", h);
+  } finally { btn.disabled=false; }
+}
+function drawProposalArea(r){
+  proposalLayer.clearLayers();
+  if (r.sub_ring && r.sub_ring.length>2){
+    const ring = r.sub_ring.map(pt=>[pt[1],pt[0]]);
+    L.polygon(ring, {color:"#d84315", weight:3, dashArray:"7 5",
+      fillColor:"#ff7043", fillOpacity:.5}).addTo(proposalLayer);
+    map.flyToBounds(L.polygon(ring).getBounds().pad(0.25), {duration:.8});
+    toast("橙色虚线=被划转片区预览");
+  }
+}
+function fitAllFences(fences){
+  const pts = (fences||BOOT.fences).flatMap(f=>f.ring.map(p=>[p[1],p[0]]));
+  if (pts.length > 1) map.fitBounds(L.latLngBounds(pts).pad(0.06));
+}
+function rejectProposal(){
+  pushMsg("sys","已拒绝（无变更）");
+  proposalLayer.clearLayers();
+  fetch("/api/reject",{method:"POST"});
+  fitAllFences();
+}
+async function applyIt(btn){
+  if (btn) btn.disabled=true;
+  proposalLayer.clearLayers();
+  const r = await (await fetch("/api/apply",{method:"POST"})).json();
+  if (!r.ok){ pushMsg("err","✗ "+esc(r.error||"应用失败")); if(btn)btn.disabled=false; return; }
+  pushMsg("sys","✅ <b>已生效</b>");
+  toast("✓ 区域已划转：门店随片区走，围栏几何已更新");
+  BOOT = await (await fetch("/api/bootstrap")).json();
+  drawFences(BOOT.fences, focusDealer);
+  if (focusDealer){ renderFocusStores(); renderLegend(); }
+  renderAnalysis();
+}
+document.getElementById("reset").onclick = async ()=>{
+  await fetch("/api/reset",{method:"POST"});
+  document.getElementById("chat").innerHTML="";
+  setFocusDealer(null); generated.clear();
+  fenceLayer.clearLayers(); draftLayer.clearLayers(); proposalLayer.clearLayers();
+  document.getElementById("genResult").innerHTML="";
+  renderContracts(); renderAnalysis(); toast("已重置（围栏回到未生成）");
+};
+
+// ---------- 分析 ----------
+async function renderAnalysis(){
+  const a = await (await fetch("/api/analysis")).json();
+  document.getElementById("kpis").innerHTML =
+    Object.entries(KIND_STYLE).map(([k,v])=>
+      `<span class="kpi"><b style="color:${v.color}">${a.kinds[k]??0}</b><span>${KIND_NAME[k]}</span></span>`).join("");
+  const g = a.gap_summary||{};
+  document.getElementById("gapblock").innerHTML =
+    `<div class="card"><h3>覆盖缺口 ${g.total_gaps||0} 家</h3>
+     <div class="muted">缺围栏 ${g.by_class&&g.by_class["缺围栏覆盖"]||0} · 缺意愿 ${g.by_class&&g.by_class["缺意愿候选"]||0} · 结构性 ${g.structural||0}</div></div>`;
+  document.querySelector("#rank tbody").innerHTML = (a.health_rank||[]).map(r=>`
+    <tr class="rowlink" onclick="showFenceAnalysis('${esc(r.dealer)}')">
+      <td><span style="display:inline-block;width:9px;height:9px;background:${dealerColor(r.dealer)};border-radius:2px;margin-right:4px;vertical-align:middle"></span>${esc(r.dealer.slice(0,14))}</td>
+      <td>${r.stores}</td><td>${(r.ok_rate*100).toFixed(0)}%</td>
+      <td>${(r.oof_rate*100).toFixed(0)}%</td>
+      <td><span class="tag ${r.materiality}">${r.verdict}</span></td></tr>`).join("");
+}
+async function showFenceAnalysis(dealer){
+  if (!generated.has(dealer)){ generated.add(dealer); }
+  const a = await (await fetch("/api/analysis?fence="+encodeURIComponent(dealer))).json();
+  const h = a.health;
+  if (h) document.getElementById("gapblock").innerHTML = `
+    <div class="card"><h3><span style="display:inline-block;width:10px;height:10px;background:${dealerColor(dealer)};border-radius:2px;margin-right:5px;vertical-align:middle"></span>${esc(h.dealer)}</h3>
+    <span class="tag ${h.materiality}">${h.verdict}</span>
+    <div class="muted">${h.stores} 店 · ${h.area_km2} km² · 密度 ${h.density_per_km2}/km²</div>
+    <div class="muted">构成: ${esc(JSON.stringify(h.kinds))}</div></div>`;
+  setFocusDealer(dealer);
+  const f = fenceOf(dealer);
+  if (f) map.flyToBounds(L.polygon(f.ring.map(p=>[p[1],p[0]])).getBounds().pad(0.15), {duration:.8});
+}
+
+// ---------- 区域切换 ----------
+async function switchRegion(id){
+  const sel = document.getElementById("regionSel"); sel.disabled = true;
+  try{
+    const r = await (await fetch("/api/switch",{method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({region:id})})).json();
+    if (r.error){ toast("✗ "+r.error); return; }
+    generated.clear(); focusDealer=null;
+    fenceLayer.clearLayers(); draftLayer.clearLayers(); storeLayer.clearLayers();
+    document.getElementById("genResult").innerHTML="";
+    document.getElementById("chat").innerHTML="";
+    await boot();
+    toast("已切换："+r.region+"（点围栏聚焦 / 录入新合同）");
+  } finally { sel.disabled = false; }
+}
+
+boot();
+</script>
+</body>
+</html>
