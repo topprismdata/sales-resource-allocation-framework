@@ -167,7 +167,7 @@ SRAF adapter（自建，负责）              visit 引擎（只读，别人维
 ```text
 docs/                    规范集 v1.2.1 FROZEN（00 章程 … 08 身份）+ 治理文件
                            CHANGELOG_v1.2.2 = 实施基线更新记录（规范零改动）
-DESIGN.md                本文件——实施阶段总体设计（活文档）
+docs/DESIGN.md         本文件——实施阶段总体设计（活文档）
 knowledge_base/          知识库 v0.3.0（31 条；json 机器可读 + md 人读索引）
 analysis/                世界模型 v2.1 · 04 实施设计 · DP06 差距分析 v2 · 合同包
                          围栏特性 · 行业空白 · 三轮审查 · CN 市场现实 · intel_reports_v0

@@ -30,7 +30,7 @@ hard errors found in v1.1.
 
 Architecture is **FROZEN** and ready for the engineering phase.
 
-Implementation progress on top of the baseline lives in `../DESIGN.md`
+Implementation progress on top of the baseline lives in `DESIGN.md`
 (living design document). The 00-08 specs themselves are unchanged.
 
 
