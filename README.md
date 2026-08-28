@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://raw.githubusercontent.com/topprismdata/.github/main/assets/brand/topprism-repo-header.png" alt="TopPrism dual-prism visual" width="100%" />
+</p>
+
 # SRAF — 经销商区域分配智能决策框架
 
 > SRAF = 给经销商区域管理装大脑。围栏绘制/门店归类/排班引擎是"怎么做"的肌肉；
