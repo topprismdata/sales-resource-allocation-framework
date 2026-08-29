@@ -368,6 +368,15 @@ candidate:
   EXISTS in the available line networks. GPT cross-review reframe
   accepted: problem ≈ heterogeneous line-network map matching
   (candidate ranking + path selection), NOT polygon generation.
+- **DATA FIX (user diagnosis, 2026-08-29):** the original fetch only
+  captured motorway–secondary named ways and clipped admin fragments.
+  Refetched via Geofabrik guangdong-latest.osm.pbf (164MB, pyosmium,
+  ALL highway classes): 188,301 road ways / 8,672 waterways / 228
+  admin-8 / 21 admin-6 → gz_osm_full.json. Re-run:
+  **Median Recall@100 = 0.975, Recall@300 = 1.000 (n=39).** Gate
+  (>0.9) PASSED. The 0.49 plateau was substantially a DATA problem —
+  street-level roads were absent so the candidate network could not
+  express the true boundary.
 - Median Recall@100 = 0.707 → strict snap needs per-dealer handling:
   top half of dealers ≈0.95–1.0 (亨啡源 0.95/1.0, confirming its 0.897
   street+road reconstruction); bottom ~15% (彩弘 0.10, 鸿欣 0.12,
