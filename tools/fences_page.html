@@ -24,6 +24,7 @@
        padding:8px 12px;box-shadow:0 2px 8px rgba(0,0,0,.15);font-size:12.5px}
  #ctrl label{display:block;cursor:pointer;margin:2px 0}
  .legend{margin-top:4px;color:#666;font-size:11px}
+ .leaflet-tile-pane{filter:grayscale(1) brightness(1.05)}
 </style>
 </head>
 <body>
@@ -48,8 +49,8 @@
 const DCOLORS = ["#e6194b","#3cb44b","#4363d8","#f58231","#911eb4","#46f0f0","#f032e6",
                  "#bcf60c","#fabebe","#008080","#9a6324","#800000"];
 const map = L.map('map');
-L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-            {maxZoom: 20, attribution: '© OSM © CARTO'}).addTo(map);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+            {maxZoom: 18, attribution: '© OSM'}).addTo(map);
 let DATA, cur = -1;
 const layers = {
   admin: L.layerGroup(), sub: L.layerGroup(),
