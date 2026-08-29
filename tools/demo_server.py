@@ -307,6 +307,11 @@ class Handler(BaseHTTPRequestHandler):
             else:
                 self._send(200, {"status": "ready"})
             return
+        if path == "/compare":
+            cp = ROOT / "tools" / "compare_page.html"
+            self._send(200, cp.read_text(encoding="utf-8"),
+                       "text/html; charset=utf-8")
+            return
         with STATE_LOCK:
             pack = _current()
             w = STATE["world"]
@@ -321,6 +326,15 @@ class Handler(BaseHTTPRequestHandler):
                 snap["kb_gaps"] = KB.gaps
                 snap["meta"]["data_dir"] = pack["data_dir"].name
                 self._send(200, snap)
+                return
+            if path == "/api/compare":
+                cf = pack["data_dir"] / "compare.json"
+                if not cf.exists():
+                    self._send(200, {"crs": "WGS84", "version": "V1c",
+                                     "missing": True, "items": [],
+                                     "hint": "运行 tools/gen_compare_data.py 生成"})
+                    return
+                self._send(200, json.loads(cf.read_text(encoding="utf-8")))
                 return
             if path == "/api/analysis":
                 q = dict(pp.split("=", 1) for pp in

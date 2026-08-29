@@ -383,6 +383,10 @@ def build_from_landmark_ratios(
             lines[d] = sub
     if len(lines) < 3:
         return {"error": f"可用界线不足 {list(lines)}", "missing": missing}
+    for need in ("西", "北", "东", "南"):
+        if need not in lines:
+            return {"error": f"缺 {need} 界，环无法闭合（有 {list(lines)}）",
+                    "missing": missing}
 
     def corner(d1, d2):
         best = (1e18, None, None)
@@ -412,6 +416,9 @@ def build_from_landmark_ratios(
     if dedup[0] != dedup[-1]:
         dedup.append(dedup[0])
 
+    if len(dedup) < 4:
+        return {"error": f"重建退化（环点 {len(dedup)}），需人工解释",
+                "missing": missing}
     area = _shoelace_km2(dedup[:-1])
     return {"ring": dedup, "area_km2": round(area, 2),
             "lines": {d: len(v) for d, v in lines.items()}, "missing": missing}

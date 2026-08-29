@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>SRAF 围栏对比 — 手绘真值 vs 四至重建(V1c)</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+  * { box-sizing: border-box; margin: 0; }
+  body { font: 13px/1.5 -apple-system, "PingFang SC", sans-serif; display: flex; height: 100vh; }
+  #side { width: 400px; min-width: 400px; display: flex; flex-direction: column;
+          border-right: 1px solid #ddd; background: #fafafa; }
+  header { padding: 10px 14px; background: #1a237e; color: #fff; }
+  header h1 { font-size: 15px; }
+  header .sub { font-size: 11px; opacity: .8; }
+  #legendBar { padding: 8px 12px; border-bottom: 1px solid #ddd; background: #fff; }
+  .lg { display: inline-flex; align-items: center; gap: 5px; margin-right: 12px; font-size: 12px; }
+  .lg i { width: 18px; height: 10px; border-radius: 2px; display: inline-block; }
+  #list { flex: 1; overflow-y: auto; }
+  .item { padding: 8px 12px; border-bottom: 1px solid #eee; cursor: pointer; }
+  .item:hover, .item.sel { background: #e8eaf6; }
+  .item .nm { font-weight: 600; font-size: 12px; }
+  .item .st { float: right; font-size: 12px; font-weight: 700; }
+  .bar { height: 5px; border-radius: 3px; background: #eee; margin-top: 5px; overflow: hidden; }
+  .bar i { display: block; height: 100%; }
+  #detail { border-top: 2px solid #ddd; padding: 10px 12px; background: #fff; max-height: 46%; overflow-y: auto; }
+  #detail h3 { font-size: 13px; margin-bottom: 6px; }
+  .kv { font-size: 11px; color: #555; margin: 2px 0; }
+  .clause { display: flex; gap: 6px; align-items: center; font-size: 11.5px; margin: 3px 0; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  .ok { background: #2e7d32; } .no { background: #c62828; }
+  .tag { display: inline-block; font-size: 10.5px; padding: 1px 7px; border-radius: 9px; margin-left: 6px; }
+  .tag.good { background: #e8f5e9; color: #2e7d32; }
+  .tag.mid { background: #fff8e1; color: #f57f17; }
+  .tag.bad { background: #ffebee; color: #c62828; }
+  .nav { display: flex; gap: 6px; padding: 8px 12px; border-top: 1px solid #ddd; background: #fff; }
+  .btn { flex: 1; padding: 6px 0; border: 0; border-radius: 6px; background: #283593;
+         color: #fff; font-size: 12px; cursor: pointer; }
+  .btn.gray { background: #9fa8da; }
+  .btn:disabled { opacity: .4; }
+  #map { flex: 1; position: relative; }
+  #hint { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); z-index: 1000;
+          background: #fffce8; border: 1px solid #ccc; border-radius: 6px; padding: 4px 10px;
+          font-size: 11.5px; }
+</style>
+</head>
+<body>
+<div id="side">
+  <header>
+    <h1>围栏对比 · 手绘真值 vs 四至重建</h1>
+    <div class="sub" id="subinfo">重建语义 V1c：按合同名查地标（含区界）→ 屏障带 → 连通分量 + 外接框闭合</div>
+  </header>
+  <div id="legendBar">
+    <span class="lg"><i style="background:#2e7d32;opacity:.5"></i>手绘真值</span>
+    <span class="lg"><i style="background:#1565c0;opacity:.5"></i>重建</span>
+    <span class="lg"><i style="background:#ff7043;opacity:.6"></i>地标屏障带</span>
+    <span class="lg" style="color:#777">绿=IoU≥.6 黄=.4–.6 红&lt;.4</span>
+  </div>
+  <div id="list"></div>
+  <div id="detail"></div>
+  <div class="nav">
+    <button class="btn gray" id="prev">← 上一家</button>
+    <button class="btn gray" id="next">下一家 →</button>
+    <button class="btn" id="backDemo" onclick="location='/'">返回 Demo</button>
+  </div>
+</div>
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const map = L.map("map", {zoomSnap: 0.25}).setView([23.1, 113.35], 9);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+            {attribution: "© OpenStreetMap"}).addTo(map);
+const truthLayer = L.layerGroup().addTo(map);
+const rebuiltLayer = L.layerGroup().addTo(map);
+const bandLayer = L.layerGroup().addTo(map);
+let DATA = [], cur = -1;
+const show = {truth: true, rebuilt: true, bands: true};
+
+function cls(iou){ return iou >= 0.6 ? "good" : iou >= 0.4 ? "mid" : "bad"; }
+function color(iou){ return iou >= 0.6 ? "#2e7d32" : iou >= 0.4 ? "#f9a825" : "#c62828"; }
+
+function renderList(){
+  const el = document.getElementById("list");
+  el.innerHTML = DATA.map((d, i) => `
+    <div class="item${i===cur?" sel":""}" onclick="select(${i})">
+      <span class="st" style="color:${color(d.iou)}">${d.iou.toFixed(2)}</span>
+      <div class="nm">${d.dealer}</div>
+      <div class="bar"><i style="width:${Math.round(d.iou*100)}%;background:${color(d.iou)}"></i></div>
+    </div>`).join("");
+}
+
+function renderDetail(d){
+  const sides = ["北","南","东","西"];
+  const clauses = sides.filter(s => d.clauses[s]).map(s => {
+    const c = d.clauses[s];
+    return `<div class="clause"><span class="dot ${c.found?"ok":"no"}"></span>
+      <b>${s}界</b> ${c.name || "—"} ${c.found?"":"<span style='color:#c62828'>（查无几何）</span>"}</div>`;
+  }).join("");
+  const fid = d.fidelity == null ? "—" : (d.fidelity*100).toFixed(0)+"%";
+  document.getElementById("detail").innerHTML = `
+    <h3>${d.dealer} <span class="tag ${cls(d.iou)}">IoU ${d.iou.toFixed(2)}</span>
+      ${d.leak ? '<span class="tag bad">屏障泄漏·闭合为 oracle</span>' : ""}</h3>
+    <div class="kv">忠实度（真值边界贴名义地标@150m）: <b>${fid}</b>
+      ${d.fidelity != null && d.fidelity < 0.35 ? "— 合同地标只约束了小半边界，上限受限" : ""}</div>
+    ${clauses}
+    <div class="kv" style="margin-top:6px;color:#888">重建=V1c 语义（离线批跑缓存 data/gz/compare.json）；
+      改进方向：闭环搜索替换外接框闭合。</div>`;
+}
+
+function select(i){
+  if (i < 0 || i >= DATA.length) return;
+  cur = i;
+  const d = DATA[i];
+  truthLayer.clearLayers(); rebuiltLayer.clearLayers(); bandLayer.clearLayers();
+  d.truth_rings.forEach(r =>
+    L.polygon(r.map(p=>[p[1],p[0]]), {color:"#1b5e20", weight:2, fillColor:"#2e7d32", fillOpacity:.30}).addTo(truthLayer));
+  d.rebuilt_rings.forEach(r =>
+    L.polygon(r.map(p=>[p[1],p[0]]), {color:"#0d47a1", weight:2, dashArray:"6 4", fillColor:"#1565c0", fillOpacity:.25}).addTo(rebuiltLayer));
+  d.bands.forEach(r =>
+    L.polygon(r.map(p=>[p[1],p[0]]), {color:"#d84315", weight:.8, fillColor:"#ff7043", fillOpacity:.35}).addTo(bandLayer));
+  const all = truthLayer.getLayers().concat(rebuiltLayer.getLayers());
+  if (all.length) map.flyToBounds(L.featureGroup(all).getBounds().pad(0.15), {duration:.6});
+  renderList(); renderDetail(d);
+  document.querySelectorAll(".item")[i]?.scrollIntoView({block:"nearest"});
+}
+
+function applyLayerVisibility(){
+  for (const [k, layer] of [["truth",truthLayer],["rebuilt",rebuiltLayer],["bands",bandLayer]]){
+    const m = map.hasLayer(layer);
+    if (show[k] && !m) map.addLayer(layer);
+    if (!show[k] && m) map.removeLayer(layer);
+  }
+}
+document.getElementById("legendBar").addEventListener("click", e=>{
+  const lg = e.target.closest(".lg"); if (!lg) return;
+  const key = {"手绘真值":"truth","重建":"rebuilt","地标屏障带":"bands"}[lg.textContent.trim()];
+  if (!key) return;
+  show[key] = !show[key]; lg.style.opacity = show[key] ? 1 : .35; applyLayerVisibility();
+});
+document.getElementById("prev").onclick = ()=>select(cur-1);
+document.getElementById("next").onclick = ()=>select(cur+1);
+document.addEventListener("keydown", e=>{
+  if (e.key==="ArrowDown"||e.key==="j") select(cur+1);
+  if (e.key==="ArrowUp"||e.key==="k") select(cur-1);
+});
+
+(async ()=>{
+  const r = await (await fetch("/api/compare")).json();
+  if (!r.items || !r.items.length){
+    document.getElementById("list").innerHTML =
+      `<div class="item">${r.hint || "无对比数据"}</div>`; return;
+  }
+  DATA = r.items.slice().sort((a,b)=>a.iou-b.iou);
+  document.getElementById("subinfo").textContent =
+    `重建语义 V1c · ${DATA.length} 家 · 中位 IoU ${
+      DATA.map(d=>d.iou).sort((a,b)=>a-b)[Math.floor(DATA.length/2)].toFixed(2)}`;
+  renderList(); select(0);
+})();
+</script>
+</body>
+</html>
