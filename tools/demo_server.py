@@ -315,6 +315,11 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/favicon.ico":
             self._send(204, b"", "image/x-icon")
             return
+        if path == "/north_desc":
+            cp = ROOT / "tools" / "north_desc_page.html"
+            self._send(200, cp.read_text(encoding="utf-8"),
+                       "text/html; charset=utf-8")
+            return
         if path == "/compare":
             cp = ROOT / "tools" / "compare_page.html"
             self._send(200, cp.read_text(encoding="utf-8"),
@@ -331,6 +336,11 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/api/regions":
                 self._send(200, {"regions": _list_regions(),
                                  "current": pack["data_dir"].name})
+                return
+            if path == "/api/north_desc":
+                df = pack["data_dir"] / "north_desc_recon.json"
+                self._send(200, json.loads(df.read_text(encoding="utf-8"))
+                           if df.exists() else {"error": "run recon first"})
                 return
             if path == "/api/bootstrap":
                 snap = _world_snapshot(w, pack)

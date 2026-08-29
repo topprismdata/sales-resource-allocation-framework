@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>北围栏：文字描述重建 vs 手绘真值</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+ html,body{margin:0;height:100%;font:13px/1.5 -apple-system,"PingFang SC",sans-serif}
+ #map{height:100%}
+ #legend{position:absolute;top:10px;right:10px;z-index:1000;background:#fff;border-radius:8px;
+   padding:10px 14px;box-shadow:0 2px 8px rgba(0,0,0,.2);font-size:13px}
+ #legend .row{margin:3px 0}
+ .sw{display:inline-block;width:26px;height:12px;margin-right:6px;border-radius:3px;vertical-align:middle}
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div id="legend">
+  <div class="row"><span class="sw" style="border:3px solid #d32f2f;background:rgba(211,47,47,.15)"></span>手绘真值（38.9 km²）</div>
+  <div class="row"><span class="sw" style="border:3px solid #ef6c00;background:rgba(239,108,0,.15)"></span>A 描述重建：凤凰+龙洞全域+联和工业角（IoU 0.759）</div>
+  <div class="row"><span class="sw" style="border:3px solid #2e7d32;background:rgba(46,125,50,.15)"></span>B = A + 长兴/新塘北部各1/3（IoU 0.811）</div>
+  <div class="row" style="color:#777;font-size:11px">灰线 = 街道界参考</div>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+fetch('/api/north_desc').then(r=>r.json()).then(d=>{
+  const map = L.map('map');
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OSM'}).addTo(map);
+  for (const [nm,ring] of Object.entries(d.streets))
+    L.polyline(ring.map(q=>[q[1],q[0]]),{color:'#555',weight:1.5,opacity:.6})
+      .bindTooltip(nm,{sticky:true}).addTo(map);
+  const P=(ring,opt)=>L.polygon(ring.map(q=>[q[1],q[0]]),opt).addTo(map);
+  P(d.truth,{color:'#d32f2f',weight:4,fillOpacity:.10});
+  P(d.A,{color:'#ef6c00',weight:3,dashArray:'8 5',fillOpacity:.10});
+  P(d.B,{color:'#2e7d32',weight:3,dashArray:'3 5',fillOpacity:.08});
+  const b=[]; d.truth.forEach(q=>b.push([q[1],q[0]]));
+  map.fitBounds(b,{padding:[30,30]});
+});
+</script>
+</body>
+</html>
