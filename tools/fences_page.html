@@ -48,8 +48,8 @@
 const DCOLORS = ["#e6194b","#3cb44b","#4363d8","#f58231","#911eb4","#46f0f0","#f032e6",
                  "#bcf60c","#fabebe","#008080","#9a6324","#800000"];
 const map = L.map('map');
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-            {maxZoom: 18, attribution: '© OSM'}).addTo(map);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+            {maxZoom: 20, attribution: '© OSM © CARTO'}).addTo(map);
 let DATA, cur = -1;
 const layers = {
   admin: L.layerGroup(), sub: L.layerGroup(),
