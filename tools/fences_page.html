@@ -38,10 +38,8 @@
     <div id="ctrl">
       <label><input type="checkbox" id="ckSub" checked> 街道/乡镇界（紫点线）</label>
       <label><input type="checkbox" id="ckAdmin" checked> 区界线（深蓝粗虚线）</label>
-      <label><input type="checkbox" id="ckStores" checked> 门店（按区着色）</label>
-      <label><input type="checkbox" id="ckOthers"> 其他经销商围栏</label>
-      <label><input type="checkbox" id="ckRecon"> 描述重建对比 A/B（亨啡源北）</label>
-      <div class="legend">实线填充=当前围栏 · ○=门店</div>
+      <label><input type="checkbox" id="ckRecon"> 描述重建（绿虚线，亨啡源北）</label>
+      <div class="legend">实线填充=当前围栏</div>
     </div>
   </div>
 </div>
@@ -54,8 +52,8 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
             {maxZoom: 18, attribution: '© OSM'}).addTo(map);
 let DATA, cur = -1;
 const layers = {
-  others: L.layerGroup(), admin: L.layerGroup(), sub: L.layerGroup(),
-  stores: L.layerGroup(), me: null, center: null, recon: null
+  admin: L.layerGroup(), sub: L.layerGroup(),
+  me: null, center: null, recon: null
 };
 fetch('/api/fences').then(r=>r.json()).then(d=>{
   DATA = d;
@@ -74,11 +72,6 @@ fetch('/api/fences').then(r=>r.json()).then(d=>{
         L.polyline(p.map(q=>[q[1],q[0]]), {color:'#7b1fa2', weight:4.5, dashArray:'2 5',
             opacity:.95}).bindTooltip('▫ '+name, {sticky:true}).addTo(layers.sub);
   layers.sub.addTo(map);
-  // 其他围栏
-  d.dealers.forEach(de=>{
-    de.rings.forEach(r=>L.polygon(r.map(q=>[q[1],q[0]]),
-        {color:'#888', weight:1, fill:false}).bindTooltip(de.name).addTo(layers.others));
-  });
   // 列表
   const list = document.getElementById('list');
   d.dealers.forEach((de,i)=>{
@@ -107,7 +100,6 @@ function select(i){
     .forEach((el,j)=>el.classList.toggle('on', j===i));
   if (layers.me) map.removeLayer(layers.me);
   if (layers.center) map.removeLayer(layers.center);
-  map.removeLayer(layers.stores); layers.stores = L.layerGroup();
   const de = DATA.dealers[i];
   const col = DCOLORS[i % DCOLORS.length];
   layers.me = L.layerGroup();
@@ -118,22 +110,11 @@ function select(i){
     layers.center = L.circleMarker([de.center[1],de.center[0]],
       {radius:6,color:'#000',fillColor:'#fff',fillOpacity:1,weight:2})
       .bindTooltip('中心点').addTo(map);
-  const dset = {};
-  de.stores.forEach(s=>{
-    (dset[s.d] = dset[s.d] || []).push(s);
-    L.circleMarker([s.lat,s.lon],{radius:3.5,weight:1,color:'#333',fillOpacity:.9,
-        fillColor:DCOLORS[Object.keys(dset).indexOf(s.d)%DCOLORS.length]})
-      .bindTooltip(s.d).addTo(layers.stores);
-  });
-  if (document.getElementById('ckStores').checked) layers.stores.addTo(map);
   const fb = de.four_bounds || {};
-  const dist = Object.entries(dset).sort((a,b)=>b[1].length-a[1].length)
-      .map(([k,v])=>`${k}:${v.length}`).join(' ');
   document.getElementById('info').style.display='';
   document.getElementById('info').innerHTML =
     `<h4>${i+1}. ${de.name}</h4>`+
     `<div class="fb">面积 ${de.area_km2} km² · 门店 ${de.store_count} 家 · 合同主体区 ${de.district||'—'}</div>`+
-    `<div class="fb legend">门店分布（区:数）: ${dist}</div>`+
     Object.entries(fb).map(([k,v])=>
       `<div class="fb"><span class="tag">${k}</span> ${v||'—'}</div>`).join('');
   const b = [];
@@ -147,8 +128,6 @@ function toggle(id, layer){
 }
 toggle('ckAdmin', layers.admin);
 toggle('ckSub', layers.sub);
-toggle('ckOthers', layers.others);
-toggle('ckStores', layers.stores);
 // 描述重建对比（按需加载）
 document.getElementById('ckRecon').onchange = e=>{
   if (!e.target.checked) {
@@ -158,9 +137,9 @@ document.getElementById('ckRecon').onchange = e=>{
   if (layers.recon) { map.addLayer(layers.recon); return; }
   fetch('/api/north_desc').then(r=>r.json()).then(d=>{
     layers.recon = L.layerGroup();
-    const P=(ring,opt)=>L.polygon(ring.map(q=>[q[1],q[0]]),opt).bindTooltip(opt.tt,{sticky:true}).addTo(layers.recon);
-    P(d.A,{color:'#ef6c00',weight:3,dashArray:'8 5',fill:false,tt:'A 凤凰+龙洞+联和角 (IoU 0.759)'});
-    P(d.B,{color:'#2e7d32',weight:3,dashArray:'3 5',fill:false,tt:'B = A+长兴/新塘北1/3 (IoU 0.811)'});
+    L.polygon(d.B.map(q=>[q[1],q[0]]),
+        {color:'#2e7d32',weight:3.5,dashArray:'6 5',fill:false})
+      .bindTooltip('描述重建（IoU 0.811）',{sticky:true}).addTo(layers.recon);
     map.addLayer(layers.recon);
   });
 };
