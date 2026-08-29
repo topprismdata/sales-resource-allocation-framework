@@ -634,6 +634,27 @@ class Handler(BaseHTTPRequestHandler):
                     density = float(pack["meta"].get(
                         "density_assumption_stores_per_km2", 25))
                     area_est = max(2.0, sc / density)
+                # V2 单元分配优先：四至名 → 线网锚 → 单元集合（全量路网）
+                try:
+                    sys.path.insert(0, str(ROOT / "tools"))
+                    from unit_allocator import UnitLibrary, allocate
+                    lib = UnitLibrary()
+                    sel, ugeom, umiss = allocate(lib, bounds or {}, tuple(center))
+                    area_u = ugeom.area * 11320 * 1.0084 if ugeom else 0.0
+                    if ugeom and 0.3 * area_est <= area_u <= 3 * area_est:
+                        self._send(200, {
+                            "ring": [list(p) for p in ugeom.exterior.coords],
+                            "area_km2": round(area_u, 2),
+                            "interpretation": "draft", "draft_quality": "ok",
+                            "area_estimate_km2": round(area_est, 1),
+                            "conflicts": _conflicts([]),
+                            "lines_used": {"allocator": "unit-v2",
+                                           "units": len(sel)},
+                            "missing": umiss, "bounds_geometry": {},
+                            "dealer": dealer})
+                        return
+                except Exception:
+                    pass  # V2 失败 → V1c 兜底
                 rr = (area_est / math.pi) ** 0.5
                 spec, missing, detail, bounds_geo = {}, [], {}, {}
                 r_clip = rr * 1.6
@@ -666,16 +687,6 @@ class Handler(BaseHTTPRequestHandler):
                     spec[d] = (nm, fr, to)
                     detail[d] = f"{nm} [{fr:.2f},{to:.2f}]"
                     bounds_geo[d] = [list(p) for p in seg_pts]
-                if orig:
-                    # F1→F2 是解释行为（K-FACT-001）：采用被接受的历史解释
-                    self._send(200, {
-                        "ring": [list(p) for p in orig.ring],
-                        "area_km2": round(orig.area_km2, 2),
-                        "interpretation": "accepted",
-                        "conflicts": _conflicts(w.fence_stores(origs[0])),
-                        "lines_used": detail, "missing": missing,
-                        "bounds_geometry": bounds_geo, "dealer": dealer})
-                    return
                 if len(spec) < 3:
                     self._send(400, {"error": f"界线证据不足（{missing}），需人工解释围栏"})
                     return

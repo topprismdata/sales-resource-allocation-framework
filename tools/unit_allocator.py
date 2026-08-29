@@ -24,62 +24,96 @@ class UnitLibrary:
         self.tree = STRtree(self.geoms)
 
     def resolve_anchor(self, name, center, direction):
-        """条款名 → 该方向上的标量界线（度）。
-        要素包含中心（如『天河区边缘』）→ 取该方向外缘（极值）；
-        要素在中心该方向一侧（如『南至珠江』）→ 取最近边。"""
+        """条款名 → 边界要素几何（WGS 线网），供可视性约束使用。"""
         d = json.load(open(f"{DATA}/gz_osm_full.json", encoding="utf-8"))
-        axis, extreme = AXIS[direction]
-        ci = 0 if axis == "x" else 1
-        cpos = center[ci]
-        pos_dir = direction in ("东", "北")
         target = name.split("（")[0].split("(")[0].strip().replace("边缘", "").replace("界", "")
-        best = None   # (score, value)
-        def consider(v, contains_center):
-            nonlocal best
-            if contains_center:
-                cand = max(v) if False else None  # 极值在收尾统一处理
-            return None
-        def scan(grp):
-            nonlocal best
+        cbuf = shapely.geometry.Point(center).buffer(0.0045)
+        best = None   # (score, geom)：离中心更近的要素优先
+        for grp in ("roads", "rivers", "adm6", "adm8"):
             for r in d[grp]:
                 nm = r.get("name", "")
-                if target and target not in nm and nm not in target:
+                if not nm or target not in nm:
                     continue
                 try: g = shapely.from_wkt(r["wkt"])
                 except Exception: continue
                 parts = ([g] if g.geom_type in ("LineString", "Polygon")
                          else list(g.geoms) if g.geom_type == "MultiLineString"
                          else list(g.geoms))
-                contains = (g.contains(Point(center)) if g.geom_type == "Polygon"
-                            else False)
-                pts = []
+                plines = []
                 for p in parts:
-                    ring = p.exterior.coords if p.geom_type == "Polygon" else p.coords
-                    pts += list(ring)[::3]
-                if contains:
-                    v = max((x if axis == "x" else y) for (x, y) in pts) \
-                        if pos_dir else min((x if axis == "x" else y) for (x, y) in pts)
-                    sc = 0  # 包含中心的要素直接定界，最优先
-                    cand = (sc, v)
-                else:
-                    vals = []
-                    for (x, y) in pts:
-                        v = x if axis == "x" else y
-                        dv = (v - cpos) if pos_dir else (cpos - v)
-                        if dv > 5 / 111000:
-                            vals.append((dv, v))
-                    if not vals:
-                        continue
-                    dv0, v0 = min(vals)
-                    cand = (1 + dv0 / (200 / 111000), v0)  # 最近边，带距离折损
-                if best is None or cand[0] < best[0]:
-                    best = cand
-        for grp in ("roads", "rivers", "adm6", "adm8"):
-            scan(grp)
+                    if p.geom_type == "Polygon":
+                        plines.append(LineString(p.exterior.coords))
+                    elif p.geom_type == "LineString":
+                        plines.append(p)
+                    else:
+                        plines += list(p.geoms)
+                if not plines:
+                    continue
+                lg = unary_union(plines)
+                if not lg.intersects(cbuf):
+                    continue  # 离中心 >500m，与条款无关
+                sc = lg.distance(shapely.geometry.Point(center))
+                if best is None or sc < best[0]:
+                    best = (sc, lg)
         return None if best is None else best[1]
 
 
 def allocate(lib, bounds, center, units_extra_wkt=None):
+    """可视性约束分配：中心到单元质心的连线不得穿过任何边界要素。
+    返回 (unit_indices, union_geom, missing)。"""
+    center_pt = shapely.geometry.Point(center)
+    bgeoms = []
+    missing = []
+    for dr, nm in (bounds or {}).items():
+        if not nm:
+            continue
+        g = lib.resolve_anchor(nm, center, dr)
+        if g is None:
+            missing.append(f"{dr}:{nm}")
+            continue
+        bgeoms.append((dr, g.buffer(20 / 111000)))   # 20m 容差
+    def ok(geom):
+        c = geom.centroid
+        conn = LineString([center_pt, c])
+        for dr, bg in bgeoms:
+            if conn.intersects(bg) and not c.within(bg) \
+                    and not conn.covered_by(bg):
+                return False
+        return True
+    # 种子：中心附近第一个合格的非碎片单元
+    seed, seed_area = None, -1
+    for j in lib.tree.query(center_pt.buffer(0.004)):
+        j = int(j)
+        g = lib.geoms[j]
+        if g.area * 11320 < 0.003:
+            continue
+        if ok(g) and g.area * 11320 > seed_area:
+            seed, seed_area = j, g.area * 11320
+    if seed is None:
+        return set(), None, missing
+    # 邻接扩散（BFS）
+    selected = set()
+    frontier = [seed]
+    seen = {seed}
+    while frontier:
+        cur = frontier.pop()
+        g = lib.geoms[cur]
+        if not ok(g) or g.area * 11320 < 0.003:
+            continue
+        selected.add(cur)
+        for j in lib.tree.query(g.buffer(0.002)):
+            j = int(j)
+            if j in seen:
+                continue
+            seen.add(j)
+            frontier.append(j)
+    if not selected:
+        return set(), None, missing
+    geom = unary_union([lib.geoms[i] for i in selected])
+    if geom.geom_type == "MultiPolygon":
+        geom = max(geom.geoms, key=lambda g: g.area)
+    return selected, geom, missing
+
     """返回 (unit_indices, union_geom, missing)。"""
     center_pt = Point(center)
     # 方向界线
