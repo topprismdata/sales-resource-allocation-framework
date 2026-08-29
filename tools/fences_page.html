@@ -37,69 +37,64 @@
     <div id="info" style="display:none"></div>
     <div id="ctrl">
       <label><input type="checkbox" id="ckSub" checked> 街道/乡镇界（紫点线）</label>
-      <label><input type="checkbox" id="ckAdmin" checked> 区界线（OSM 碎片）</label>
-      <label><input type="checkbox" id="ckOthers"> 其他经销商围栏</label>
+      <label><input type="checkbox" id="ckAdmin" checked> 区界线（深蓝粗虚线）</label>
       <label><input type="checkbox" id="ckStores" checked> 门店（按区着色）</label>
-      <div class="legend">虚线=行政边界 · 实线填充=当前围栏 · ○=门店</div>
+      <label><input type="checkbox" id="ckOthers"> 其他经销商围栏</label>
+      <label><input type="checkbox" id="ckRecon"> 描述重建对比 A/B（亨啡源北）</label>
+      <div class="legend">实线填充=当前围栏 · ○=门店</div>
     </div>
   </div>
 </div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-let DATA, layers = {me:null, others:L.layerGroup(), admin:L.layerGroup(),
-                    sub:L.layerGroup(),
-                    stores:L.layerGroup(), center:null}, cur = -1;
+const DCOLORS = ["#e6194b","#3cb44b","#4363d8","#f58231","#911eb4","#46f0f0","#f032e6",
+                 "#bcf60c","#fabebe","#008080","#9a6324","#800000"];
 const map = L.map('map');
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
             {maxZoom: 18, attribution: '© OSM'}).addTo(map);
-const DCOLORS = ["#e6194b","#3cb44b","#4363d8","#f58231","#911eb4","#46f0f0","#f032e6",
-                 "#bcf60c","#fabebe","#008080","#9a6324","#800000"];
+let DATA, cur = -1;
+const layers = {
+  others: L.layerGroup(), admin: L.layerGroup(), sub: L.layerGroup(),
+  stores: L.layerGroup(), me: null, center: null, recon: null
+};
 fetch('/api/fences').then(r=>r.json()).then(d=>{
   DATA = d;
-  // admin lines
+  document.getElementById('dcount').textContent = `经销商（${d.dealers.length}）`;
+  // 区界（深蓝粗虚线）
   for (const [name, polys] of Object.entries(d.admin))
     for (const p of polys)
       if (p.length >= 2)
         L.polyline(p.map(q=>[q[1],q[0]]), {color:'#0d47a1', weight:5, dashArray:'10 6',
-                    opacity:.95}).bindTooltip('⚑ '+name, {sticky:true}).addTo(layers.admin);
+            opacity:.95}).bindTooltip('⚑ '+name, {sticky:true}).addTo(layers.admin);
   layers.admin.addTo(map);
+  // 街道界（紫点线）
   for (const [name, polys] of Object.entries(d.subdistricts || {}))
     for (const p of polys)
       if (p.length >= 2)
         L.polyline(p.map(q=>[q[1],q[0]]), {color:'#7b1fa2', weight:4.5, dashArray:'2 5',
-                    opacity:.95}).bindTooltip('▫ '+name, {sticky:true}).addTo(layers.sub);
+            opacity:.95}).bindTooltip('▫ '+name, {sticky:true}).addTo(layers.sub);
   layers.sub.addTo(map);
-  // others
-  d.dealers.forEach((de,i)=>{
-    de.rings.forEach(r=>L.polygon(r.map(q=>[q[1],q[0]]), {color:'#888', weight:1, fill:false})
-        .bindTooltip(de.name).addTo(layers.others));
+  // 其他围栏
+  d.dealers.forEach(de=>{
+    de.rings.forEach(r=>L.polygon(r.map(q=>[q[1],q[0]]),
+        {color:'#888', weight:1, fill:false}).bindTooltip(de.name).addTo(layers.others));
   });
-  // list
-  document.getElementById('dcount').textContent = `经销商（${d.dealers.length}）`;
+  // 列表
   const list = document.getElementById('list');
   d.dealers.forEach((de,i)=>{
     const el = document.createElement('div');
-    el.className='dl'; el.textContent = de.name;
-    el.innerHTML += `<small>${de.area_km2}km²·${de.store_count}店</small>`;
+    el.className='dl'; el.dataset.name = de.name;
+    el.innerHTML = `${de.name}<small>${de.area_km2}km²·${de.store_count}店</small>`;
     el.onclick = ()=>select(i);
-    el.dataset.name = de.name;
     list.appendChild(el);
   });
   document.getElementById('search').oninput = e=>{
+    const q = e.target.value.trim();
     [...list.children].forEach(el=>el.style.display =
         !q || el.dataset.name.includes(q) ? '' : 'none');
   };
   fitAll();
 });
-document.getElementById('ckAdmin').onchange = e=>{
-  e.target.checked ? map.addLayer(layers.admin) : map.removeLayer(layers.admin);};
-document.getElementById('ckOthers').onchange = e=>{
-  e.target.checked ? map.addLayer(layers.others) : map.removeLayer(layers.others);};
-document.getElementById('ckStores').onchange = e=>{
-  e.target.checked ? map.addLayer(layers.stores) : map.removeLayer(layers.stores);};
-document.getElementById('ckSub').onchange = e=>{
-  e.target.checked ? map.addLayer(layers.sub) : map.removeLayer(layers.sub);};
-
 function fitAll(){
   const b = [];
   for (const polys of Object.values(DATA.admin)) for (const p of polys)
@@ -131,7 +126,6 @@ function select(i){
       .bindTooltip(s.d).addTo(layers.stores);
   });
   if (document.getElementById('ckStores').checked) layers.stores.addTo(map);
-  // info panel
   const fb = de.four_bounds || {};
   const dist = Object.entries(dset).sort((a,b)=>b[1].length-a[1].length)
       .map(([k,v])=>`${k}:${v.length}`).join(' ');
@@ -146,6 +140,30 @@ function select(i){
   de.rings.forEach(r=>r.forEach(q=>b.push([q[1],q[0]])));
   map.fitBounds(b, {padding:[40,40]});
 }
+function toggle(id, layer){
+  document.getElementById(id).onchange = e=>{
+    e.target.checked ? map.addLayer(layer) : map.removeLayer(layer);
+  };
+}
+toggle('ckAdmin', layers.admin);
+toggle('ckSub', layers.sub);
+toggle('ckOthers', layers.others);
+toggle('ckStores', layers.stores);
+// 描述重建对比（按需加载）
+document.getElementById('ckRecon').onchange = e=>{
+  if (!e.target.checked) {
+    if (layers.recon) map.removeLayer(layers.recon);
+    return;
+  }
+  if (layers.recon) { map.addLayer(layers.recon); return; }
+  fetch('/api/north_desc').then(r=>r.json()).then(d=>{
+    layers.recon = L.layerGroup();
+    const P=(ring,opt)=>L.polygon(ring.map(q=>[q[1],q[0]]),opt).bindTooltip(opt.tt,{sticky:true}).addTo(layers.recon);
+    P(d.A,{color:'#ef6c00',weight:3,dashArray:'8 5',fill:false,tt:'A 凤凰+龙洞+联和角 (IoU 0.759)'});
+    P(d.B,{color:'#2e7d32',weight:3,dashArray:'3 5',fill:false,tt:'B = A+长兴/新塘北1/3 (IoU 0.811)'});
+    map.addLayer(layers.recon);
+  });
+};
 </script>
 </body>
 </html>
