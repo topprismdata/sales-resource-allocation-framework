@@ -1,6 +1,6 @@
 # Dealer Territory Knowledge Base (Knowledge Base) 
 
-- Status: v0.3.0 (31 items: 21 crystallized + 9 supplemented by industry research + 1 new from business correction; business gaps 5→2) 
+- Status: v0.4.0 (32 items: 21 crystallized + 9 supplemented by industry research + 2 new from business corrections; business gaps 5→2) 
 - Date: 2026-08-28
 - Positioning: **04 Allocation Intelligence layer's "IQ" source**——World Model provides skeleton, Knowledge Base provides flesh
 - Machine-readable: `knowledge_items.json` (This file is human-readable index) 
@@ -13,7 +13,7 @@ The output of the Intelligence layer is **advice for people**. Advice for people
 Every link in the reasoning chain must come from **knowledge items with sources**——this is exactly the opposite of "lacking IQ":
 Not a missing feature, but **missing knowledge**.
 
-## Six types of knowledge × 31 items
+## Six types of knowledge × 32 items
 
 ### Principles (Why it's designed this way) ——from Zoltners book + market analysis
 | ID | Knowledge | Source |
@@ -24,6 +24,7 @@ Not a missing feature, but **missing knowledge**.
 | K-PRIN-004 | Three-step design: account-level→geographic integration→alignment adjustment | book |
 | K-PRIN-005 | Hierarchical mirroring organization: decision-making level = organizational level, D/B/V three levels independent, handovers only via interfaces, cross-level intervention prohibited | industry research + user final decision |
 | K-PRIN-006 | Territory adjustment decision object = 【territory/sub-area】, store assignment is a derived effect (stores follow territory, not CRM store-level changes) | business side 2026-08-28 correction |
+| K-PRIN-007 | A territory may comprise multiple disconnected spatial components; continuity is a business preference, not an ontological constraint (D14) | business side 2026-08-29 correction + oracle-ladder audit |
 
 ### Rules (When and how to do it) ——data validation + business dialogue
 | ID | Knowledge | Source |

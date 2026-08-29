@@ -66,8 +66,10 @@ def point_in_ring(pt: tuple[float, float], ring: tuple[tuple[float, float], ...]
 
 
 class World:
-    """gz_data.json 快照的内存切片。"""
+    """gz_data.json 快照的内存切片。
 
+    D14: 一个经销商的领地可由多个不连续围栏块（component）组成。
+    fences_by_dealer 保留全部块；fence_by_dealer 保留首个（向后兼容）。"""
     def __init__(self, path: "str|dict" = "/tmp/gz_data.json") -> None:
         raw = path if isinstance(path, dict) else json.load(open(path, encoding="utf-8"))
         self.fences: list[Fence] = []
@@ -87,7 +89,10 @@ class World:
         for s in self.stores:
             for d in s.dealers:
                 self.by_dealer.setdefault(d, []).append(s)
-        self.fence_by_dealer = {f.dealer: f for f in self.fences}
+        self.fences_by_dealer: dict[str, list[Fence]] = {}
+        for f in self.fences:
+            self.fences_by_dealer.setdefault(f.dealer, []).append(f)
+        self.fence_by_dealer = {d: fs[0] for d, fs in self.fences_by_dealer.items()}
         self.kind_counts = raw["kinds"]
 
     def with_stores(self, stores: list[Store]) -> "World":
@@ -99,7 +104,10 @@ class World:
         for s in stores:
             for d in s.dealers:
                 w.by_dealer.setdefault(d, []).append(s)
-        w.fence_by_dealer = self.fence_by_dealer
+        w.fences_by_dealer = {}
+        for f in self.fences:
+            w.fences_by_dealer.setdefault(f.dealer, []).append(f)
+        w.fence_by_dealer = {d: fs[0] for d, fs in w.fences_by_dealer.items()}
         from collections import Counter
         w.kind_counts = dict(Counter(s.kind for s in stores))
         return w
@@ -110,7 +118,10 @@ class World:
         w.fences = fences
         w.stores = self.stores
         w.by_dealer = self.by_dealer
-        w.fence_by_dealer = {f.dealer: f for f in fences}
+        w.fences_by_dealer = {}
+        for f in fences:
+            w.fences_by_dealer.setdefault(f.dealer, []).append(f)
+        w.fence_by_dealer = {d: fs[0] for d, fs in w.fences_by_dealer.items()}
         w.kind_counts = self.kind_counts
         return w
 
@@ -118,6 +129,13 @@ class World:
 
     def fence_stores(self, fence: Fence) -> list[Store]:
         return self.by_dealer.get(fence.dealer, [])
+    def fences_of(self, dealer: str) -> list[Fence]:
+        """D14: 该经销商的全部领地块（可能 0..N 个不连续 component）。"""
+        return self.fences_by_dealer.get(dealer, [])
+
+    def territory_area_km2(self, dealer: str) -> float:
+        """领地总面积 = 各块面积之和（密度分母用，见 D14 §6.5）。"""
+        return sum(f.area_km2 for f in self.fences_of(dealer))
 
     def reclassify(self, store: Store, new_dealers: tuple[str, ...]) -> str:
         """移动门店后重算 kind（u/direct 不变）。"""

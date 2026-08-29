@@ -347,8 +347,8 @@ class Handler(BaseHTTPRequestHandler):
                 out: dict = {"kinds": w.kind_counts,
                              "gap_summary": classify_gap(w, KB)["summary"]}
                 if fence_dealer:
-                    f = w.fence_by_dealer.get(fence_dealer)
-                    out["health"] = fence_health(w, f, KB) if f else None
+                    fs = w.fences_of(fence_dealer)
+                    out["health"] = fence_health(w, fs[0], KB) if fs else None
                 else:
                     out["health_rank"] = run_q1(w, KB)[:12]
                 self._send(200, out)
@@ -391,8 +391,7 @@ class Handler(BaseHTTPRequestHandler):
             osm = pack["osm"] or {}
             if not dealer or len(dealer) < 4:
                 self._send(400, {"error": "dealer_id 至少 4 个字"}); return
-            if dealer in {f.dealer for f in w.fences}:
-                self._send(400, {"error": f"经销商已存在: {dealer}"}); return
+            # D14: 同经销商新增围栏块是合法的多块领地（component），不再拒绝
             if not text:
                 self._send(400, {"error": "缺少合同描述 text"}); return
             # —— LLM 语义抽取（方向反转 / areas / channels）——
@@ -557,9 +556,9 @@ class Handler(BaseHTTPRequestHandler):
                     self._send(400, {"error": f"数据包缺 osm_parsed.json"
                                               f"（{pack['data_dir']}），四至重建不可用"})
                     return
-                orig = w.fence_by_dealer.get(dealer)
-                if orig:
-                    area_est = orig.area_km2
+                origs = w.fences_of(dealer)
+                if origs:
+                    area_est = w.territory_area_km2(dealer)
                 else:
                     sc = next((c["store_count"] for c in pack["contracts"]
                                if c["dealer_id"] == dealer), 0)
@@ -604,7 +603,7 @@ class Handler(BaseHTTPRequestHandler):
                         "ring": [list(p) for p in orig.ring],
                         "area_km2": round(orig.area_km2, 2),
                         "interpretation": "accepted",
-                        "conflicts": _conflicts(w.fence_stores(orig)),
+                        "conflicts": _conflicts(w.fence_stores(origs[0])),
                         "lines_used": detail, "missing": missing,
                         "bounds_geometry": bounds_geo, "dealer": dealer})
                     return
@@ -663,7 +662,7 @@ class Handler(BaseHTTPRequestHandler):
                     "proposal": {"src": p.src_dealer, "dst": p.dst_dealer,
                                  "area": p.area_desc, "moved": len(p.stores)},
                     "area": imp.get("area", {}),
-                    "sub_ring": p.sub_ring,
+                    "sub_rings": p.sub_rings,
                     "source_after": imp["source_after"],
                     "target_after": imp["target_after"],
                     "moved_kind_delta": imp["moved_kind_delta"],
@@ -683,7 +682,11 @@ class Handler(BaseHTTPRequestHandler):
                 cols, nbs = _assign_dealer_colors(w2.fences)
                 pack["colors"] = cols
                 pack["neighbors"] = nbs
-                pack["fence_areas"] = {f.dealer: f.area_km2 for f in w2.fences}
+                pack["fence_areas"] = {
+                    d: round(sum(g.area_km2 for g in fs), 2)
+                    for d, fs in w2.fences_by_dealer.items()}
+                pack["fence_blocks"] = {
+                    d: len(fs) for d, fs in w2.fences_by_dealer.items()}
                 STATE["world"] = w2
                 STATE["proposal"] = None
                 self._send(200, {"ok": True, "kinds": w2.kind_counts,

@@ -657,12 +657,16 @@ async function doAdjust(){
 }
 function drawProposalArea(r){
   proposalLayer.clearLayers();
-  if (r.sub_ring && r.sub_ring.length>2){
-    const ring = r.sub_ring.map(pt=>[pt[1],pt[0]]);
-    L.polygon(ring, {color:"#d84315", weight:3, dashArray:"7 5",
-      fillColor:"#ff7043", fillOpacity:.5}).addTo(proposalLayer);
-    map.flyToBounds(L.polygon(ring).getBounds().pad(0.25), {duration:.8});
-    toast("橙色虚线=被划转片区预览");
+  const rings = r.sub_rings || (r.sub_ring ? [r.sub_ring] : []);
+  if (rings.length){
+    let all = [];
+    rings.forEach(rg => { if (rg.length>2){
+      const latlngs = rg.map(pt=>[pt[1],pt[0]]);
+      all = all.concat(latlngs);
+      L.polygon(latlngs, {color:"#d84315", weight:3, dashArray:"7 5",
+        fillColor:"#ff7043", fillOpacity:.5}).addTo(proposalLayer); }});
+    if (all.length>1) map.flyToBounds(L.latLngBounds(all).pad(0.25), {duration:.8});
+    toast("橙色虚线=被划转片区预览"+(rings.length>1?`（${rings.length}块）`:""));
   }
 }
 function fitAllFences(fences){

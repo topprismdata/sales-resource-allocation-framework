@@ -35,7 +35,7 @@ boundary moves.
 
 ```text
 Intelligence = World Model (skeleton)
-             + Knowledge Base (flesh, 31 sourced entries)
+             + Knowledge Base (flesh, 32 sourced entries)
              + Reasoning (advice for humans, every "why" lands on an entry)
 ```
 
@@ -109,7 +109,7 @@ contract).
 | Path | Contents |
 |---|---|
 | `docs/` | Normative specs 00–08 (**v1.2.1 FROZEN**) + governance files; language normalization per `CHANGELOG_v1.2.3.md` |
-| `docs/DESIGN.md` | Living implementation design + ADR log (D1–D13) |
+| `docs/DESIGN.md` | Living implementation design + ADR log (D1–D14) |
 | `intelligence/` | World-model slice, area-first adjust engine, GCJ⇄WGS boundary, road semantics, vision verification, LLM parse |
 | `dealer_territory/` | Layer-D fence split / allocation / four-bounds / analysis |
 | `knowledge_base/` | 31 knowledge entries (JSON machine-readable + human index) |

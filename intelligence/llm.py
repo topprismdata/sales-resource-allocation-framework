@@ -87,8 +87,8 @@ def llm_parse_command(world, kb, text: str):
 
     src = _match_dealer(world, _clean(intent.get("src", "")))
     dst = _match_dealer(world, _clean(intent.get("dst", "")))
-    if src.area_id == dst.area_id:
-        raise AdjustError("source 与 target 是同一区域")
+    if src.dealer == dst.dealer:
+        raise AdjustError("source 与 target 是同一经销商")
     area = str(intent.get("area", "")).strip() or "整个区域"
     try:
         return build_proposal(world, kb, text, src, dst, area, "llm")

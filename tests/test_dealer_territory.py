@@ -147,6 +147,17 @@ if __name__ == "__main__":
 
 
 class TestFenceSplit(unittest.TestCase):
+    @staticmethod
+    def _split_available():
+        try:
+            import market_partition  # noqa: F401
+            return True
+        except ModuleNotFoundError:
+            return False
+
+    def setUp(self):
+        if not self._split_available():
+            self.skipTest("market_partition not installed (external repo)")
     def test_river_split(self):
         from dealer_territory.fence_split import GeoBarrier, split_fence
         fence = square_ring(113.20, 23.00, 0.20, 0.10)

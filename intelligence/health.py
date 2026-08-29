@@ -38,9 +38,11 @@ def fence_health(world: World, fence: Fence, kb: KnowledgeBase) -> dict:
     return {
         "area_id": fence.area_id,
         "dealer": fence.dealer,
-        "area_km2": fence.area_km2,
-        "stores": n,
-        "density_per_km2": round(n / fence.area_km2, 1) if fence.area_km2 else None,
+        "area_km2": world.territory_area_km2(fence.dealer) or fence.area_km2,
+        "blocks": len(world.fences_of(fence.dealer)),
+        "density_per_km2": (round(n / max(world.territory_area_km2(fence.dealer),
+                                          fence.area_km2), 1)
+                            if fence.area_km2 else None),
         "kinds": {KIND_ZH.get(k, k): v for k, v in kinds.most_common()},
         "ok_rate": round(ok_rate, 3),
         "oof_rate": round(oof_rate, 3),
@@ -52,6 +54,12 @@ def fence_health(world: World, fence: Fence, kb: KnowledgeBase) -> dict:
 
 
 def run_q1(world: World, kb: KnowledgeBase) -> list[dict]:
-    reports = [fence_health(world, f, kb) for f in world.fences]
+    # D14: 一经销商一报告（多块领地合并为一条，密度按领地总面积）
+    seen, reports = set(), []
+    for f in world.fences:
+        if f.dealer in seen:
+            continue
+        seen.add(f.dealer)
+        reports.append(fence_health(world, f, kb))
     reports.sort(key=lambda r: (r["verdict"] != "调查", -r["oof_rate"]))
     return reports

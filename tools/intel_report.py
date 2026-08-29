@@ -52,8 +52,12 @@ def main() -> None:
             ap.error("--q3 需要 --fence 与 --target")
         src = [f for f in world.fences if args.fence in f.dealer]
         tgt = [f for f in world.fences if args.target in f.dealer]
-        if len(src) != 1 or len(tgt) != 1:
-            ap.error(f"匹配歧义: source={len(src)} target={len(tgt)}，请用更长子串")
+        # D14: 一个经销商可能有多块围栏，按去重后的经销商数判歧义
+        sd, td = {f.dealer for f in src}, {f.dealer for f in tgt}
+        if len(sd) != 1 or len(td) != 1:
+            ap.error(f"匹配歧义: source={len(sd)} target={len(td)}，请用更长子串")
+        if not src or not tgt:
+            ap.error("未找到匹配的围栏")
         stores = world.fence_stores(src[0])
         if args.district:
             stores = [s for s in stores if s.district == args.district]

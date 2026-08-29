@@ -26,7 +26,8 @@ import math
 import re
 from dataclasses import dataclass, field
 
-from shapely.geometry import Point, Polygon
+from shapely.geometry import MultiPoint, Point, Polygon
+from shapely.ops import unary_union
 
 from .impact import move_impact
 
@@ -52,7 +53,7 @@ class Proposal:
     src_dealer: str
     dst_dealer: str
     area_desc: str            # 片区描述（决策对象的语义名）
-    sub_ring: list            # 被划转片区多边形 [[lon,lat]…]
+    sub_rings: list         # 被划转片区多边形环列表 [[[lon,lat]…], …]（D14 多块安全）
     stores: list              # 随片区走的门店（效果）
     impact: dict = field(default_factory=dict)
     parser: str = "rules"
@@ -108,12 +109,72 @@ def _ring_of(poly: Polygon):
     return tuple((round(x, 7), round(y, 7)) for x, y in pts)
 
 
+def _fence_union(world: "World", dealer: str) -> Polygon:
+    """D14: 某经销商全部领地块的并集（可能为 MultiPolygon）。"""
+    fs = world.fences_of(dealer)
+    if not fs:
+        return Polygon()
+    polys = [_fence_poly(f) for f in fs]
+    polys = [q for q in polys if not q.is_empty]
+    return unary_union(polys) if len(polys) > 1 else polys[0]
+
+
+def _rings_of_geom(g) -> list:
+    """Polygon / MultiPolygon / GeometryCollection → 外环列表（[[lon,lat]…]）。"""
+    out = []
+    if g is None or g.is_empty:
+        return out
+    if g.geom_type == "GeometryCollection":
+        for q in g.geoms:
+            out.extend(_rings_of_geom(q))
+    elif g.geom_type == "MultiPolygon":
+        for q in g.geoms:
+            out.extend(_rings_of_geom(q))
+    elif g.geom_type == "Polygon":
+        pts = list(g.exterior.coords)
+        if pts[0] != pts[-1]:
+            pts.append(pts[0])
+        out.append([[round(x, 6), round(y, 6)] for x, y in pts])
+    return out
+
+
+def _cluster_hulls(stores, r_km: float = 2.0) -> list:
+    """D14 §6.1: 门店点按空间邻近聚类（缓冲 r_km 连通分量），每簇一个凸包。
+    替代旧的单一凸包——不连续领地块不再被一个 span-hull 抹平。"""
+    pts = [(st.lon, st.lat) for st in stores]
+    if not pts:
+        return []
+    deg = r_km / 110.574
+    buf = [Point(x, y).buffer(deg) for x, y in pts]
+    merged = unary_union(buf)
+    clusters = []
+    polys = (list(merged.geoms) if merged.geom_type == "MultiPolygon"
+             else [merged])
+    for comp in polys:
+        if comp.is_empty:
+            continue
+        # 该簇内的门店点
+        cp = comp.buffer(deg)  # 用原 buffer 命中判定
+        members = [(x, y) for (x, y) in pts if cp.contains(Point(x, y))]
+        if len(members) >= 3:
+            clusters.append(MultiPoint(members).convex_hull)
+        elif members:
+            x, y = members[0]
+            clusters.append(Point(x, y).buffer(deg * 0.3))
+    return clusters
+
+
+def _cluster_area_km2(stores, r_km: float = 2.0) -> float:
+    """各簇凸包面积之和（多块安全的 km² 统计视图）。"""
+    return round(sum(km2(h) for h in _cluster_hulls(stores, r_km)), 2)
+
+
 # ---------- 片区选择（几何） ----------
 
 def select_area(world: World, src: Fence, selector: str
                 ) -> tuple[Polygon, str]:
-    """selector → (片区多边形, 语义名)。多边形保证落在 src 围栏内。"""
-    fp = _fence_poly(src)
+    """selector → (片区几何, 语义名)。几何落在 src 全部领地块的并集内（D14 多块安全）。"""
+    fp = _fence_union(world, src.dealer)
     sel = (selector or "全部").strip()
     stores = world.fence_stores(src)
 
@@ -192,6 +253,8 @@ def select_area(world: World, src: Fence, selector: str
 def build_proposal(world: World, kb: KnowledgeBase, text: str,
                    src: Fence, dst: Fence, selector: str,
                    parser: str = "rules") -> Proposal:
+    if src.dealer == dst.dealer:
+        raise AdjustError("source 与 target 是同一经销商")
     sel = (selector or "全部").strip()
     for fill in ("片区", "区域", "部分", "范围"):
         cand = sel.replace(fill, "").strip()
@@ -203,16 +266,16 @@ def build_proposal(world: World, kb: KnowledgeBase, text: str,
     if not moved:
         raise AdjustError(f"「{area_desc}」内没有 {src.dealer[:10]} 的门店")
     impact = move_impact(world, src, dst, moved, kb)
-    sub_hull = _hull(moved)
     src_stores = world.fence_stores(src)
     dst_stores = world.fence_stores(dst)
     impact["area"] = {
         "area_desc": area_desc,
-        "sub_km2": round(km2(sub_hull), 2),
-        "src_km2": [round(km2(_hull(src_stores)), 2),
-                    round(km2(_hull([x for x in src_stores if x not in moved])), 2)],
-        "dst_km2": [round(km2(_hull(dst_stores)), 2),
-                    round(km2(_hull(list(dst_stores) + moved)), 2)],
+        "sub_km2": _cluster_area_km2(moved),
+        "sub_blocks": len(_cluster_hulls(moved)),
+        "src_km2": [_cluster_area_km2(src_stores),
+                    _cluster_area_km2([x for x in src_stores if x not in moved])],
+        "dst_km2": [_cluster_area_km2(dst_stores),
+                    _cluster_area_km2(list(dst_stores) + moved)],
         "src_stores": [len(src_stores), len(src_stores) - len(moved)],
         "dst_stores": [len(dst_stores), len(dst_stores) + len(moved)],
     }
@@ -222,11 +285,9 @@ def build_proposal(world: World, kb: KnowledgeBase, text: str,
                   f"围栏=门店派生视图，归属随店走",
         "spec_ref": "世界模型 F2 可干预 · F3 派生；店随区域走，"
                     "非门店级 CRM 改动"})
-    coords = list(sub_hull.exterior.coords) if not sub_hull.is_empty else []
-    coords = list(sub.exterior.coords)
     return Proposal(text=text, src_dealer=src.dealer, dst_dealer=dst.dealer,
                     area_desc=area_desc,
-                    sub_ring=[[round(x, 6), round(y, 6)] for x, y in coords],
+                    sub_rings=_rings_of_geom(sub),
                     stores=moved, impact=impact, parser=parser)
 
 
@@ -259,8 +320,8 @@ def parse_and_propose(world: World, kb: KnowledgeBase, text: str) -> Proposal:
             "@A 不做了区域都给 @B、把 @A 的增城区划给 @B")
     src = _match_dealer(world, src_name)
     dst = _match_dealer(world, dst_name)
-    if src.area_id == dst.area_id:
-        raise AdjustError("source 与 target 是同一区域")
+    if src.dealer == dst.dealer:
+        raise AdjustError("source 与 target 是同一经销商")
     return build_proposal(world, kb, t, src, dst, sel, "rules")
 
 
@@ -283,11 +344,15 @@ def apply_proposal(world: World, proposal: Proposal) -> World:
     new_fences = [f for f in w2.fences
                   if f.dealer not in (proposal.src_dealer, proposal.dst_dealer)]
     for dealer in (proposal.src_dealer, proposal.dst_dealer):
-        orig = next((f for f in world.fences if f.dealer == dealer), None)
+        origs = [f for f in world.fences if f.dealer == dealer]
+        base_id = origs[0].area_id if origs else dealer[:8]
         ds = [st for st in new_stores if dealer in st.dealers]
-        hull = _hull(ds)
-        if hull.is_empty or not ds:
-            continue
-        new_fences.append(Fence(orig.area_id if orig else dealer[:8],
-                                dealer, round(km2(hull), 2), _ring_of(hull)))
+        # D14: 按空间邻近聚类为 N 个凸包（不连续领地自然表达为多块）
+        hulls = sorted(_cluster_hulls(ds), key=lambda h: -h.area)
+        for i, hull in enumerate(hulls):
+            if hull.is_empty:
+                continue
+            tag = "" if i == 0 else f"-{i + 1}"
+            new_fences.append(Fence(f"{base_id}{tag}", dealer,
+                                    round(km2(hull), 2), _ring_of(hull)))
     return w2.with_fences(new_fences)

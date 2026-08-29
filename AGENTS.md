@@ -10,7 +10,7 @@ layer for FMCG distributor territory management. World model +
 evidence-governed knowledge base + reasoning that proposes to humans.
 
 Spec baseline: `docs/00–08` v1.2.1 FROZEN. Implementation design:
-`DESIGN.md` (living doc). Ontology corrections: D1–D13 in DESIGN.md §5.
+`DESIGN.md` (living doc). Ontology corrections: D1–D14 in DESIGN.md §5.
 
 ---
 
@@ -116,7 +116,7 @@ above exists to prevent this pattern.
 2. `confidence: MEDIUM/LOW` entries only support secondary reasoning.
 3. Data entries (FACT/BENCH) refresh with snapshots; principle entries
    (PRIN) require business-owner confirmation to modify.
-4. Current count: 31 entries (v0.3.0).
+4. Current count: 32 entries (v0.4.0).
 
 ---
 
@@ -133,7 +133,7 @@ above exists to prevent this pattern.
 - Error messages shown to business users: Chinese.
 - Code comments: English preferred; Chinese acceptable if referencing
   Chinese domain terms.
-- Version: bump `DESIGN.md` status (v0.6 → v0.7 etc.) for ontological
+- Version: bump `DESIGN.md` status (v0.7 → v0.8 etc.) for ontological
   changes; bump `docs/CHANGELOG_v1.2.*` for spec-adjacent changes.
 
 ---

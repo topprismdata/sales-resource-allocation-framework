@@ -24,6 +24,7 @@ hard errors found in v1.1.
 - `CHANGELOG_v1.2.1.md` (documentation hotfix)
 - `CHANGELOG_v1.2.2.md` (implementation: area-first adjust + logical fence merge)
 - `CHANGELOG_v1.2.3.md` (documentation language normalization to English)
+- `CHANGELOG_v1.2.4.md` (implementation: D14 multi-component territory)
 - `CONSISTENCY_CHECK_REPORT.md`
 - `SHA256SUMS.md`
 
@@ -35,7 +36,7 @@ Implementation progress on top of the baseline lives in `DESIGN.md`
 (living design document). The 00-08 specs themselves are unchanged.
 
 
-Use **v1.2.3** as the current state of the **v1.2 Implementation Baseline**.
+Use **v1.2.4** as the current state of the **v1.2 Implementation Baseline**.
 v1.2.1 was a documentation-only hotfix; v1.2.2 records implementation progress;
 v1.2.3 normalizes the documentation language to English with zero semantic
 change (specs 00-08 content unchanged).

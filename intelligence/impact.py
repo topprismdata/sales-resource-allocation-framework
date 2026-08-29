@@ -25,9 +25,11 @@ def move_impact(world: World, source: Fence, target: Fence,
     after_t = before_t + moved
 
     def dealer_view(stores_after: list[Store], fence: Fence) -> dict:
+        # D14: 密度分母用领地全部块面积之和，非单块
+        area = max(world.territory_area_km2(fence.dealer), fence.area_km2)
         return {"stores": len(stores_after),
                 "kinds": _kind_comp(stores_after),
-                "density_per_km2": round(len(stores_after) / fence.area_km2, 1)}
+                "density_per_km2": round(len(stores_after) / area, 1)}
 
     # 被移动门店的 kind 变化（新归属下：dealers 去掉 source 加上 target）
     moved_detail = []

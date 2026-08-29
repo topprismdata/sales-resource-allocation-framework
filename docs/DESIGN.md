@@ -1,5 +1,5 @@
 # SRAF Overall Design Document (Living Document)
-- Status: v0.6 (overall design for implementation phase, updated as implementation progresses)
+- Status: v0.7 (overall design for implementation phase, updated as implementation progresses)
 - Date: 2026-08-28
 - Specification Baseline: 00-08 Specification Set (this directory) **v1.2.1 FROZEN** (this document does not modify specifications; it records implementation status and design decisions built upon the specifications)
 - Implementation Baseline Update: docs/CHANGELOG_v1.2.2.md (regional priority semantics + logical fence merge, 2026-08-28)
@@ -36,7 +36,7 @@ traces back to a sourced knowledge entry (K-*), so people can keep questioning d
 ├──────────────────────────────────────────────────────────────┤
 │  04 Allocation Intelligence layer (in design): Diagnosis first locates the layer, then attributes causes within that layer            │
 ├──────────────────────┬───────────────────────────────────────┤
-│  World Model v2.1 (skeleton) │  Knowledge Base v0.3.0 (flesh, 31 entries)            │
+│  World Model v2.1 (skeleton) │  Knowledge Base v0.4.0 (flesh, 32 entries)            │
 │  L1-L4 UFO layering       │  Principles 6 · Rules 12 · Facts 3 · Cases 3 · Constraints 2 · Benchmarks 5    │
 │  Event catalog E1-E11       │  Governance: No unverified source enters the database; MEDIUM only assists     │
 │  Three-level structure §2A        │  Sources: books + papers + data + dialogues + industry search        │
@@ -106,6 +106,7 @@ Fence Drawing Empirical Evidence: 72% district/county contracting system; bounda
 | D7 | **Three Iron Laws of Knowledge Governance**: No source, no entry; MEDIUM only for auxiliary reasoning; data classes refresh with snapshots, principle classes require business confirmation | Prevent "hallucinated knowledge" | 2026-08-28 |
 | D8 | **Lightweight Storage Start**: dataclass+JSON/SQLite, interfaces designed per graph model, bitemporal implemented at application layer (XTDB close-and-open semantics) | 38 fences + 33k stores don't need Neo4j; smooth migration path exists | 2026-08-28 |
 | D9 | **Intelligent Layer Output=Human Advice**: Observation→rule matching→reasoning chain assembly (advice+justification chain+risk+routing), no auto-execution | User positioning: "give humans advice"; high-risk adjustments require human approval (GW process) | 2026-08-28 |
+| D14 | **Multi-component territory**: a dealer's territory may comprise multiple disconnected spatial components. `World.fences_of(dealer)` returns all blocks; transfer re-clusters remaining stores into N hulls (2 km proximity); density uses summed territory area. Continuity is a business preference, not an ontological constraint. | Oracle-ladder audit: 9/37 dealers multi-block; 国之林 3 blocks IoU 0.81 (multi ≠ hard); single `fence_by_dealer` index silently dropped blocks | 2026-08-29 |
 | D13 | **Coordinate System Boundary Normalization**: Data packages declare meta.crs (default GCJ-02=Gaode system); one-time GCJ→WGS on load (`pack_from_disk`), reverse conversion on write (`pack_for_disk`), internal geometry=pure WGS-84 (same standard as OSM landmarks/tiles) | Discrimination experiment: fence vertices→OSM roads GCJ direct comparison median 338m vs after WGS conversion 123m → business fences confirmed drawn in Gaode (GCJ-02); Guangzhou mixed two systems=623m systematic offset (E-549/N+293), sufficient to distort four-direction verification/route-following judgment/base map alignment. Store↔fence kind classification on both sides uses same system so unaffected | 2026-08-28 |
 | D11 | **Territory Priority + Logical Fence Merge**: Transfers only reassign store assignment (unique fact, quantity conservation trivially holds), fences=derived view of dealer-store point set convex hull; deprecated union/difference polygon surgery, fragmentation/conservation checks | Business corrected "decision object is territory, stores are side effects" (K-PRIN-006); hand-written GIS surgery is bug breeding ground (GeometryCollection crashes, km² caliber deviation 9%, fragmentation governance pseudo-problem), entire class of problems disappears with logical merge | 2026-08-28 |
 | D12 | **Parsing Rules Priority, LLM Fallback**: Sub-area selector+regex pattern (<1s) as main path, LLM·M3 only for free-form sentences; @ mention engine ensures LLM always sees full names | LLM on critical path causes 8-20s latency and timeout jitter; colloquial abbreviation mismatches cured by @ expansion (frontend deterministic replacement) | 2026-08-28 |

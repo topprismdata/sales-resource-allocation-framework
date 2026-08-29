@@ -1,8 +1,8 @@
 {
   "_meta": {
     "name": "dealer_territory_knowledge_base",
-    "version": "0.3.0",
-    "date": "2026-08-28",
+    "version": "0.4.0",
+    "date": "2026-08-29",
     "description": "Distributor regional management knowledge base v0 seed version — Knowledge items crystallized from this round of work (books/papers/real data/business dialogues), for the 04 allocation intelligence layer to retrieve when generating human recommendations.",
     "schema": {
       "id": "K-<category abbreviation>-<sequence number>",
@@ -293,6 +293,15 @@
       "source": "Business‑side correction 2026‑08‑28 (“Should not be phrased as store; if it were a store you could directly modify it in CRM; in reality it is a region, store is an added effect”).",
       "confidence": "HIGH",
       "maps_to": "World model F2 fence = decision object / F3 store = derived effect; adjust.py region‑priority engine."
+    },
+    {
+      "id": "K-PRIN-007",
+      "type": "principle",
+      "statement": "A dealer's territory may comprise multiple spatially disconnected components (enclaves, exclaves). Continuity is a business preference, NOT an ontological constraint; each component is independently describable by contract bounds and independently transferable.",
+      "conditions": "any commercial territory model where fence geometry is a derived view (D11)",
+      "source": "Business owner confirmation 2026-08-29; oracle-ladder audit: 9/37 Guangzhou dealers multi-block, 国之林 3 blocks IoU 0.81 (multi≠hard)",
+      "confidence": "HIGH",
+      "maps_to": "World Model F2 artifact; D14; world.fences_of/territory_area_km2"
     }
   ],
   "knowledge_gaps_needing_business_input": [
