@@ -358,6 +358,27 @@ Endorses P4b-2 as the top-level hypothesis, with corrections:
    OSM refetch (our admin-6 layer has open chains; polygonize closed
    only 5/11) or licensed sources. Prerequisite task for O1/O4.
 
+**P2-V — Candidate Boundary Choice Oracle — ✅ DONE 2026-08-29**
+(`tools/bench_p2v_recall.py`, `data/gz/p2v_recall.json`). Candidate
+network = admin-6 + admin-8 + roads + rivers cut into 250m segments
+(88,725 segs). GT boundary length fraction within 100/300m of any
+candidate:
+
+- **Median Recall@300 = 0.935** → the real boundary overwhelmingly
+  EXISTS in the available line networks. GPT cross-review reframe
+  accepted: problem ≈ heterogeneous line-network map matching
+  (candidate ranking + path selection), NOT polygon generation.
+- Median Recall@100 = 0.707 → strict snap needs per-dealer handling:
+  top half of dealers ≈0.95–1.0 (亨啡源 0.95/1.0, confirming its 0.897
+  street+road reconstruction); bottom ~15% (彩弘 0.10, 鸿欣 0.12,
+  华新 0.29) have boundaries genuinely absent from the network.
+- **Architecture decision**: main line = Boundary Choice
+  (candidate recall → segment features [name/side/orientation/distance/
+  continuity] → path optimization, HMM/Viterbi-style, cf. Newson &
+  Krumm 2009; NOT greedy — one wrong junction derails the chain, as
+  observed on 亨啡源). Face assignment / global partition (P4b-2)
+  DEMOTED to a fallback only for low-recall dealers.
+
 **P5 — Aggregation (min vs product vs kernel)**: report calibration and
 candidate-cycle ranking accuracy, not just final IoU. Expected: min for
 semantics, product as evidence score, Erwig kernel for hard feasibility.
