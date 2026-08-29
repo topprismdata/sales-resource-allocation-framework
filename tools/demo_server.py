@@ -34,6 +34,8 @@ from intelligence.health import fence_health, run_q1  # noqa: E402
 from intelligence.classify import classify_gap  # noqa: E402
 from intelligence.coords import pack_from_disk, pack_for_disk  # noqa: E402
 from intelligence.knowledge import KnowledgeBase  # noqa: E402
+sys.path.insert(0, str(ROOT / "tools"))
+from yeidai_ops import YeidaiState, parse_op, apply_op  # noqa: E402
 from intelligence.world import World, point_in_ring  # noqa: E402
 
 
@@ -156,7 +158,8 @@ def _list_regions() -> list[dict]:
 
 STATE_LOCK = threading.Lock()
 STATE = {"pack": _load_pack(_resolve_data_dir(DATA_DIR_ARG)),
-         "world": None, "proposal": None}
+         "world": None, "proposal": None,
+         "yeidai": YeidaiState(), "yeidai_snapshot": YeidaiState().snapshot()}
 STATE["world"] = STATE["pack"]["world"]
 
 
@@ -698,6 +701,30 @@ class Handler(BaseHTTPRequestHandler):
                     "conflicts": _conflicts(in_fence),
                     "lines_used": detail, "missing": missing,
                     "bounds_geometry": bounds_geo, "dealer": dealer})
+                return
+            if self.path == "/api/yeidai_adjust":
+                text = str(body.get("text", ""))
+                st: YeidaiState = STATE["yeidai"]
+                try:
+                    op = parse_op(text, st.zones)
+                    msg = apply_op(st, op)
+                except ValueError as e:
+                    self._send(400, {"error": str(e)})
+                    return
+                self._send(200, {"message": msg, "zones": st.snapshot()})
+                return
+            if self.path == "/api/yeidai_apply":
+                st: YeidaiState = STATE["yeidai"]
+                snap = st.snapshot()
+                json.dump({"crs": "WGS84", "zones": snap},
+                          open(str(ROOT / "data" / "gz" / "haizhu_liwan_zones.json"),
+                               "w", encoding="utf-8"), ensure_ascii=False)
+                self._send(200, {"message": "已落盘", "zones": snap})
+                return
+            if self.path == "/api/yeidai_reset":
+                STATE["yeidai"] = YeidaiState()
+                self._send(200, {"message": "已还原",
+                                 "zones": STATE["yeidai"].snapshot()})
                 return
             if self.path == "/api/adjust":
                 text = body.get("text", "")

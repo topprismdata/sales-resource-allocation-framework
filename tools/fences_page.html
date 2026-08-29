@@ -45,6 +45,22 @@
       <div class="legend">实线填充=当前围栏</div>
       <div class="legend" id="ver">页面 v15 · 数据未知</div>
     </div>
+    <div id="yedbox" style="position:absolute;bottom:14px;left:10px;z-index:1000;background:#fff;
+         border-radius:8px;padding:8px 10px;box-shadow:0 2px 8px rgba(0,0,0,.15);font-size:12.5px;width:420px">
+      <b>业代围栏调整</b>
+      <div id="ychips" style="margin:4px 0">
+        <span class="chip" style="background:#f4f6f8;border-radius:10px;padding:1px 8px;cursor:pointer">@海珠荔湾02 和 @海珠荔湾03 合并</span>
+        <span class="chip" style="background:#f4f6f8;border-radius:10px;padding:1px 8px;cursor:pointer">拆分 @海珠荔湾05 沿 珠江</span>
+      </div>
+      <input id="ycmd" placeholder="输入 @ 唤起业代片区，例：@海珠荔湾02 和 @海珠荔湾03 合并"
+             style="width:100%;box-sizing:border-box;padding:5px 8px;border:1px solid #ccc;border-radius:6px">
+      <div style="margin-top:5px;display:flex;gap:6px;align-items:center">
+        <button id="ybtn" style="padding:3px 12px;border:1px solid #1a73e8;background:#e8f0fe;border-radius:6px;cursor:pointer">调整</button>
+        <button id="yapply" style="padding:3px 12px;border:1px solid #188038;background:#e6f4ea;border-radius:6px;cursor:pointer">应用落盘</button>
+        <button id="yreset" style="padding:3px 12px;border:1px solid #999;border-radius:6px;cursor:pointer">还原</button>
+        <span id="ymeg" style="color:#1a73e8"></span>
+      </div>
+    </div>
   </div>
 </div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -90,6 +106,42 @@ fetch('/api/fences').then(r=>r.json()).then(d=>{
   });
   document.getElementById('ckYed').onchange = e=>{
     e.target.checked ? map.addLayer(yeLayers) : map.removeLayer(yeLayers);
+  };
+  // 业代命令
+  const ycmd=document.getElementById('ycmd'), ymeg=document.getElementById('ymeg');
+  let zoneNames=[];
+  fetch('/api/yeidai').then(r=>r.json()).then(d=>{zoneNames=d.zones.map(z=>z.name);});
+  ycmd.addEventListener('input',()=>{
+    const v=ycmd.value; const m=v.match(/@([^@\s，。；、,;]*)$/);
+    if(!m){return;}
+    const q=m[1];
+    const hit=zoneNames.find(n=>n.includes(q));
+    if(hit){
+      ycmd.value=v.slice(0,v.length-q.length)+hit+' ';
+    }
+  });
+  async function yePost(url){
+    ymeg.textContent='…';
+    const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({text:ycmd.value})});
+    const d=await r.json();
+    ymeg.textContent=d.message||d.error||'';
+    if(d.zones){
+      yeLayers.clearLayers();
+      d.zones.forEach((z,i)=>{
+        L.polygon(z.ring.map(q=>[q[1],q[0]]),
+          {color:'#e67e22',weight:2,fillColor:'#e67e22',fillOpacity:.18,
+           dashArray: url.includes('adjust')?'4 4':null})
+          .bindTooltip(`业代 ${z.name} (${z.area}km²)`,{sticky:true}).addTo(yeLayers);
+      });
+    }
+  }
+  document.getElementById('ybtn').onclick=()=>yePost('/api/yeidai_adjust');
+  document.getElementById('yapply').onclick=()=>yePost('/api/yeidai_apply');
+  document.getElementById('yreset').onclick=async()=>{
+    const r=await fetch('/api/yeidai_reset',{method:'POST'});
+    const d=await r.json(); ymeg.textContent=d.message;
+    yeLayers.clearLayers(); location.reload();
   };
   // 列表
   const list = document.getElementById('list');
