@@ -388,6 +388,11 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, {"dealers": dealers, "admin": admin,
                                  "subdistricts": subs})
                 return
+            if path == "/api/yeidai":
+                zf = pack["data_dir"] / "haizhu_liwan_zones.json"
+                self._send(200, json.loads(zf.read_text(encoding="utf-8"))
+                           if zf.exists() else {"zones": []})
+                return
             if path == "/api/compare":
                 cf = pack["data_dir"] / "compare.json"
                 if not cf.exists():

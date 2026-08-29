@@ -41,6 +41,7 @@
       <label><input type="checkbox" id="ckAdmin" checked> 区界线（深蓝粗虚线）</label>
       <label><input type="checkbox" id="ckTruth" checked> 真实围栏（当前经销商）</label>
       <label><input type="checkbox" id="ckRecon" checked> 描述重建（绿，亨啡源北）</label>
+      <label><input type="checkbox" id="ckYed" checked> 业代片区·海珠荔湾（橙）</label>
       <div class="legend">实线填充=当前围栏</div>
       <div class="legend" id="ver">页面 v15 · 数据未知</div>
     </div>
@@ -75,6 +76,21 @@ fetch('/api/fences').then(r=>r.json()).then(d=>{
         L.polyline(p.map(q=>[q[1],q[0]]), {color:'#7b1fa2', weight:4.5, dashArray:'2 5',
             opacity:.95}).bindTooltip('▫ '+name, {sticky:true}).addTo(layers.sub);
   layers.sub.addTo(map);
+  // 业代片区（橙）
+  const yeLayers = L.layerGroup();
+  fetch('/api/yeidai').then(r=>r.json()).then(d=>{
+    const DC = ["#e67e22","#f1c40f","#8e44ad","#16a085","#c0392b","#2980b9",
+                "#27ae60","#d35400","#7f8c8d","#2c3e50","#e84393"];
+    d.zones.forEach((z,i)=>{
+      L.polygon(z.ring.map(q=>[q[1],q[0]]),
+        {color:DC[i%DC.length],weight:2,fillColor:DC[i%DC.length],fillOpacity:.18})
+        .bindTooltip(`业代 ${z.name} (${z.area}km²)`,{sticky:true}).addTo(yeLayers);
+    });
+    yeLayers.addTo(map);
+  });
+  document.getElementById('ckYed').onchange = e=>{
+    e.target.checked ? map.addLayer(yeLayers) : map.removeLayer(yeLayers);
+  };
   // 列表
   const list = document.getElementById('list');
   d.dealers.forEach((de,i)=>{
