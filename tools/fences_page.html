@@ -58,8 +58,8 @@ fetch('/api/fences').then(r=>r.json()).then(d=>{
   for (const [name, polys] of Object.entries(d.admin))
     for (const p of polys)
       if (p.length >= 2)
-        L.polyline(p.map(q=>[q[1],q[0]]), {color:'#1565c0', weight:2.2, dashArray:'7 5',
-                    opacity:.85}).bindTooltip('⚑ '+name, {sticky:true}).addTo(layers.admin);
+        L.polyline(p.map(q=>[q[1],q[0]]), {color:'#0d47a1', weight:5, dashArray:'10 6',
+                    opacity:.95}).bindTooltip('⚑ '+name, {sticky:true}).addTo(layers.admin);
   layers.admin.addTo(map);
   // others
   d.dealers.forEach((de,i)=>{
@@ -77,7 +77,6 @@ fetch('/api/fences').then(r=>r.json()).then(d=>{
     list.appendChild(el);
   });
   document.getElementById('search').oninput = e=>{
-    const q = e.target.value.trim();
     [...list.children].forEach(el=>el.style.display =
         !q || el.dataset.name.includes(q) ? '' : 'none');
   };
