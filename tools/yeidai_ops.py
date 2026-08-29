@@ -1,187 +1,214 @@
 #!/usr/bin/env python3
-"""业代围栏自然语言操作（@引用）：合并/拆分/划拨。纯几何，无门店。"""
-import json, re, math, statistics
+"""业代围栏操作（单元集合范式）：围栏=基础单元集合，合并/拆分/划拨=集合运算。
+基础单元库不可变；围栏只持有单元 id 集合，几何为渲染缓存。
+"""
+import json, re, math
 import shapely
-from shapely.geometry import LineString, Polygon, Point, box
+import networkx as nx
+from shapely.geometry import Polygon, Point
+from shapely.strtree import STRtree
 from shapely.ops import unary_union
 
 DATA = "/Users/ghb/sales-resource-allocation-framework/data/gz"
+LINK_MIN_M = 50          # 单元邻接判定：共享边界最短长度
 
 
 class YeidaiState:
-    """业代围栏工作副本（WGS84）。"""
+    """工作副本：每片 = 单元 id 集合。几何按需计算。"""
 
     def __init__(self):
-        d = json.load(open(f"{DATA}/haizhu_liwan_zones_original.json", encoding="utf-8"))
-        self.zones = [{"id": z["id"], "name": z["name"],
-                       "geom": YeidaiState._geom(z)}
-                      for z in d["zones"]]
+        d = json.load(open(f"{DATA}/basic_units_wgs.json", encoding="utf-8"))
+        self.unit_geoms = [shapely.from_wkt(u["geom"]) for u in d["units"]]
+        g = json.load(open(f"{DATA}/unit_graph_hzlw.json", encoding="utf-8"))
+        self.adj = {int(k): set(v) for k, v in g["adjacency"].items()}
+        self.unit_zone0 = {int(k): v for k, v in g["unit_zone"].items()}
+        self.zone_units0 = g["zone_units"]
+        zmeta = json.load(open(f"{DATA}/haizhu_liwan_zones_original.json",
+                               encoding="utf-8"))["zones"]
+        # 初始围栏：按原始分配的单元集；无单元的围栏 → 原始环注册为伪单元
+        self.zones = []
+        self.pseudo = {}   # pseudo_id → geom（异常片兜底）
+        extra = len(self.unit_geoms)
+        for z in zmeta:
+            key = z["name"] + "|" + z["id"]
+            uids = set(self.zone_units0.get(key, []))
+            geom = None
+            if uids:
+                geom = unary_union([self.unit_geoms[u] for u in uids])
+            else:
+                p = Polygon(z["ring"])
+                geom = p if p.is_valid else p.buffer(0)
+                if geom.geom_type == "MultiPolygon":
+                    geom = max(geom.geoms, key=lambda x: x.area)
+                self.pseudo[extra] = geom
+                uids = {extra}
+                extra += 1
+            self.zones.append({"id": z["id"], "name": z["name"],
+                               "unit_ids": uids, "geom": geom})
 
-    @staticmethod
-    def _geom(z):
-        if "ring" in z:
-            return str_shapely(z["ring"])
-        parts = [shapely.Polygon(r) for r in z.get("rings", [])]
-        parts = [p if p.is_valid else p.buffer(0) for p in parts]
-        return unary_union(parts) if len(parts) > 1 else parts[0]
+    # ---------- 几何 ----------
+    def geom_of(self, unit_ids):
+        return unary_union([self.unit_geoms[u] if u < len(self.unit_geoms)
+                            else self.pseudo[u] for u in sorted(unit_ids)])
 
     def snapshot(self):
         out = []
         for z in self.zones:
-            g = z["geom"]
+            g = self.geom_of(z["unit_ids"])
             rings = ([list(g.exterior.coords)] if g.geom_type == "Polygon"
                      else [list(p.exterior.coords) for p in g.geoms])
             out.append({"id": z["id"], "name": z["name"],
                         "rings": [[[round(x, 6), round(y, 6)] for x, y in r]
                                   for r in rings],
-                        "area": round(g.area * 11320 * 0.995, 1)})
+                        "area": round(g.area * 11320 * 1.0084, 1)})
         return out
+
+    # ---------- 解析 ----------
+    def resolve(self, text):
+        refs = re.findall(r"@([^\s@，。；、,;]+)", text)
+        out = []
+        for ref in refs:
+            hits = [z for z in self.zones if ref in z["name"]]
+            if len(hits) != 1:
+                raise ValueError(f"@{ref} 匹配到 {len(hits)} 个围栏，请用更长的名字")
+            out.append(hits[0])
+        return out
+
+    def resolve_llm(self, op):
+        if op.get("op") == "merge":
+            zs = self.resolve(" ".join("@"+n for n in op["zones"]))
+            return {"op": "merge", "zones": zs}
+        if op.get("op") == "split":
+            return {"op": "split", "zone": self.resolve("@"+op["zone"])[0],
+                    "cut": op.get("cut")}
+        if op.get("op") == "transfer_direction":
+            return {"op": "transfer_direction",
+                    "src": self.resolve("@"+op["src_zone"])[0],
+                    "direction": op["direction"],
+                    "dst": self.resolve("@"+op["dst_zone"])[0]}
+        if op.get("op") == "delete":
+            return {"op": "delete", "zone": self.resolve("@"+op["zone"])[0]}
+        raise ValueError(f"LLM: 未知操作 {op.get('op')}")
+
+    def parse_op(self, text):
+        refs = self.resolve(text)
+        if re.search(r"合并|融合|并成一个", text):
+            if len(refs) < 2:
+                raise ValueError("合并需要至少两个 @围栏")
+            return {"op": "merge", "zones": refs}
+        m = re.search(r"(@\S+)\s*(?:的)?(北|南|东|西)(?:部|边|侧)?(?:区域)?\s*"
+                      r"(?:划给|给|归|并入)\s*(@\S+)", text)
+        if m:
+            return {"op": "transfer_direction", "src": refs[0],
+                    "direction": m.group(2), "dst": refs[-1]}
+        if re.search(r"拆分|切开|分成两|一分为二", text) and refs:
+            mc = re.search(r"沿\s*([^\s@，。；、,;]+)", text)
+            return {"op": "split", "zone": refs[0],
+                    "cut": mc.group(1) if mc else None}
+        if re.search(r"取消|删除|撤销", text) and refs:
+            return {"op": "delete", "zone": refs[0]}
+        raise ValueError("无法识别的指令：支持 合并/@A @B、拆分 @A 沿 XX、"
+                         "@A 的北部划给 @B、取消 @A")
+
+    # ---------- 操作（全部是单元集合运算） ----------
+    def apply(self, op):
+        if op["op"] == "merge":
+            zs = op["zones"]
+            keep = zs[0]
+            names = [z["name"] for z in zs]
+            for z in zs[1:]:
+                keep["unit_ids"] |= z["unit_ids"]
+            keep["geom"] = self.geom_of(keep["unit_ids"])
+            self.zones = [z for z in self.zones if z not in zs[1:]]
+            return f"已合并 {names} → {keep['name']}（{len(keep['unit_ids'])}单元）"
+
+        if op["op"] == "delete":
+            z = op["zone"]
+            self.zones = [x for x in self.zones if x is not z]
+            return f"已取消 {z['name']}"
+
+        if op["op"] == "transfer_direction":
+            src, dst, dr = op["src"], op["dst"], op["direction"]
+            dv = {"北": (0, 1), "南": (0, -1), "东": (1, 0), "西": (-1, 0)}[dr]
+            c = src["geom"].centroid
+            moved = {u for u in src["unit_ids"]
+                     if ((self.unit_geoms[u].centroid.x - c.x) * dv[0]
+                         + (self.unit_geoms[u].centroid.y - c.y) * dv[1]) > 0}
+            if not moved:
+                raise ValueError(f"{dr}部没有可划的单元")
+            src["unit_ids"] -= moved
+            dst["unit_ids"] |= moved
+            src["geom"] = self.geom_of(src["unit_ids"])
+            dst["geom"] = self.geom_of(dst["unit_ids"])
+            return (f"已把 {src['name']} 的{dr}部 {len(moved)} 个单元"
+                    f"划给 {dst['name']}")
+
+        if op["op"] == "split":
+            z = op["zone"]
+            cutname = op.get("cut")
+            cutline = self._resolve_cut(cutname) if cutname else None
+            # 邻接子图（片内）+ 删边 → 连通分量
+            sub = nx.Graph()
+            uids = sorted(z["unit_ids"])
+            sub.add_nodes_from(uids)
+            for u in uids:
+                for v in self.adj.get(u, ()):
+                    if v in z["unit_ids"] and u < v:
+                        sub.add_edge(u, v)
+            if cutline is not None:
+                drop = []
+                for u, v in list(sub.edges()):
+                    shared = self.unit_geoms[u].intersection(self.unit_geoms[v])
+                    if not shared.is_empty and cutline.distance(shared) < 1e-9:
+                        drop.append((u, v))
+                for e in drop:
+                    sub.remove_edge(*e)
+            comps = sorted(nx.connected_components(sub), key=len, reverse=True)
+            if len(comps) < 2:
+                msg = ("切割要素未把围栏一分为二（它可能本来就是这条围栏的边界）"
+                       if cutname else "默认切分未能分开（单元邻接过密），"
+                                       "请指定沿XX路/河")
+                raise ValueError(msg)
+            z["unit_ids"] = set(comps[0])
+            names = [z["name"]]
+            for k, comp in enumerate(comps[1:], 1):
+                nm = f"{z['name']}-{k}"
+                self.zones.append({"id": f"{z['id']}-{k}", "name": nm,
+                                   "unit_ids": set(comp), "geom": None})
+                names.append(nm)
+            for z_ in self.zones:
+                if z_["unit_ids"] is not None and z_["geom"] is None:
+                    z_["geom"] = self.geom_of(z_["unit_ids"])
+            return f"已拆分 {z['name']} → {names}（{len(comps)} 片）"
+
+        raise ValueError(f"未知操作 {op['op']}")
+
+    def _resolve_cut(self, name):
+        """名称 → 线网中的要素几何（路/河/行政界）。"""
+        d = json.load(open(f"{DATA}/gz_osm_full.json", encoding="utf-8"))
+        pieces = []
+        for grp in ("roads", "rivers"):
+            for r in d[grp]:
+                if name and name in r.get("name", ""):
+                    try:
+                        g = shapely.from_wkt(r["wkt"])
+                    except Exception:
+                        continue
+                    parts = ([g] if g.geom_type == "LineString"
+                             else list(g.geoms) if g.geom_type == "MultiLineString" else [])
+                    pieces += parts
+        if not pieces:
+            raise ValueError(f"找不到线要素『{name}』")
+        return unary_union(pieces)
 
 
 def str_shapely(ring):
-    import shapely
     p = Polygon(ring)
     return p if p.is_valid else p.buffer(0)
 
 
-def resolve_zones(text, zones):
-    """@短名 → 完整围栏名（子串唯一匹配，多个@可重复指向同一片）。"""
-    refs = re.findall(r"@([^\s@，。；、,;]+)", text)
-    out = []
-    for ref in refs:
-        hits = [z for z in zones if ref in z["name"]]
-        if len(hits) != 1:
-            raise ValueError(f"@{ref} 匹配到 {len(hits)} 个围栏，请用更长的名字")
-        out.append(hits[0])
-    return out
-
-
-def parse_op(text, zones):
-    """规则解析 → 结构化操作。"""
-    refs = resolve_zones(text, zones)
-    t = text
-    if re.search(r"合并|融合|并成一个", t):
-        if len(refs) < 2:
-            raise ValueError("合并需要至少两个 @围栏")
-        return {"op": "merge", "zones": refs}
-    m = re.search(r"(@\S+)\s*(?:的)?(北|南|东|西)(?:部|边|侧)?(?:区域)?\s*(?:划给|给|归|并入)\s*(@\S+)", t)
-    if m:
-        return {"op": "transfer_direction", "src_zone": refs[0],
-                "direction": m.group(2), "dst_zone": refs[-1]}
-    m = re.search(r"拆分|切开|分成两|一分为二", t)
-    if m and refs:
-        mc = re.search(r"沿\s*([^\s@，。；,;]+)", t)
-        return {"op": "split", "zone": refs[0],
-                "cut": mc.group(1) if mc else None}
-    m = re.search(r"(@\S+)\s*(?:取消|删除|撤销)", t)
-    if m:
-        return {"op": "delete", "zone": refs[0]}
-    raise ValueError("无法识别的指令：支持 合并/@A @B、拆分 @A 沿 XX、@A 的北部划给 @B、取消 @A")
-
-
-def apply_op(state, op):
-    zones = state.zones
-    if op["op"] == "merge":
-        names = [z["name"] for z in op["zones"]]
-        geom = unary_union([z["geom"] for z in op["zones"]])
-        keep = op["zones"][0]
-        keep["geom"] = geom
-        state.zones = [z for z in zones if z not in op["zones"][1:]]
-        return f"已合并 {names} → {keep['name']}（{geom.area*11320:.1f}km²）"
-
-    if op["op"] == "delete":
-        z = op["zone"]
-        state.zones = [x for x in zones if x is not z]
-        return f"已取消 {z['name']}"
-
-    if op["op"] == "split":
-        z = op["zone"]
-        cutname = op.get("cut")
-        cutline = None
-        if cutname:
-            d = json.load(open(f"{DATA}/gz_osm_full.json", encoding="utf-8"))
-            cands = []
-            for grp in ("roads", "rivers"):
-                for r in d[grp]:
-                    if cutname and cutname in r.get("name", ""):
-                        try:
-                            g = shapely.from_wkt(r["wkt"])
-                        except Exception:
-                            continue
-                        parts = ([g] if g.geom_type == "LineString"
-                                 else list(g.geoms) if g.geom_type == "MultiLineString" else [])
-                        cands += parts
-            if cands:
-                cutline = unary_union(cands).intersection(
-                    z["geom"].buffer(0.0005)).buffer(0.00015)
-        if cutline is None or cutline.is_empty:
-            # 无线名：过质心的水平线
-            c = z["geom"].centroid
-            cutline = LineString([(c.x - 1, c.y), (c.x + 1, c.y)]).buffer(0.00015)
-        from shapely.ops import split as shp_split
-        cut_opts = [cutline]
-        if cutline.geom_type == "MultiLineString":
-            cut_opts += list(cutline.geoms)
-        pieces = []
-        for cut_one in cut_opts:
-          for bw in (0.0, 0.0004, 0.0012):
-            cutuse = cut_one.buffer(bw) if bw > 0 else cut_one
-            if bw == 0:
-                if cutuse.geom_type not in ("LineString", "MultiLineString"):
-                    continue
-                try:
-                    res = shp_split(z["geom"], cutuse)
-                except Exception:
-                    continue
-                polys = [g for g in (res.geoms if hasattr(res, "geoms") else [res])
-                         if g.geom_type == "Polygon"]
-            else:
-                diff = z["geom"].difference(cutuse)
-                polys = list(diff.geoms) if diff.geom_type == "MultiPolygon" else (
-                    [diff] if diff.geom_type == "Polygon" and not diff.is_empty else [])
-            if len(polys) >= 2:
-                pieces = [g for g in polys if g.area > 1e-7]
-                if len(pieces) >= 2:
-                    break
-        if len(pieces) < 2:
-            raise ValueError("切分失败：切割要素未把围栏一分为二")
-        pieces.sort(key=lambda p: -p.area)
-        z["geom"] = pieces[0]
-        newzone = {"id": z["id"] + "-b", "name": z["name"] + "-B", "geom": pieces[1]}
-        zones.insert(zones.index(z) + 1, newzone)
-        return (f"已拆分 {z['name']} → {z['name']}"
-                f"（{pieces[0].area*11320:.1f}km²）+ {newzone['name']}"
-                f"（{pieces[1].area*11320:.1f}km²）"
-                + (f"，切割线：{cutname}" if cutname else "，默认水平切"))
-
-    if op["op"] == "transfer_direction":
-        src, dst, dr = op["src_zone"], op["dst_zone"], op["direction"]
-        if src is dst:
-            raise ValueError("源和目标相同")
-        dv = {"北": (0, 1), "南": (0, -1), "东": (1, 0), "西": (-1, 0)}[dr]
-        c = src["geom"].centroid
-        half = box(c.x - 1 + (0 if dv[0] >= 0 else 0), c.y, c.x + 1, c.y + 1) \
-            if dr == "北" else None
-        if dr == "北":
-            half = box(c.x - 1, c.y, c.x + 1, c.y + 1)
-        elif dr == "南":
-            half = box(c.x - 1, c.y - 1, c.x + 1, c.y)
-        elif dr == "东":
-            half = box(c.x, c.y - 1, c.x + 1, c.y + 1)
-        else:
-            half = box(c.x - 1, c.y - 1, c.x, c.y + 1)
-        piece = src["geom"].intersection(half)
-        if piece.is_empty or piece.area < 1e-7:
-            raise ValueError(f"{dr}部没有可划的区域")
-        src["geom"] = src["geom"].difference(half)
-        dst["geom"] = unary_union([dst["geom"], piece])
-        return (f"已把 {src['name']} 的{dr}部"
-                f"（{piece.area*11320:.1f}km²）划给 {dst['name']}")
-    raise ValueError(f"未知操作 {op['op']}")
-
-
 def llm_parse_op(text, zones, timeout=60):
-    """规则失败时的 LLM 兜底：让模型把指令解析成结构化 op（MiniMax M3）。"""
+    """规则失败时的 LLM 兜底：返回结构化 op（名称形式）。"""
     import requests
     cfg = json.load(open(f"{DATA}/llm_config.json", encoding="utf-8"))
     names = [z["name"] for z in zones]
@@ -204,28 +231,6 @@ def llm_parse_op(text, zones, timeout=60):
               "max_tokens": 512}, timeout=timeout)
     r.raise_for_status()
     content = r.json()["choices"][0]["message"]["content"].strip()
+    import re
     content = re.sub(r"^```(json)?|```$", "", content, flags=re.M).strip()
-    op = json.loads(content)
-    byname = {z["name"]: z for z in zones}
-    if op.get("op") == "merge":
-        zs = [byname[n] for n in op["zones"] if n in byname]
-        if len(zs) < 2:
-            raise ValueError("LLM: 合并目标不足")
-        return {"op": "merge", "zones": zs}
-    if op.get("op") == "split":
-        z = byname.get(op["zone"])
-        if not z:
-            raise ValueError("LLM: 拆分目标不存在")
-        return {"op": "split", "zone": z, "cut": op.get("cut")}
-    if op.get("op") == "transfer_direction":
-        s, dd = byname.get(op["src_zone"]), byname.get(op["dst_zone"])
-        if not s or not dd or op["direction"] not in ("北", "南", "东", "西"):
-            raise ValueError("LLM: 划拨参数无效")
-        return {"op": "transfer_direction", "src_zone": s,
-                "direction": op["direction"], "dst_zone": dd}
-    if op.get("op") == "delete":
-        z = byname.get(op["zone"])
-        if not z:
-            raise ValueError("LLM: 删除目标不存在")
-        return {"op": "delete", "zone": z}
-    raise ValueError(f"LLM: 未知操作 {op.get('op')}")
+    return json.loads(content)
