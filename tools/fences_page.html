@@ -89,6 +89,7 @@ fetch('/api/fences').then(r=>r.json()).then(d=>{
         !q || el.dataset.name.includes(q) ? '' : 'none');
   };
   fitAll();
+  if (document.getElementById('ckRecon').checked) loadRecon();
 });
 function fitAll(){
   const b = [];
@@ -136,11 +137,7 @@ document.getElementById('ckTruth').onchange = e=>{
 toggle('ckAdmin', layers.admin);
 toggle('ckSub', layers.sub);
 // 描述重建对比（按需加载）
-document.getElementById('ckRecon').onchange = e=>{
-  if (!e.target.checked) {
-    if (layers.recon) map.removeLayer(layers.recon);
-    return;
-  }
+function loadRecon(){
   if (layers.recon) { map.addLayer(layers.recon); return; }
   fetch('/api/north_desc').then(r=>r.json()).then(d=>{
     layers.recon = L.layerGroup();
@@ -151,6 +148,11 @@ document.getElementById('ckRecon').onchange = e=>{
         {color:'#1b5e20',weight:1.5,opacity:.6,dashArray:'1 4'}).addTo(layers.recon);
     map.addLayer(layers.recon);
   });
+}
+document.getElementById('ckRecon').onchange = e=>{
+  if (!e.target.checked) {
+    if (layers.recon) map.removeLayer(layers.recon);
+  } else loadRecon();
 };
 </script>
 </body>
