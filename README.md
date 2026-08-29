@@ -35,7 +35,7 @@ boundary moves.
 
 ```text
 Intelligence = World Model (skeleton)
-             + Knowledge Base (flesh, 32 sourced entries)
+             + Knowledge Base (flesh, 33 sourced entries)
              + Reasoning (advice for humans, every "why" lands on an entry)
 ```
 

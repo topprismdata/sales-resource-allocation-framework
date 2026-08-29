@@ -1,7 +1,7 @@
 {
   "_meta": {
     "name": "dealer_territory_knowledge_base",
-    "version": "0.4.0",
+    "version": "0.4.1",
     "date": "2026-08-29",
     "description": "Distributor regional management knowledge base v0 seed version — Knowledge items crystallized from this round of work (books/papers/real data/business dialogues), for the 04 allocation intelligence layer to retrieve when generating human recommendations.",
     "schema": {
@@ -302,6 +302,15 @@
       "source": "Business owner confirmation 2026-08-29; oracle-ladder audit: 9/37 Guangzhou dealers multi-block, 国之林 3 blocks IoU 0.81 (multi≠hard)",
       "confidence": "HIGH",
       "maps_to": "World Model F2 artifact; D14; world.fences_of/territory_area_km2"
+    },
+    {
+      "id": "K-PRIN-008",
+      "type": "principle",
+      "statement": "Low agreement between a hand-drawn fence and its nominal four-bounds landmarks is largely DRAWING NOISE: tracing a winding river/road in a CRM UI takes hundreds of clicks, so humans straighten, shortcut, and draw by impression. The contract defines coarse-grained intent; the hand-drawn polygon is a noisy fine-grained realization. Reconstruction must be evaluated against human re-draw agreement (core/plus tolerance band), never against exact hand-drawn IoU.",
+      "conditions": "any benchmark of text→geometry reconstruction against human-drawn ground truth",
+      "source": "Business owner 2026-08-29 (『人工边界不严格一般是手工绘制难度导致的』) + fidelity decomposition audit: 88% of vertices >500m from named landmark; of those ~47% lie on other real OSM features (secondary references), ~53% on nothing (drawing noise); convex-hull ratio 1.34",
+      "confidence": "HIGH",
+      "maps_to": "docs/FOUR_BOUNDS_RECONSTRUCTION_SPEC.md §7.2; P0 human ceiling experiment; Q3 core/plus output posture"
     }
   ],
   "knowledge_gaps_needing_business_input": [

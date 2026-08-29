@@ -144,6 +144,9 @@ bbox is never the real answer.
 perimeter within 150 m of a named landmark) is the dominant predictor
 of reconstruction accuracy, stronger than block count.
 
+**Reframe (see §7.2):** the V1c ≈ 0.49 ceiling is partly the
+hand-drawing noise floor, not purely a text/algorithm deficiency.
+
 **Key counter-intuitive result: multi-block ≠ hard.** 国之林 has 3
 disconnected blocks but IoU 0.806 (large suburban, boundary hugs admin
 line, fidelity 0.687). 穗穗盛 has 2 blocks but IoU 0.115 (dense urban,
@@ -156,14 +159,45 @@ not component count.
 |---|---|---|---|---|
 | A | single block, fidelity ≥ 0.5 | 3 | 0.78 | near-unique from four-bounds |
 | B | single block, high fid, needs endpoint | 0 | — | (empty at this data density) |
-| C | low fidelity (< 0.5) | 25 | 0.50 | under-specified; needs boundary_mode/offset slots OR irreducible human tolerance |
+| C | low fidelity (< 0.5) | 25 | 0.50 | see §7.2 decomposition — mostly drawing noise, not text deficiency |
 | D | multi-component | 9 | 0.41 | needs component slots; but see 国之林 |
 
-**Interpretation:** only 3/37 are cleanly "four-bounds-unique". The
-dominant class C (25) is under-determined — the human hand-drawn
-boundary mostly does NOT lie on the named landmarks. This is the
-engineering proof that four-bounds constrains roughly *half* a real
-boundary, matching the V1c ≈ 0.49 ceiling.
+### 7.2 Fidelity Decomposition (business-owner insight + audit, 2026-08-29)
+
+Business owner: *"when the human boundary is not strict, it is usually
+caused by the difficulty of manual drawing."* Verified by distance-signature
+audit on all 37 cases. Median 88% of hand-drawn vertices sit > 500 m from
+the clause-named landmark. Where do those deviating vertices actually lie?
+
+| Component | Share | Meaning |
+|---|---|---|
+| On a DIFFERENT real OSM road/river (±80 m) | **~47%** | the drawn boundary follows secondary features the contract never named — real spatial information absent from the text |
+| On no OSM feature at all | **~53%** | **drawing noise**: hand-tracing a winding river/road in a CRM requires hundreds of clicks; humans shortcut, straighten, and draw by impression at their screen scale |
+
+Convex-hull ratio median 1.34 (vs 1.0 = perfectly convex): the true
+boundary is substantially non-convex — the deviation is structured
+approximation, not random jitter.
+
+**Consequences for this benchmark (corrects Rev-1 interpretation):**
+
+1. Low fidelity ≠ "contracts are under-specified." The contract defines
+   a **coarse-grained intent**; the hand-drawn fence is a **noisy
+   fine-grained realization**. They are not supposed to agree at pixel
+   level. Chasing IoU→0.8 against hand-drawn noise is the wrong target.
+2. The correct evaluation target is **agreement with contract intent
+   within a tolerance band** — exactly what the Erwig core/plus model
+   (Q3) provides: the hand-drawn polygon should fall inside our plus
+   zone; its exact edge is unknowable and does not need to be known.
+3. This makes **P0 (human re-draw ceiling) the decisive experiment**:
+   three humans drawing from the same contract will disagree with each
+   other at the same noise scale. If human-vs-human IoU is ~0.55, a
+   model at 0.493 is already near human-equivalent — and the headline
+   metric must be reported against that ceiling, never against 1.0.
+4. The ~47% secondary-feature component IS text deficiency — that part
+   is recoverable by the minimal contract slots (§6: arc endpoints +
+   boundary_mode + secondary-feature naming), and OSM context can
+   partially infer it without new slots (a visible-exit ray that hits a
+   river justifies snapping the arc there).
 
 ## 8. Recommended Pipeline (9 steps)
 

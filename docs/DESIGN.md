@@ -36,7 +36,7 @@ traces back to a sourced knowledge entry (K-*), so people can keep questioning d
 ├──────────────────────────────────────────────────────────────┤
 │  04 Allocation Intelligence layer (in design): Diagnosis first locates the layer, then attributes causes within that layer            │
 ├──────────────────────┬───────────────────────────────────────┤
-│  World Model v2.1 (skeleton) │  Knowledge Base v0.4.0 (flesh, 32 entries)            │
+│  World Model v2.1 (skeleton) │  Knowledge Base v0.4.1 (flesh, 33 entries)            │
 │  L1-L4 UFO layering       │  Principles 6 · Rules 12 · Facts 3 · Cases 3 · Constraints 2 · Benchmarks 5    │
 │  Event catalog E1-E11       │  Governance: No unverified source enters the database; MEDIUM only assists     │
 │  Three-level structure §2A        │  Sources: books + papers + data + dialogues + industry search        │

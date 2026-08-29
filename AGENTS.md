@@ -116,7 +116,7 @@ above exists to prevent this pattern.
 2. `confidence: MEDIUM/LOW` entries only support secondary reasoning.
 3. Data entries (FACT/BENCH) refresh with snapshots; principle entries
    (PRIN) require business-owner confirmation to modify.
-4. Current count: 32 entries (v0.4.0).
+4. Current count: 33 entries (v0.4.1).
 
 ---
 
