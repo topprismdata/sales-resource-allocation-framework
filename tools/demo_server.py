@@ -332,7 +332,10 @@ class Handler(BaseHTTPRequestHandler):
                 if not cf.exists():
                     self._send(200, {"crs": "WGS84", "version": "V1c",
                                      "missing": True, "items": [],
-                                     "hint": "运行 tools/gen_compare_data.py 生成"})
+                                     "debug_cwd": str(Path.cwd()),
+                                     "debug_path": str(cf),
+                                     "debug_exists": str(cf.exists()),
+                                     "hint": "run tools/gen_compare_data.py"})
                     return
                 self._send(200, json.loads(cf.read_text(encoding="utf-8")))
                 return
