@@ -291,9 +291,72 @@ resolution ceiling.
 false-closure rate. Tests whether Wang-2026 dynamic buffer transfers to
 Guangzhou's river+admin mix.
 
-**P4 — Admin Arc Ablation**: {whole-polygon-clip / bbox / nearest /
-two-anchor-shortest / two-anchor-direction-aware / cycle-joint}.
-Predicted winner: direction-aware two-anchor + cycle optimization.
+**P4 — REDESIGNED after refutation of its premise (2026-08-29)**
+
+Original P4 assumed a territory ≈ an admin-district polygon to clip
+against. Store-side audit kills that premise: **25/37 dealers span
+multiple districts; 10/11 districts are subdivided among dealers
+(白云 16, 番禺 15, 天河 12); exactly 1 dealer exclusively holds a whole
+district (从化).** A district is NOT a territory container — clipping by
+it would sever legitimate territory exactly where K-RULE-002 says
+fences live (shared district boundaries).
+
+Correct role: **admin boundaries are boundary LINES — arc candidates
+of the same class as roads and rivers.** "南到番禺区边缘" means "south
+boundary = some arc of ∂Panyu", not "territory ⊆ Panyu".
+
+Granularity ladder (user direction, 2026-08-29): use BOTH
+- 区界 (district ∂, admin_level 6) — base framework arcs;
+- 街道办/镇界 (subdistrict/town ∂, admin_level 8) — finer atomic
+  cells (China's natural building blocks, Zoltners-style). Old-city
+  "一区切 3~6 块" most plausibly partitions on subdistrict lines.
+
+**P4b — three changes, testable independently:**
+1. ∂district + ∂subdistrict arcs = first-class barrier candidates
+   alongside road/river arcs (same side-field + cycle machinery);
+2. joint partition reconstruction: one planar subdivision (faces from
+   arcs), faces globally assigned to dealers — each shared border
+   decided once; explains the P1 paradox (国之林 V1c succeeded because
+   full-line barriers + neighbor clauses accidentally closed a face);
+3. face-atom hypothesis test: old-city boundaries coincide more with
+   ∂subdistrict than with roads? If yes, faces = subdistrict polygons
+   and side constraints degenerate into face assignments.
+
+**GPT cross-review verdict (2026-08-29, docs/reviews/2026-08-29_gpt_p4b_partition_review_raw.md)**
+Endorses P4b-2 as the top-level hypothesis, with corrections:
+1. Do NOT planarize all OSM — face explosion (dual carriageways, river
+   banks, sliver polys → 10⁵+ faces). Only contract-mentioned features +
+   admin-6 + admin-8 + gap-repair connectors enter the candidate set.
+2. **NEXT SINGLE EXPERIMENT = P4b-O Global Oracle Atomic Partition**
+   (ceiling before solver — same discipline that made P1 decisive):
+   four atomizations {O1 street polys (admin-8), O2 road-block faces,
+   O3 contract-mentioned arc arrangement, O4 hybrid}; assign every face
+   to argmax_k Area(f∩GT_k) (pure representation, no NLP/solver);
+   report per-atomization Median IoU / Q25-75 / worst-5 /
+   BoundaryF1@50/100/300m / component counts. Decision rule: if even
+   the best ceiling ≈ V1c's 0.49 → representation dead, need finer
+   atoms; if ≥0.7 → build the face-assignment solver.
+3. Report IoU decomposition (final / no-bbox / bbox-only / fallback
+   rate) from now on — bbox was masking the real signal (P1 lesson).
+4. Semantics: landmarks demoted from hard barriers to (a) unary side
+   potentials μ_k,b(f) per clause + (b) pairwise boundary rewards ρ_fg
+   (low cost to cut ALONG a named river/road, never forced). Face
+   labels x_f ∈ {dealers} ∪ {∅}; hard tiling only after a topology
+   audit of GT (enclaves / carve-outs / water measured first).
+5. P4b-3 confound alert: street boundaries follow roads by census
+   rule — boundary-distance tests give false positives; use the Atomic
+   Unit Oracle Test (can uncut street polygons reproduce GT), n=37,
+   territory-level clustered bootstrap.
+6. Guard 8 failure modes: face explosion; atoms too coarse (street
+   split by 3 dealers = unrecoverable); tiling not strict (keep ∅
+   label); inter-contract contradictions (slack); connectivity soft
+   until GT component audit; center = strong prior not hard seed;
+   evidence double-counting (street-along-road → dissolve + provenance
+   tags); time mismatch (valid_from/to on admin evidence).
+7. Data note: NBS 12-digit codes are entity lists, NOT geometry, and
+   no longer public since 2024-10 — level-8 geometry must come from an
+   OSM refetch (our admin-6 layer has open chains; polygonize closed
+   only 5/11) or licensed sources. Prerequisite task for O1/O4.
 
 **P5 — Aggregation (min vs product vs kernel)**: report calibration and
 candidate-cycle ranking accuracy, not just final IoU. Expected: min for
