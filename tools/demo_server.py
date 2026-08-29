@@ -679,11 +679,27 @@ class Handler(BaseHTTPRequestHandler):
                 if len(spec) < 3:
                     self._send(400, {"error": f"界线证据不足（{missing}），需人工解释围栏"})
                     return
+                # V2 单元分配优先（basic_units_v3_clean 存在时）
+                ring = None
+                rb = None
                 try:
-                    rb = build_from_landmark_ratios(dealer, spec, tuple(center), osm)
-                except Exception as e:  # noqa: BLE001
-                    self._send(400, {"error": f"重建失败: {e}; missing={missing}"})
-                    return
+                    sys.path.insert(0, str(ROOT / "tools"))
+                    from unit_allocator import UnitLibrary, allocate
+                    lib = UnitLibrary()
+                    sel, ugeom, umiss = allocate(lib, bounds, tuple(center))
+                    area_u = ugeom.area * 11320 * 1.0084 if ugeom else 0.0
+                    if ugeom and 0.3 * area_est <= area_u <= 3 * area_est:
+                        rb = {"ring": list(ugeom.exterior.coords),
+                              "area_km2": ugeom.area * 11320 * 1.0084}
+                        detail["allocator"] = "unit-v2"
+                except Exception:
+                    rb = None
+                if rb is None:
+                    try:
+                        rb = build_from_landmark_ratios(dealer, spec, tuple(center), osm)
+                    except Exception as e:  # noqa: BLE001
+                        self._send(400, {"error": f"重建失败: {e}; missing={missing}"})
+                        return
                 ring = rb["ring"]
                 lons = [p[0] for p in ring]; lats = [p[1] for p in ring]
                 cand = [s for s in w.stores
