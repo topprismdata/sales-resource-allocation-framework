@@ -42,6 +42,7 @@
       <label><input type="checkbox" id="ckTruth" checked> 真实围栏（当前经销商）</label>
       <label><input type="checkbox" id="ckRecon" checked> 描述重建（绿，亨啡源北）</label>
       <div class="legend">实线填充=当前围栏</div>
+      <div class="legend" id="ver">页面 v15 · 数据未知</div>
     </div>
   </div>
 </div>
@@ -140,6 +141,8 @@ toggle('ckSub', layers.sub);
 function loadRecon(){
   if (layers.recon) { map.addLayer(layers.recon); return; }
   fetch('/api/north_desc').then(r=>r.json()).then(d=>{
+    document.getElementById('ver').textContent =
+      `页面 v15 · 重建数据 ${Object.keys(d).join('/')} · 绿块${d.roadB ? d.roadB.length : '?'}点`;
     layers.recon = L.layerGroup();
     L.polygon(d.roadB.map(q=>[q[1],q[0]]),
         {color:'#1b5e20',weight:4,dashArray:'6 5',fillColor:'#2e7d32',fillOpacity:.85})
