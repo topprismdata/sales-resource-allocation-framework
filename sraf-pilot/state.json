@@ -1,23 +1,79 @@
 {
   "pilot": "cc-unit-selection-pilot",
-  "contracts_version": "v1.0",
-  "current_phase": "P0",
+  "contracts_version": "v1.1",
+  "current_phase": "P1",
   "phases": {
-    "P0": {"status": "awaiting_gate", "gate": "G0", "owner": "L0"},
-    "P1": {"status": "todo", "gate": "G1", "owner": "L2", "tasks": []},
-    "P2": {"status": "todo", "gate": "G2-a/b/c", "owner": "L2", "tasks": []},
-    "P2b": {"status": "conditional", "trigger": "G2-c < 0.90", "owner": "L2", "tasks": []},
-    "P3": {"status": "todo", "gate": "G3", "owner": "L2+L1", "tasks": []},
-    "P3b": {"status": "conditional", "trigger": "需要 side_of 原语", "owner": "L2", "tasks": []},
-    "P4": {"status": "todo", "gate": "G4", "owner": "L2+L0", "tasks": []}
+    "P0": {
+      "status": "done",
+      "gate": "G0",
+      "owner": "L0"
+    },
+    "P1": {
+      "status": "in_progress",
+      "gate": "G1",
+      "owner": "L2",
+      "tasks": [
+        "T-101",
+        "T-102",
+        "T-103",
+        "T-104",
+        "T-105"
+      ]
+    },
+    "P2": {
+      "status": "todo",
+      "gate": "G2-a/b/c",
+      "owner": "L2",
+      "tasks": []
+    },
+    "P2b": {
+      "status": "conditional",
+      "trigger": "G2-c < 0.90",
+      "owner": "L2",
+      "tasks": []
+    },
+    "P3": {
+      "status": "todo",
+      "gate": "G3",
+      "owner": "L2+L1",
+      "tasks": []
+    },
+    "P3b": {
+      "status": "conditional",
+      "trigger": "需要 side_of 原语",
+      "owner": "L2",
+      "tasks": []
+    },
+    "P4": {
+      "status": "todo",
+      "gate": "G4",
+      "owner": "L2+L0",
+      "tasks": []
+    }
   },
   "gates": {
-    "G0": null, "G1": null, "G2-a": null, "G2-b": null,
-    "G2-c": null, "G3": null, "G4": null
+    "G0": {
+      "result": "pass",
+      "date": "2026-08-30",
+      "by": "业务方签字"
+    },
+    "G1": null,
+    "G2-a": null,
+    "G2-b": null,
+    "G2-c": null,
+    "G3": null,
+    "G4": null
   },
   "model_escalation": {
     "L2_current": "glm-5.3-flash",
     "L2_fallback": "glm-5.3",
     "consecutive_failures": 0
+  },
+  "pilot_facts": {
+    "units_in_pilot": 224,
+    "area_km2": 153.9,
+    "streets": 40,
+    "dealer_fences": 4,
+    "yeidai_fences": 17
   }
 }

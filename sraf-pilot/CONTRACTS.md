@@ -1,6 +1,6 @@
 # CONTRACTS — 试点唯一真相源
 
-> **状态**：v1.0（2026-08-30）
+> **状态**：v1.1（2026-08-30）
 > **所有权**：只有 **L0（架构，Claude Opus 5）** 可修改本文件。L1/L2 发现问题 →
 > 写 `JOURNAL.md` 的 `[ESCALATION]` 条目，等 L0 回复，**不得自行修改本文件**。
 > **继承**：本文件继承仓库根 `AGENTS.md` 的全部约束（领域纠正 D11–D14、数据契约、
@@ -65,16 +65,20 @@
 
 ### 3.3 中间产物（全部写入 `data/pilot/`，已 gitignore）
 
-| 文件 | schema |
-|---|---|
-| `units.json` | `{"crs":"GCJ-02","units":[{"uid":int,"key":str,"district_code":str,"street":str,"area_km2":float,"centroid":[lon,lat],"geom":"<WKT>"}]}` |
-| `unit_graph.json` | `{"adjacency":{"<uid>":[uid,...]},"link_min_m":50}` |
-| `streets.json` | `{"streets":[{"name":str,"code":str,"district_code":str,"geom":"<WKT>"}]}` |
-| `districts.json` | 同上结构 |
-| `fences_dealer.json` | `{"fences":[{"name":str,"src_id":str,"area_km2":float,"center":[lon,lat],"geom":"<WKT>"}]}` |
-| `fences_yeidai.json` | 同上 |
-| `oracle_unitsets.json` | `{"<fence_name>":{"unit_ids":[int,...],"coverage":float,"straddle":int}}` |
-| `data_issues.md` | 脏点处理记录（人可读） |
+> **「阶段」列为归属裁定**（v1.1 新增，回应 L1 冻结点①）：本表是**跨阶段的产物总表**，
+> §7 的阶段分配以本列为准。G1 只考核标注 P1 的产物。
+
+| 文件 | 阶段 | schema |
+|---|---|---|
+| `units.json` | **P1** | `{"crs":"GCJ-02","units":[{"uid":int,"key":str,"district_code":str,"street":str,"area_km2":float,"centroid":[lon,lat],"geom":"<WKT>"}]}` |
+| `streets.json` | **P1** | `{"streets":[{"name":str,"code":str,"district_code":str,"geom":"<WKT>"}]}` |
+| `districts.json` | **P1** | 同上结构 |
+| `fences_dealer.json` | **P1** | `{"fences":[{"name":str,"src_id":str,"area_km2":float,"center":[lon,lat],"overlap_ratio":float,"geom":"<WKT>"}]}` |
+| `fences_yeidai.json` | **P1** | 同上 |
+| `crs_evidence.json` | **P1** | 见 §3.5.4 |
+| `data_issues.md` | **P1** | 脏点处理记录（人可读） |
+| `unit_graph.json` | **P2** | `{"adjacency":{"<uid>":[uid,...]},"link_min_m":50}` |
+| `oracle_unitsets.json` | **P2** | `{"<src_id>":{"unit_ids":[int,...],"coverage":float,"straddle":int}}` |
 
 **`uid` 稳定性契约**：`uid` = 在 `units.json` 中的数组下标，一旦 P2 产出即冻结。
 后续任何重建必须保证同一 `key`（源文件 `主键`）映射到同一 `uid`，否则所有
@@ -85,6 +89,67 @@
 沿用主线 `tools/yeidai_ops.py` 的 `LINK_MIN_M = 50`：
 两单元共享边界长度 ≥ 50 m 才算邻接。**不得擅自改这个常数**（改则 `split`
 行为与主线不一致）。
+
+---
+
+### 3.5 冻结规则（v1.1 新增，回应 L1 冻结点②③④⑤；L2 不得自行选择）
+
+#### 3.5.1 街道 ↔ 区县连接
+
+**`街道.父级id` == `区县.区域编码`，精确等值匹配。禁止模糊/名称匹配。**
+
+- 已取证：174 个街道的 `父级id` 取值集合 100% ⊆ 11 个区县编码集合
+- 试点区街道数：海珠(440105) **18** 个、荔湾(440103) **22** 个，合计 **40** 个
+- 出现 `父级id` 不在区县编码集合中的街道 → **抛错**，不得静默跳过
+
+#### 3.5.2 围栏归属试点区的判定
+
+```
+overlap_ratio = area(fence ∩ (海珠 ∪ 荔湾)) / area(fence)
+入选条件：overlap_ratio >= 0.5
+```
+
+- 已取证：分布**双峰、灰区为零**（经销商 15 条相交中 0.2~0.8 区间 **0 条**；
+  业代 21 条相交中同样 **0 条**），故阈值取 0.5 安全
+- `overlap_ratio` 必须写入 fence schema 供追溯
+- **若将来出现 0.2~0.8 灰区样本 → 不得自行取舍，写 `[ESCALATION]`**
+- 预期结果：经销商 **4 条**入选、业代 **17 条**入选
+
+#### 3.5.3 主键与重复名
+
+- **`src_id` = CSV 的 `片区id` 字段原值**（已验证两份 CSV 内均唯一）
+- **`名称` 不是主键。禁止任何按名称去重。**
+- 三组同名不同位置记录（海珠荔湾07 / 番禺08 / 白云南03）由 §3.5.2 空间判定
+  天然分开，**无需人工规则**；三组情况必须写入 `data_issues.md` 留档
+- 若两条记录 `src_id` 相同 → 真重复 → **抛错**
+- ⚠️ **不得据围栏名称推断地理位置**：已观察到 `天河越秀10/11`、`番禺08`、
+  `白云南03` 的几何 100% 落在海珠+荔湾内，命名疑似按业代组织而非地理
+
+#### 3.5.4 坐标系验证方法（全部参数冻结）
+
+| 项 | 冻结值 |
+|---|---|
+| 样本 | 试点区内**全部**经销商围栏（n=4，不抽样） |
+| 顶点抽样 | 每条围栏顶点等距抽样**至多 200 点** |
+| 距离函数 | 复用 `intelligence.world.haversine_km`，**禁止自写经纬度换算** |
+| 坐标转换 | 复用 `intelligence.coords.gcj2wgs`，**禁止另写转换公式** |
+| 对照 A（同系假设） | 围栏顶点**原坐标** → 最近单元边界，取距离中位数 |
+| 对照 B（异系反证） | 围栏顶点经 `gcj2wgs` 转换后 → 最近单元边界，取距离中位数 |
+| 不变量 | **单元几何一律保持原样，两组对照中都不转换** |
+| 判定 | **A < 100 m 且 B > 300 m → 判定两者同为 GCJ-02** |
+| 不满足判定 | **不得下结论**，写 `[ESCALATION]` |
+
+判定依据：若两份数据同系，A 应很小；B 引入单侧转换后应接近根 `AGENTS.md` D13
+记录的广州 **~623 m** 系统性偏移量级。
+
+`crs_evidence.json` schema：
+```jsonc
+{"method":"3.5.4","n_fences":4,"vertex_cap":200,
+ "median_A_m":0.0,"median_B_m":0.0,
+ "verdict":"SAME_CRS_GCJ02" | "INCONCLUSIVE",
+ "per_fence":[{"src_id":"...","name":"...","n_vertices":200,
+               "median_A_m":0.0,"median_B_m":0.0}]}
+```
 
 ---
 
@@ -165,8 +230,8 @@
 | **G0** | P0 | 业务方确认 CONTRACTS.md | 人工签字 |
 | **G1** | P1 | 试点数据抽取正确 | 单测全绿 **且** 坐标系判定有数字证据（不是"应该是"） |
 | **G2-a** | P2 | 单元库自洽 | 两两重叠面积 < 总面积 0.1%；无孤立单元（除真实飞地，需列名） |
-| **G2-b** | P2 | 表达能力（业代） | oracle 单元集覆盖率**中位 ≥ 0.95** |
-| **G2-c** | P2 | 表达能力（经销商） | **无预设阈值**，测基线。< 0.90 → 触发 P2b |
+| **G2-b** | P2 | 表达能力（业代） | oracle 单元集覆盖率**中位 ≥ 0.95**（n=17） |
+| **G2-c** | P2 | 表达能力（经销商） | **无预设阈值**，测基线。< 0.90 → 触发 P2b。⚠️ n=4，**须逐条报数值，不报中位数** |
 | **G3** | P3 | 几何天花板 | 给定人工写好的 oracle DSL 树，执行器复现单元集**必须 100% 精确**，含退化用例 |
 | **G4** | P4 | 端到端 `[合成语料]` | 报中位单元集 Jaccard + `components` 准确率。**无预设通过线，如实报告** |
 
@@ -236,3 +301,4 @@ P4  omp+L0 04_nl2rule.py NL → DSL 树                         → G4 [合成�
 | 版本 | 日期 | 变更 | 批准 |
 |---|---|---|---|
 | v1.0 | 2026-08-30 | 初版 | 待 G0 |
+| v1.1 | 2026-08-30 | §3.3 增阶段归属列；新增 §3.5 冻结规则（街道连接/归属判定/主键与重复名/坐标验证方法）；回应 L1 五项冻结点 | G0 已签字 |
