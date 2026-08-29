@@ -312,6 +312,9 @@ class Handler(BaseHTTPRequestHandler):
             self._send(200, cp.read_text(encoding="utf-8"),
                        "text/html; charset=utf-8")
             return
+        if path == "/favicon.ico":
+            self._send(204, b"", "image/x-icon")
+            return
         if path == "/compare":
             cp = ROOT / "tools" / "compare_page.html"
             self._send(200, cp.read_text(encoding="utf-8"),

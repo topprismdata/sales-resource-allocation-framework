@@ -27,8 +27,9 @@
 </style>
 </head>
 <body>
+<div id="wrap">
   <div id="side">
-    <h3>经销商（37）</h3>
+    <h3 id="dcount">经销商</h3>
     <input id="search" placeholder="搜索经销商…">
     <div id="list"></div>
   </div>
@@ -74,6 +75,7 @@ fetch('/api/fences').then(r=>r.json()).then(d=>{
         .bindTooltip(de.name).addTo(layers.others));
   });
   // list
+  document.getElementById('dcount').textContent = `经销商（${d.dealers.length}）`;
   const list = document.getElementById('list');
   d.dealers.forEach((de,i)=>{
     const el = document.createElement('div');
