@@ -351,6 +351,8 @@ class Handler(BaseHTTPRequestHandler):
                 cons = {c["dealer_id"]: c for c in pack["contracts"]}
                 dealers = []
                 for de, fences in sorted(w.fences_by_dealer.items()):
+                    if de.startswith("佛山"):
+                        continue
                     c = cons.get(de, {})
                     stores = [{"lon": s.lon, "lat": s.lat, "d": s.district}
                               for s in w.stores if de in s.dealers]
