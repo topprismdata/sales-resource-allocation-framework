@@ -369,7 +369,11 @@ class Handler(BaseHTTPRequestHandler):
                 osm = pack["osm"] or {}
                 admin = {name: v.get("polys", [])
                          for name, v in (osm.get("districts") or {}).items()}
-                self._send(200, {"dealers": dealers, "admin": admin})
+                sdf = pack["data_dir"] / "osm_subdistricts.json"
+                subs = (json.loads(sdf.read_text(encoding="utf-8"))
+                        .get("subdistricts", {})) if sdf.exists() else {}
+                self._send(200, {"dealers": dealers, "admin": admin,
+                                 "subdistricts": subs})
                 return
             if path == "/api/compare":
                 cf = pack["data_dir"] / "compare.json"

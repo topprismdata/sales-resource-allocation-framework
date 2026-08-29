@@ -27,7 +27,6 @@
 </style>
 </head>
 <body>
-<div id="wrap">
   <div id="side">
     <h3>经销商（37）</h3>
     <input id="search" placeholder="搜索经销商…">
@@ -36,6 +35,7 @@
   <div id="map" style="position:relative">
     <div id="info" style="display:none"></div>
     <div id="ctrl">
+      <label><input type="checkbox" id="ckSub" checked> 街道/乡镇界（紫点线）</label>
       <label><input type="checkbox" id="ckAdmin" checked> 区界线（OSM 碎片）</label>
       <label><input type="checkbox" id="ckOthers"> 其他经销商围栏</label>
       <label><input type="checkbox" id="ckStores" checked> 门店（按区着色）</label>
@@ -45,13 +45,13 @@
 </div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-const map = L.map('map');
+let DATA, layers = {me:null, others:L.layerGroup(), admin:L.layerGroup(),
+                    sub:L.layerGroup(),
+                    stores:L.layerGroup(), center:null}, cur = -1;
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
             {maxZoom: 18, attribution: '© OSM'}).addTo(map);
 const DCOLORS = ["#e6194b","#3cb44b","#4363d8","#f58231","#911eb4","#46f0f0","#f032e6",
                  "#bcf60c","#fabebe","#008080","#9a6324","#800000"];
-let DATA, layers = {me:null, others:L.layerGroup(), admin:L.layerGroup(),
-                    stores:L.layerGroup(), center:null}, cur = -1;
 fetch('/api/fences').then(r=>r.json()).then(d=>{
   DATA = d;
   // admin lines
@@ -61,6 +61,12 @@ fetch('/api/fences').then(r=>r.json()).then(d=>{
         L.polyline(p.map(q=>[q[1],q[0]]), {color:'#0d47a1', weight:5, dashArray:'10 6',
                     opacity:.95}).bindTooltip('⚑ '+name, {sticky:true}).addTo(layers.admin);
   layers.admin.addTo(map);
+  for (const [name, polys] of Object.entries(d.subdistricts || {}))
+    for (const p of polys)
+      if (p.length >= 2)
+        L.polyline(p.map(q=>[q[1],q[0]]), {color:'#7b1fa2', weight:2.5, dashArray:'2 5',
+                    opacity:.9}).bindTooltip('▫ '+name, {sticky:true}).addTo(layers.sub);
+  layers.sub.addTo(map);
   // others
   d.dealers.forEach((de,i)=>{
     de.rings.forEach(r=>L.polygon(r.map(q=>[q[1],q[0]]), {color:'#888', weight:1, fill:false})
@@ -88,10 +94,11 @@ document.getElementById('ckOthers').onchange = e=>{
   e.target.checked ? map.addLayer(layers.others) : map.removeLayer(layers.others);};
 document.getElementById('ckStores').onchange = e=>{
   e.target.checked ? map.addLayer(layers.stores) : map.removeLayer(layers.stores);};
+document.getElementById('ckSub').onchange = e=>{
+  e.target.checked ? map.addLayer(layers.sub) : map.removeLayer(layers.sub);};
 
 function fitAll(){
   const b = [];
-  DATA.admin[name=>0];
   for (const polys of Object.values(DATA.admin)) for (const p of polys)
     for (const q of p) b.push([q[1],q[0]]);
   map.fitBounds(b);
