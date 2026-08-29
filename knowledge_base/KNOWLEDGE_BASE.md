@@ -1,6 +1,6 @@
 # Dealer Territory Knowledge Base (Knowledge Base) 
 
-- Status: v0.4.1 (33 items: 21 crystallized + 9 supplemented by industry research + 2 new from business corrections; business gaps 5→2) 
+- Status: v0.4.2 (34 items: 21 crystallized + 9 supplemented by industry research + 2 new from business corrections; business gaps 5→2) 
 - Date: 2026-08-28
 - Positioning: **04 Allocation Intelligence layer's "IQ" source**——World Model provides skeleton, Knowledge Base provides flesh
 - Machine-readable: `knowledge_items.json` (This file is human-readable index) 
@@ -13,7 +13,7 @@ The output of the Intelligence layer is **advice for people**. Advice for people
 Every link in the reasoning chain must come from **knowledge items with sources**——this is exactly the opposite of "lacking IQ":
 Not a missing feature, but **missing knowledge**.
 
-## Six types of knowledge × 33 items
+## Six types of knowledge × 34 items
 
 ### Principles (Why it's designed this way) ——from Zoltners book + market analysis
 | ID | Knowledge | Source |
@@ -45,6 +45,7 @@ Not a missing feature, but **missing knowledge**.
 
 ### Facts (What the market looks like) 
 K-FACT-001 Contract fill-in-the-blank text · K-FACT-002 Outright sell-in + no-return terms · K-FACT-003 Guangzhou current snapshot
+K-FACT-004 Contract-named boundary landmarks may cross the territory interior (river as boundary ≠ river as cut) — P1 oracle-arc audit |
 
 ### Cases (How it specifically happened) 
 K-CASE-001 Conghua whole-territory contracting · K-CASE-002 Panyu riverside division · K-CASE-003 Dashi adjustment transition

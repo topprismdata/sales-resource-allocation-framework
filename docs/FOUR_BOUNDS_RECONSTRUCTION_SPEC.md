@@ -188,6 +188,17 @@ approximation, not random jitter.
    within a tolerance band** — exactly what the Erwig core/plus model
    (Q3) provides: the hand-drawn polygon should fall inside our plus
    zone; its exact edge is unknowable and does not need to be known.
+2a. **CORRECTION after P1 (2026-08-29):** the self-simplify noise proxy
+   (1 km → IoU 0.86) only bounds *wiggle smoothness*, not *placement
+   error*. 穗穗盛-type failures (model area 2.6× truth, IoU 0.12) are
+   region-SELECTION errors that no amount of human drawing noise
+   explains — a human re-draw would still cover roughly the right
+   area. So Class C low fidelity decomposes further: (a) drawing
+   wiggle ≤ 14%, (b) wrong-face region selection (the fixable,
+   dominant part), (c) genuine secondary-feature references absent from
+   text. Do not use "drawing noise" to explain away the 0.49 plateau;
+   P1 proves algorithmic headroom remains.
+
 3. This makes **P0 (human re-draw ceiling) the decisive experiment**:
    three humans drawing from the same contract will disagree with each
    other at the same noise scale. If human-vs-human IoU is ~0.55, a
@@ -240,13 +251,36 @@ ground truth. Report IoU / BIoU / HD95 / PoLiS pairwise. This defines
 the reachable ceiling and the human-tolerance noise floor. **Any model
 result must be normalized to this.**
 
-**P1 — Oracle Arc Endpoint** (the pivotal falsification test)
-Hand-annotate each clause's true [start, end] on the reference feature;
-everything else automatic. If IoU jumps 0.49 → 0.75+, the bottleneck is
-arc-endpoint information (→ add the slot to the contract). If it barely
-moves, the bottleneck is reference geometry/topology, not the text.
-This single experiment decides the whole engineering direction — higher
-priority than any algorithm tuning.
+**P1 — Oracle Arc Endpoint** — ✅ DONE 2026-08-29
+(`tools/bench_p1.py`, `tools/visualize_p1.py`, `/p1` page,
+`/tmp/p1_results.json`). Oracle = barrier clipped to the landmark
+segments actually within 300 m of the true boundary (cheating arc
+selection), same bbox closure as V1c.
+
+**Result: Δ(P1−V1c) median −0.036; arc selection is NOT the lever.**
+Per-case (|Δ|>0.02 on 23/34):
+
+| Direction | Example | Geometry (visual+numeric audit) |
+|---|---|---|
+| oracle HURTS (up to −0.47) | 胜意隆 0.82→0.49 | truth is large concave admin-area (934 km²); V1c's FULL-LINE barriers happen to fence it tightly (area ratio 1.0×); pruning arcs opens gaps → flood back to raw bbox (1.6×) |
+| oracle HELPS (up to +0.21) | 穗穗盛 0.12→0.32 | named landmarks CROSS THE INTERIOR of the truth (珠江西/后航道 cut ~3 km inside): full-line barriers slice the owner's own territory → seed component loses the far side; pruning restores it |
+| both miss badly | 穗穗盛 | both V1c and P1 cover 2.6–2.8× truth area — bbox closure carries most of the IoU, not the barriers |
+
+**Conclusions:**
+1. Do NOT chase arc-endpoint contract slots as the primary fix — with
+   the current closure mechanism, oracle arcs add nothing (median −0.04).
+2. The binding constraint is **closure + region selection**: full-line
+   barriers are simultaneously too strong (cutting internal rivers,
+   穗穗盛) and too weak (gap-flooding to bbox, 胜意隆). Both symptoms
+   trace to the same root: barrier semantics has no notion of SIDE
+   (signed distance field) — a river crossing the interior should
+   constrain sides, not sever connectivity.
+3. Noise floor (truth self-simplified 1 km) = 0.86, convex-hull = 0.73
+   → the 0.49 plateau is BELOW the human noise floor; there is real
+   algorithmic headroom left. Next lever = pipeline steps 5→8 proper:
+   side-membership fields + constrained min-cost cycle (§8), i.e. P3/P4.
+4. The `/p1` page (demo_server) renders truth/V1c/oracle/noise-floor per
+   dealer sorted by Δ for human inspection.
 
 **P2 — Oracle Reference Geometry**: hand-tell the algorithm exactly which
 OSM object each clause refers to (no endpoints). Measures entity-

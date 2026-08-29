@@ -1,7 +1,7 @@
 {
   "_meta": {
     "name": "dealer_territory_knowledge_base",
-    "version": "0.4.1",
+    "version": "0.4.2",
     "date": "2026-08-29",
     "description": "Distributor regional management knowledge base v0 seed version — Knowledge items crystallized from this round of work (books/papers/real data/business dialogues), for the 04 allocation intelligence layer to retrieve when generating human recommendations.",
     "schema": {
@@ -311,6 +311,15 @@
       "source": "Business owner 2026-08-29 (『人工边界不严格一般是手工绘制难度导致的』) + fidelity decomposition audit: 88% of vertices >500m from named landmark; of those ~47% lie on other real OSM features (secondary references), ~53% on nothing (drawing noise); convex-hull ratio 1.34",
       "confidence": "HIGH",
       "maps_to": "docs/FOUR_BOUNDS_RECONSTRUCTION_SPEC.md §7.2; P0 human ceiling experiment; Q3 core/plus output posture"
+    },
+    {
+      "id": "K-FACT-004",
+      "type": "fact",
+      "statement": "In real territory data, contract-named boundary landmarks can CROSS THE INTERIOR of the territory they bound (e.g., Pearl River channels cutting ~3km into 穗穗盛's blocks, which is also WHY the territory has 2 disconnected components). Barrier-only semantics severs the owner's own land; a river as boundary must be modeled as a SIDE constraint, not a connectivity cut. A territory's disconnection often shares its cause with a landmark clause.",
+      "conditions": "territories bounded by linear features that continue through the interior",
+      "source": "P1 oracle-arc audit 2026-08-29 (bench_p1.py + /p1 visual page): 穗穗盛 V1c 0.12→P1 0.32; interior-crossing measurement 珠江西航道 3.2km, 珠江后航道 3.0km",
+      "confidence": "HIGH",
+      "maps_to": "docs/FOUR_BOUNDS_RECONSTRUCTION_SPEC.md §10 P1; pipeline steps 5-8 (side field + cycle)"
     }
   ],
   "knowledge_gaps_needing_business_input": [

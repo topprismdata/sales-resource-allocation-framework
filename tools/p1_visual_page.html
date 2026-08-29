@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>P1 实验可视化 — 手绘真值 vs 自动弧 vs Oracle弧 vs 噪声下限</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+  * { box-sizing: border-box; margin: 0; }
+  body { font: 13px/1.5 -apple-system, "PingFang SC", sans-serif; display: flex; height: 100vh; }
+  #side { width: 380px; min-width: 380px; display: flex; flex-direction: column;
+          border-right: 1px solid #ddd; background: #fafafa; }
+  header { padding: 10px 14px; background: #1a237e; color: #fff; }
+  header h1 { font-size: 14px; }
+  header .sub { font-size: 11px; opacity: .8; }
+  #legendBar { padding: 8px 12px; border-bottom: 1px solid #ddd; background: #fff; }
+  .lg { display: inline-flex; align-items: center; gap: 5px; margin: 2px 10px 2px 0; font-size: 12px; cursor: pointer; }
+  .lg i { width: 18px; height: 10px; border-radius: 2px; display: inline-block; }
+  #list { flex: 1; overflow-y: auto; }
+  .item { padding: 7px 12px; border-bottom: 1px solid #eee; cursor: pointer; font-size: 12px; }
+  .item:hover, .item.sel { background: #e8eaf6; }
+  .item b.iou { float: right; }
+  #detail { border-top: 2px solid #ddd; padding: 10px 12px; background: #fff; max-height: 40%; overflow-y: auto; }
+  #detail h3 { font-size: 13px; margin-bottom: 6px; }
+  .kv { font-size: 11.5px; color: #555; margin: 2px 0; }
+  .nav { display: flex; gap: 6px; padding: 8px 12px; border-top: 1px solid #ddd; background: #fff; }
+  .btn { flex: 1; padding: 6px 0; border: 0; border-radius: 6px; background: #283593; color: #fff; font-size: 12px; cursor: pointer; }
+  .btn.gray { background: #9fa8da; }
+  #map { flex: 1; position: relative; }
+</style>
+</head>
+<body>
+<div id="side">
+  <header>
+    <h1>P1 实验视觉验证 · 按 Δ(P1−V1c) 排序</h1>
+    <div class="sub">绿=手绘真值 ｜ 蓝=自动弧(V1c) ｜ 橙=Oracle弧 ｜ 红虚=噪声下限(简化1km) ｜ 灰=地标屏障</div>
+  </header>
+  <div id="legendBar">
+    <span class="lg" data-k="truth"><i style="background:#2e7d32;opacity:.45"></i>手绘真值</span>
+    <span class="lg" data-k="v1c"><i style="background:#1565c0;opacity:.45"></i>自动弧 V1c</span>
+    <span class="lg" data-k="oracle"><i style="background:#ff7043;opacity:.5"></i>Oracle 弧</span>
+    <span class="lg" data-k="nf"><i style="background:#c62828;opacity:.4"></i>噪声下限</span>
+    <span class="lg" data-k="bands"><i style="background:#9e9e9e;opacity:.6"></i>地标屏障</span>
+  </div>
+  <div id="list"></div>
+  <div id="detail"></div>
+  <div class="nav">
+    <button class="btn gray" id="prev">←</button>
+    <button class="btn gray" id="next">→</button>
+    <button class="btn" onclick="location='/'">返回 Demo</button>
+  </div>
+</div>
+<div id="map"></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const map = L.map("map", {zoomSnap: 0.25}).setView([23.1, 113.35], 9);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {attribution:"© OSM"}).addTo(map);
+const layers = {truth: L.layerGroup(), v1c: L.layerGroup(), oracle: L.layerGroup(),
+                nf: L.layerGroup(), bands: L.layerGroup().addTo(map)};
+Object.values(layers).forEach(l => map.addLayer(l));
+const show = {truth:1, v1c:1, oracle:1, nf:1, bands:1};
+let CASES = [], cur = -1;
+const style = {
+  truth:  {color:"#1b5e20", weight:2.5, fillColor:"#2e7d32", fillOpacity:.30},
+  v1c:    {color:"#0d47a1", weight:1.5, dashArray:"1 0", fillColor:"#1565c0", fillOpacity:.22},
+  oracle: {color:"#d84315", weight:1.5, fillColor:"#ff7043", fillOpacity:.22},
+  nf:     {color:"#c62828", weight:2, dashArray:"6 4", fill:false},
+};
+function iou(a, b){ // quick area-based from rendered json not possible; use server metrics instead
+  return null; }
+function renderList(){
+  const el = document.getElementById("list");
+  el.innerHTML = CASES.map((c,i)=>`<div class="item${i===cur?" sel":""}" onclick="select(${i})">
+    <b class="iou" style="color:${c.delta>=0.02?'#2e7d32':(c.delta<=-0.02?'#c62828':'#888')}">Δ ${c.delta>=0?'+':''}${c.delta.toFixed(2)}</b>
+    ${c.dealer}<br><span style="color:#777">V1c ${c.v1c_iou.toFixed(2)} → P1 ${c.p1_iou.toFixed(2)}</span></div>`).join("");
+}
+function select(i){
+  if (i<0||i>=CASES.length) return;
+  cur = i;
+  const c = CASES[i];
+  for (const k of ["truth","v1c","oracle","nf"]) layers[k].clearLayers();
+  (c.truth_rings||[]).forEach(r=>L.polygon(r.map(p=>[p[1],p[0]]), style.truth).addTo(layers.truth));
+  if (c.v1c_ring && c.v1c_ring.length>2) L.polygon(c.v1c_ring.map(p=>[p[1],p[0]]), style.v1c).addTo(layers.v1c);
+  if (c.oracle_ring && c.oracle_ring.length>2) L.polygon(c.oracle_ring.map(p=>[p[1],p[0]]), style.oracle).addTo(layers.oracle);
+  (c.nf_rings||[]).forEach(r=>L.polygon(r.map(p=>[p[1],p[0]]), style.nf).addTo(layers.nf));
+  layers.bands.clearLayers();
+  (c.band_rings||[]).forEach(r=>L.polygon(r.map(p=>[p[1],p[0]]),
+      {color:"#616161", weight:.8, fillColor:"#9e9e9e", fillOpacity:.35}).addTo(layers.bands));
+  const all = layers.truth.getLayers().concat(layers.v1c.getLayers());
+  if (all.length) map.flyToBounds(L.featureGroup(all).getBounds().pad(.12), {duration:.6});
+  document.getElementById("detail").innerHTML =
+    `<h3>${c.dealer}</h3>
+     <div class="kv">V1c IoU <b>${c.v1c_iou.toFixed(2)}</b> → Oracle-arc P1 IoU <b>${c.p1_iou.toFixed(2)}</b>
+       （Δ ${c.delta>=0?'+':''}${c.delta.toFixed(2)}）</div>
+     <div class="kv">噪声下限（真值自简化1km）IoU ${c.nf_iou.toFixed(2)} ← 人类重画可达上限的代理</div>
+     <div class="kv" style="margin-top:4px">四至: ${Object.entries(c.landmarks||{}).map(([k,v])=>k+" "+(v||"—")).join(" ｜ ")}</div>
+     <div class="kv" style="color:#888;margin-top:4px">灰带=自动弧选中的地标屏障。橙≈蓝 → arc选择不是瓶颈；蓝超出红虚线轮廓 → 模型区越过人类自身重画噪声。</div>`;
+  renderList();
+  document.querySelectorAll(".item")[i]?.scrollIntoView({block:"nearest"});
+}
+document.getElementById("legendBar").addEventListener("click", e=>{
+  const lg = e.target.closest(".lg"); if (!lg) return;
+  const k = lg.dataset.k; show[k]=1-show[k]; lg.style.opacity = show[k]?1:.35;
+  show[k] ? map.addLayer(layers[k]) : map.removeLayer(layers[k]);
+});
+document.getElementById("prev").onclick = ()=>select(cur-1);
+document.getElementById("next").onclick = ()=>select(cur+1);
+document.addEventListener("keydown", e=>{ if(e.key==="ArrowDown") select(cur+1); if(e.key==="ArrowUp") select(cur-1); });
+(async ()=>{
+  const [vis, met] = await Promise.all([
+    fetch("/api/p1_visual").then(r=>r.json()),
+    fetch("/api/p1_metrics").then(r=>r.json())]);
+  const mm = Object.fromEntries(met.map(r=>[r.dealer, r]));
+  CASES = vis.cases.map(c=>{
+    const m = mm[c.dealer] || {};
+    const ringsOf = polys => polys.map(p=>p.length>2 ? p : null).filter(Boolean);
+    return { dealer:c.dealer,
+      truth_rings: c.truth,
+      v1c_ring: c.v1c, oracle_ring: c.oracle, nf_rings: c.nf, band_rings: c.bands,
+      landmarks: c.landmarks,
+      v1c_iou: m.v1c_iou ?? 0, p1_iou: m.p1_iou ?? 0, delta: (m.p1_iou ?? 0) - (m.v1c_iou ?? 0),
+      nf_iou: m.nf1000 ?? 0 };
+  }).sort((a,b)=>a.delta-b.delta);
+  renderList(); select(0);
+})();
+</script>
+</body>
+</html>

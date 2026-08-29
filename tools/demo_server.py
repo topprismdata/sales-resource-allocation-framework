@@ -307,6 +307,11 @@ class Handler(BaseHTTPRequestHandler):
             else:
                 self._send(200, {"status": "ready"})
             return
+        if path == "/p1":
+            cp = ROOT / "tools" / "p1_visual_page.html"
+            self._send(200, cp.read_text(encoding="utf-8"),
+                       "text/html; charset=utf-8")
+            return
         if path == "/compare":
             cp = ROOT / "tools" / "compare_page.html"
             self._send(200, cp.read_text(encoding="utf-8"),
@@ -326,6 +331,16 @@ class Handler(BaseHTTPRequestHandler):
                 snap["kb_gaps"] = KB.gaps
                 snap["meta"]["data_dir"] = pack["data_dir"].name
                 self._send(200, snap)
+                return
+            if path == "/api/p1_visual":
+                vf = pack["data_dir"] / "p1_visual.json"
+                self._send(200, json.loads(vf.read_text(encoding="utf-8"))
+                           if vf.exists() else {"cases": []})
+                return
+            if path == "/api/p1_metrics":
+                mf = Path("/tmp/p1_results.json")
+                self._send(200, json.loads(mf.read_text(encoding="utf-8"))
+                           if mf.exists() else [])
                 return
             if path == "/api/compare":
                 cf = pack["data_dir"] / "compare.json"
