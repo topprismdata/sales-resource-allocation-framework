@@ -66,8 +66,8 @@ fetch('/api/fences').then(r=>r.json()).then(d=>{
   for (const [name, polys] of Object.entries(d.subdistricts || {}))
     for (const p of polys)
       if (p.length >= 2)
-        L.polyline(p.map(q=>[q[1],q[0]]), {color:'#7b1fa2', weight:2.5, dashArray:'2 5',
-                    opacity:.9}).bindTooltip('▫ '+name, {sticky:true}).addTo(layers.sub);
+        L.polyline(p.map(q=>[q[1],q[0]]), {color:'#7b1fa2', weight:4.5, dashArray:'2 5',
+                    opacity:.95}).bindTooltip('▫ '+name, {sticky:true}).addTo(layers.sub);
   layers.sub.addTo(map);
   // others
   d.dealers.forEach((de,i)=>{
