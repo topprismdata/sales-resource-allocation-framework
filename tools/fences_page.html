@@ -138,9 +138,11 @@ document.getElementById('ckRecon').onchange = e=>{
   if (layers.recon) { map.addLayer(layers.recon); return; }
   fetch('/api/north_desc').then(r=>r.json()).then(d=>{
     layers.recon = L.layerGroup();
-    L.polygon(d.B.map(q=>[q[1],q[0]]),
+    L.polygon(d.roadB.map(q=>[q[1],q[0]]),
         {color:'#1b5e20',weight:4,dashArray:'6 5',fillColor:'#2e7d32',fillOpacity:.25})
-      .bindTooltip('描述重建（IoU 0.811）',{sticky:true}).addTo(layers.recon);
+      .bindTooltip('描述重建（道路链，IoU 0.877）',{sticky:true}).addTo(layers.recon);
+    L.polyline(d.cutline.map(q=>[q[1],q[0]]),
+        {color:'#1b5e20',weight:1.5,opacity:.6,dashArray:'1 4'}).addTo(layers.recon);
     map.addLayer(layers.recon);
   });
 };
