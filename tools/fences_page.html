@@ -145,7 +145,7 @@ document.getElementById('ckRecon').onchange = e=>{
   fetch('/api/north_desc').then(r=>r.json()).then(d=>{
     layers.recon = L.layerGroup();
     L.polygon(d.roadB.map(q=>[q[1],q[0]]),
-        {color:'#1b5e20',weight:4,dashArray:'6 5',fillColor:'#2e7d32',fillOpacity:.25})
+        {color:'#1b5e20',weight:4,dashArray:'6 5',fillColor:'#2e7d32',fillOpacity:.85})
       .bindTooltip('描述重建（道路链，IoU 0.877）',{sticky:true}).addTo(layers.recon);
     L.polyline(d.cutline.map(q=>[q[1],q[0]]),
         {color:'#1b5e20',weight:1.5,opacity:.6,dashArray:'1 4'}).addTo(layers.recon);
