@@ -139,7 +139,7 @@ document.getElementById('ckRecon').onchange = e=>{
   fetch('/api/north_desc').then(r=>r.json()).then(d=>{
     layers.recon = L.layerGroup();
     L.polygon(d.B.map(q=>[q[1],q[0]]),
-        {color:'#2e7d32',weight:3.5,dashArray:'6 5',fill:false})
+        {color:'#1b5e20',weight:4,dashArray:'6 5',fillColor:'#2e7d32',fillOpacity:.25})
       .bindTooltip('描述重建（IoU 0.811）',{sticky:true}).addTo(layers.recon);
     map.addLayer(layers.recon);
   });
