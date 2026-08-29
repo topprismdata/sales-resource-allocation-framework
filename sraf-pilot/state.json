@@ -1,7 +1,7 @@
 {
   "pilot": "cc-unit-selection-pilot",
-  "contracts_version": "v1.1",
-  "current_phase": "P1",
+  "contracts_version": "v1.3",
+  "current_phase": "P2",
   "phases": {
     "P0": {
       "status": "done",
@@ -9,7 +9,7 @@
       "owner": "L0"
     },
     "P1": {
-      "status": "in_progress",
+      "status": "done",
       "gate": "G1",
       "owner": "L2",
       "tasks": [
@@ -18,10 +18,17 @@
         "T-103",
         "T-104",
         "T-105"
-      ]
+      ],
+      "task_status": {
+        "T-101": "done",
+        "T-102": "done",
+        "T-103": "done",
+        "T-104": "done",
+        "T-105": "done"
+      }
     },
     "P2": {
-      "status": "todo",
+      "status": "ready",
       "gate": "G2-a/b/c",
       "owner": "L2",
       "tasks": []
@@ -57,7 +64,13 @@
       "date": "2026-08-30",
       "by": "业务方签字"
     },
-    "G1": null,
+    "G1": {
+      "result": "pass",
+      "date": "2026-08-30",
+      "by": "L0 独立验收",
+      "tests": 56,
+      "assertions": 26
+    },
     "G2-a": null,
     "G2-b": null,
     "G2-c": null,
@@ -75,5 +88,7 @@
     "streets": 40,
     "dealer_fences": 4,
     "yeidai_fences": 17
-  }
+  },
+  "dispatch_mechanism": "L0→L2 直接派发（L1 沙箱无法运行 omp，见 JOURNAL 01:30）",
+  "crs_verdict": "SAME_CRS_GCJ02 (median_A=0.00175m, median_C=623.8m)"
 }
