@@ -317,6 +317,11 @@ class Handler(BaseHTTPRequestHandler):
             self._send(200, cp.read_text(encoding="utf-8"),
                        "text/html; charset=utf-8")
             return
+        if path == "/fences":
+            cp = ROOT / "tools" / "fences_page.html"
+            self._send(200, cp.read_text(encoding="utf-8"),
+                       "text/html; charset=utf-8")
+            return
         with STATE_LOCK:
             pack = _current()
             w = STATE["world"]
@@ -341,6 +346,28 @@ class Handler(BaseHTTPRequestHandler):
                 mf = Path("/tmp/p1_results.json")
                 self._send(200, json.loads(mf.read_text(encoding="utf-8"))
                            if mf.exists() else [])
+                return
+            if path == "/api/fences":
+                cons = {c["dealer_id"]: c for c in pack["contracts"]}
+                dealers = []
+                for de, fences in sorted(w.fences_by_dealer.items()):
+                    c = cons.get(de, {})
+                    stores = [{"lon": s.lon, "lat": s.lat, "d": s.district}
+                              for s in w.stores if de in s.dealers]
+                    dealers.append({
+                        "name": de,
+                        "area_km2": round(sum(f.area_km2 for f in fences), 1),
+                        "store_count": len(stores),
+                        "rings": [list(map(list, f.ring)) for f in fences],
+                        "district": c.get("district", ""),
+                        "four_bounds": c.get("four_bounds", {}),
+                        "center": list(c.get("center") or ([stores[0]["lon"],
+                                     stores[0]["lat"]] if stores else [])),
+                        "stores": stores})
+                osm = pack["osm"] or {}
+                admin = {name: v.get("polys", [])
+                         for name, v in (osm.get("districts") or {}).items()}
+                self._send(200, {"dealers": dealers, "admin": admin})
                 return
             if path == "/api/compare":
                 cf = pack["data_dir"] / "compare.json"
