@@ -98,9 +98,10 @@ fetch('/api/fences').then(r=>r.json()).then(d=>{
     const DC = ["#e67e22","#f1c40f","#8e44ad","#16a085","#c0392b","#2980b9",
                 "#27ae60","#d35400","#7f8c8d","#2c3e50","#e84393"];
     d.zones.forEach((z,i)=>{
-      L.polygon(z.ring.map(q=>[q[1],q[0]]),
+      const rings = z.rings || [z.ring];
+      rings.forEach(rg=>L.polygon(rg.map(q=>[q[1],q[0]]),
         {color:DC[i%DC.length],weight:2,fillColor:DC[i%DC.length],fillOpacity:.18})
-        .bindTooltip(`业代 ${z.name} (${z.area}km²)`,{sticky:true}).addTo(yeLayers);
+        .bindTooltip(`业代 ${z.name} (${z.area}km²)`,{sticky:true}).addTo(yeLayers));
     });
     yeLayers.addTo(map);
   });

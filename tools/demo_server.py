@@ -35,7 +35,7 @@ from intelligence.classify import classify_gap  # noqa: E402
 from intelligence.coords import pack_from_disk, pack_for_disk  # noqa: E402
 from intelligence.knowledge import KnowledgeBase  # noqa: E402
 sys.path.insert(0, str(ROOT / "tools"))
-from yeidai_ops import YeidaiState, parse_op, apply_op  # noqa: E402
+from yeidai_ops import YeidaiState, parse_op, apply_op, llm_parse_op  # noqa: E402
 from intelligence.world import World, point_in_ring  # noqa: E402
 
 
@@ -705,13 +705,22 @@ class Handler(BaseHTTPRequestHandler):
             if self.path == "/api/yeidai_adjust":
                 text = str(body.get("text", ""))
                 st: YeidaiState = STATE["yeidai"]
+                parser = "rules"
+                op = None
+                err1 = None
                 try:
                     op = parse_op(text, st.zones)
-                    msg = apply_op(st, op)
-                except ValueError as e:
-                    self._send(400, {"error": str(e)})
-                    return
-                self._send(200, {"message": msg, "zones": st.snapshot()})
+                except ValueError as e1:
+                    err1 = str(e1)
+                    try:
+                        op = llm_parse_op(text, st.zones)
+                        parser = "llm"
+                    except Exception as e2:
+                        self._send(400, {"error": f"规则: {err1} ｜ LLM: {e2}"})
+                        return
+                msg = apply_op(st, op)
+                self._send(200, {"message": f"[{parser}] {msg}",
+                                 "zones": st.snapshot()})
                 return
             if self.path == "/api/yeidai_apply":
                 st: YeidaiState = STATE["yeidai"]

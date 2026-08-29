@@ -14,14 +14,28 @@ class YeidaiState:
     def __init__(self):
         d = json.load(open(f"{DATA}/haizhu_liwan_zones_original.json", encoding="utf-8"))
         self.zones = [{"id": z["id"], "name": z["name"],
-                       "geom": str_shapely(z["ring"])}
+                       "geom": YeidaiState._geom(z)}
                       for z in d["zones"]]
 
+    @staticmethod
+    def _geom(z):
+        if "ring" in z:
+            return str_shapely(z["ring"])
+        parts = [shapely.Polygon(r) for r in z.get("rings", [])]
+        parts = [p if p.is_valid else p.buffer(0) for p in parts]
+        return unary_union(parts) if len(parts) > 1 else parts[0]
+
     def snapshot(self):
-        return [{"id": z["id"], "name": z["name"],
-                 "ring": [[round(x, 6), round(y, 6)] for x, y in z["geom"].exterior.coords],
-                 "area": round(z["geom"].area * 11320 * 0.995, 1)}
-                for z in self.zones]
+        out = []
+        for z in self.zones:
+            g = z["geom"]
+            rings = ([list(g.exterior.coords)] if g.geom_type == "Polygon"
+                     else [list(p.exterior.coords) for p in g.geoms])
+            out.append({"id": z["id"], "name": z["name"],
+                        "rings": [[[round(x, 6), round(y, 6)] for x, y in r]
+                                  for r in rings],
+                        "area": round(g.area * 11320 * 0.995, 1)})
+        return out
 
 
 def str_shapely(ring):
@@ -164,3 +178,54 @@ def apply_op(state, op):
         return (f"已把 {src['name']} 的{dr}部"
                 f"（{piece.area*11320:.1f}km²）划给 {dst['name']}")
     raise ValueError(f"未知操作 {op['op']}")
+
+
+def llm_parse_op(text, zones, timeout=60):
+    """规则失败时的 LLM 兜底：让模型把指令解析成结构化 op（MiniMax M3）。"""
+    import requests
+    cfg = json.load(open(f"{DATA}/llm_config.json", encoding="utf-8"))
+    names = [z["name"] for z in zones]
+    sys_p = (
+        "你是围栏指令解析器。把用户的中文指令解析成纯JSON（不要markdown、不要解释）。\n"
+        f"可用围栏名：{json.dumps(names, ensure_ascii=False)}\n"
+        '操作schema：\n'
+        '{"op":"merge","zones":["名1","名2"]}\n'
+        '{"op":"split","zone":"名","cut":"道路或河名，无则null"}\n'
+        '{"op":"transfer_direction","src_zone":"名","direction":"北|南|东|西","dst_zone":"名"}\n'
+        '{"op":"delete","zone":"名"}\n'
+        "围栏名必须原样使用上面列表中的完整名称。"
+    )
+    r = requests.post(cfg["url"], headers={
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {cfg['key']}"},
+        json={"model": cfg["model"],
+              "messages": [{"role": "system", "content": sys_p},
+                           {"role": "user", "content": text}],
+              "max_tokens": 512}, timeout=timeout)
+    r.raise_for_status()
+    content = r.json()["choices"][0]["message"]["content"].strip()
+    content = re.sub(r"^```(json)?|```$", "", content, flags=re.M).strip()
+    op = json.loads(content)
+    byname = {z["name"]: z for z in zones}
+    if op.get("op") == "merge":
+        zs = [byname[n] for n in op["zones"] if n in byname]
+        if len(zs) < 2:
+            raise ValueError("LLM: 合并目标不足")
+        return {"op": "merge", "zones": zs}
+    if op.get("op") == "split":
+        z = byname.get(op["zone"])
+        if not z:
+            raise ValueError("LLM: 拆分目标不存在")
+        return {"op": "split", "zone": z, "cut": op.get("cut")}
+    if op.get("op") == "transfer_direction":
+        s, dd = byname.get(op["src_zone"]), byname.get(op["dst_zone"])
+        if not s or not dd or op["direction"] not in ("北", "南", "东", "西"):
+            raise ValueError("LLM: 划拨参数无效")
+        return {"op": "transfer_direction", "src_zone": s,
+                "direction": op["direction"], "dst_zone": dd}
+    if op.get("op") == "delete":
+        z = byname.get(op["zone"])
+        if not z:
+            raise ValueError("LLM: 删除目标不存在")
+        return {"op": "delete", "zone": z}
+    raise ValueError(f"LLM: 未知操作 {op.get('op')}")
