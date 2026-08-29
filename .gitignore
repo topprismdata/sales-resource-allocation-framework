@@ -9,3 +9,11 @@ __pycache__/
 *.pem
 sraf_secrets*
 analysis/
+
+# —— 试点补充（feat/cc-unit-selection-pilot）——
+data/pilot/
+*.geojson
+*.csv
+ghkey*
+*.token
+sraf-pilot/**/__pycache__/
