@@ -48,6 +48,7 @@
 let DATA, layers = {me:null, others:L.layerGroup(), admin:L.layerGroup(),
                     sub:L.layerGroup(),
                     stores:L.layerGroup(), center:null}, cur = -1;
+const map = L.map('map');
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
             {maxZoom: 18, attribution: '© OSM'}).addTo(map);
 const DCOLORS = ["#e6194b","#3cb44b","#4363d8","#f58231","#911eb4","#46f0f0","#f032e6",
