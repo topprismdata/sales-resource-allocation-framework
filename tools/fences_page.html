@@ -39,7 +39,8 @@
     <div id="ctrl">
       <label><input type="checkbox" id="ckSub" checked> 街道/乡镇界（紫点线）</label>
       <label><input type="checkbox" id="ckAdmin" checked> 区界线（深蓝粗虚线）</label>
-      <label><input type="checkbox" id="ckRecon"> 描述重建（绿虚线，亨啡源北）</label>
+      <label><input type="checkbox" id="ckTruth" checked> 真实围栏（当前经销商）</label>
+      <label><input type="checkbox" id="ckRecon" checked> 描述重建（绿，亨啡源北）</label>
       <div class="legend">实线填充=当前围栏</div>
     </div>
   </div>
@@ -103,6 +104,7 @@ function select(i){
   if (layers.center) map.removeLayer(layers.center);
   const de = DATA.dealers[i];
   const col = DCOLORS[i % DCOLORS.length];
+  if (layers.me) map.removeLayer(layers.me);
   layers.me = L.layerGroup();
   de.rings.forEach(r=>L.polygon(r.map(q=>[q[1],q[0]]),
       {color:col, weight:3, fillOpacity:.12}).addTo(layers.me));
@@ -127,6 +129,10 @@ function toggle(id, layer){
     e.target.checked ? map.addLayer(layer) : map.removeLayer(layer);
   };
 }
+document.getElementById('ckTruth').onchange = e=>{
+  if (!e.target.checked) { if (layers.me) map.removeLayer(layers.me); }
+  else if (layers.me) map.addLayer(layers.me);
+};
 toggle('ckAdmin', layers.admin);
 toggle('ckSub', layers.sub);
 // 描述重建对比（按需加载）
