@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""区域构成描述（文献 + 贪心混合）。
+"""区域构成描述（文献事实 + 贪心紧描述，含路级词）。
 
 双输出：
-  desc_compact = 贪心选的街道名（净增益，高J，台账重演用）
+  desc_compact = 贪心选的紧描述（街道 / 街道沿路，高J，台账重演用）
   desc_full    = 结构化事实完整描述（含占比，正确答案）
-  compose      = 结构化事实（全部街道+占比，文献接地）
+  compose      = 结构化事实（全部街道+占比）
 """
-import json, sys, math
+import json, sys
 from collections import Counter
 sys.path.insert(0, "/Users/ghb/sales-resource-allocation-framework")
 import shapely
@@ -19,20 +19,22 @@ meta = json.load(open(f"{DATA}/meta.json", encoding="utf-8"))
 reg = json.load(open(f"{DATA}/region.json", encoding="utf-8"))
 pack_from_disk(reg, [], meta)
 OFF = json.load(open(f"{DATA}/basic_units_wgs.json", encoding="utf-8"))["units"]
-attrs = [{"id": i, "street": u.get("street"), "district": u.get("district")}
-         for i, u in enumerate(OFF)]
+ATTR = json.load(open(f"{DATA}/unit_attributes.json", encoding="utf-8"))["units"]
 units = [shapely.from_wkt(u["geom"]) for u in OFF]
 utree = STRtree(units)
 
 by_street = {}
-for a in attrs:
+by_road = {}
+for a in ATTR:
     if a["street"]:
         by_street.setdefault(a["street"], set()).add(a["id"])
+    for rd in a["roads"]:
+        by_road.setdefault(rd, set()).add(a["id"])
 
 
 def human_compose(orig):
     """结构化事实：[(街道名, 单元数, 街道总数, 占比标签, 占比)]"""
-    cnt = Counter(attrs[u]["street"] for u in orig if attrs[u]["street"])
+    cnt = Counter(ATTR[u]["street"] for u in orig if ATTR[u]["street"])
     items = []
     for stn, n in cnt.most_common():
         tot = len(by_street.get(stn, set()))
@@ -51,20 +53,34 @@ def human_compose(orig):
     return items
 
 
-def greedy_compact(orig, max_terms=10):
-    """贪心选紧描述（净增益），高J。选完即止，不要求全。"""
+def greedy_compact(orig, max_terms=12):
+    """贪心紧描述（街道+路级词），净增益优先。"""
     covered = set()
     terms = []
-    cand = [(stn, by_street.get(stn, set())) for stn, _, _, _, _ in
-            sorted(human_compose(orig), key=lambda x: -x[4])]
+    cand = []
+    streets_present = {stn for stn, s in by_street.items() if s & orig}
+    for stn in streets_present:
+        cand.append((stn, by_street[stn]))
+        # 沿路词：orig 单元所贴的路 ∩ 该街道
+        road_union = set()
+        for u in (by_street[stn] & orig):
+            road_union |= set(ATTR[u]["roads"])
+        for rd in road_union:
+            s = by_street[stn] & by_road.get(rd, set())
+            if s and s - covered:
+                cand.append((f"{stn}沿{rd}", s))
     while len(terms) < max_terms:
         best = None
         for label, s in cand:
             new = s - covered
-            gain = len(new & orig) - len(new - orig)
+            hit = len(new & orig)
+            if hit == 0:
+                continue
+            over = len(new - orig)
+            gain = hit - over
             if gain < 1:
                 continue
-            sc = (len(new & orig), len(new & orig) / len(new) if new else 0)
+            sc = (gain, hit, hit / len(new) if new else 0)
             if best is None or sc > best[0]:
                 best = (sc, label, s)
         if best is None:
@@ -74,6 +90,14 @@ def greedy_compact(orig, max_terms=10):
         if orig <= covered:
             break
     return terms
+
+
+def resolve(term):
+    """描述项 → 单元集"""
+    if "沿" in term:
+        a, b = term.split("沿", 1)
+        return by_street.get(a, set()) & by_road.get(b, set())
+    return by_street.get(term, set())
 
 
 def main():
@@ -89,15 +113,12 @@ def main():
         orig = {int(i) for i in utree.query(zg) if units[int(i)].centroid.within(zg)}
         if not orig:
             continue
-        # 结构化事实（文献）
         compose = human_compose(orig)
         full_parts = [f"{stn}({tag})" for stn, n, tot, tag, _ in compose]
-        # 贪心紧描述（高J，台账重演用）
         compact = greedy_compact(orig)
-        # 投影计算J
         proj = set()
-        for stn in compact:
-            proj |= by_street.get(stn, set())
+        for tm in compact:
+            proj |= resolve(tm)
         j = len(proj & orig) / len(proj | orig) if proj | orig else 0
         p = len(proj & orig) / len(proj) if proj else 0
         r = len(proj & orig) / len(orig) if orig else 0
