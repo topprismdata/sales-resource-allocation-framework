@@ -23,6 +23,8 @@
  #ctrl{position:absolute;bottom:14px;right:10px;z-index:1000;background:#fff;border-radius:8px;
        padding:8px 12px;box-shadow:0 2px 8px rgba(0,0,0,.15);font-size:12.5px}
  #ctrl label{display:block;cursor:pointer;margin:2px 0}
+ .blklabel{background:rgba(255,255,255,.9);border:1px solid #e6194b;border-radius:4px;
+   padding:1px 6px;font-weight:600;font-size:11px}
  .legend{margin-top:4px;color:#666;font-size:11px}
  .leaflet-tile-pane{filter:grayscale(1) brightness(1.05)}
 </style>
@@ -41,10 +43,13 @@
       <label><input type="checkbox" id="ckSub" checked> 街道/乡镇界（紫点线）</label>
       <label><input type="checkbox" id="ckAdmin" checked> 区界线（深蓝粗虚线）</label>
       <label><input type="checkbox" id="ckTruth" checked> 真实围栏（当前经销商）</label>
-      <label><input type="checkbox" id="ckRecon" checked> 描述重建（绿，亨啡源北）</label>
       <label><input type="checkbox" id="ckYed" checked> 业代片区·海珠荔湾（橙）</label>
-      <div class="legend">实线填充=当前围栏</div>
-      <div class="legend" id="ver">页面 v15 · 数据未知</div>
+      <div class="legend">
+        <span style="color:#e6194b">■</span>/<span style="color:#f58231">■</span> 当前经销商围栏（多块时分色+标注面积）<br>
+        <span style="color:#7b1fa2">┅</span> 街道/乡镇界 <span style="color:#0d47a1">┅</span> 区界<br>
+        <span style="color:#d32f2f">■</span> 台账围栏（载入台账后）
+      </div>
+      <div class="legend" id="ver"></div>
     </div>
     <div id="searchbox" style="position:absolute;top:14px;left:10px;z-index:1000;background:#fff;
          border-radius:8px;padding:8px 10px;box-shadow:0 2px 8px rgba(0,0,0,.15);font-size:12.5px;width:430px">
@@ -103,7 +108,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
 let DATA, cur = -1;
 const layers = {
   admin: L.layerGroup(), sub: L.layerGroup(),
-  me: null, center: null, recon: null
+  me: null, center: null
 };
 fetch('/api/fences').then(r=>r.json()).then(d=>{
   DATA = d;
@@ -199,7 +204,7 @@ fetch('/api/fences').then(r=>r.json()).then(d=>{
   d.dealers.forEach((de,i)=>{
     const el = document.createElement('div');
     el.className='dl'; el.dataset.name = de.name;
-    el.innerHTML = `${de.name}<small>${de.area_km2}km²·${de.store_count}店</small>`;
+    el.innerHTML = `${de.name}<small>${de.area_km2}km² · ${de.rings.length>1?de.rings.length+'块':''}${de.rings.length>1?' · ':''}${de.store_count}店</small>`;
     el.onclick = ()=>select(i);
     list.appendChild(el);
   });
@@ -209,7 +214,6 @@ fetch('/api/fences').then(r=>r.json()).then(d=>{
         !q || el.dataset.name.includes(q) ? '' : 'none');
   };
   fitAll();
-  if (document.getElementById('ckRecon').checked) loadRecon();
 });
 function fitAll(){
   const b = [];
@@ -227,8 +231,26 @@ function select(i){
   const col = DCOLORS[i % DCOLORS.length];
   if (layers.me) map.removeLayer(layers.me);
   layers.me = L.layerGroup();
-  de.rings.forEach(r=>L.polygon(r.map(q=>[q[1],q[0]]),
-      {color:col, weight:3, fillOpacity:.12}).addTo(layers.me));
+  const ringArea=(rg)=>{ let s=0;
+    for(let i=0;i<rg.length-1;i++){
+      s+=rg[i][0]*rg[i+1][1]-rg[i+1][0]*rg[i][1]; }
+    const lat=rg[0][1];
+    return Math.abs(s/2)*111.32*Math.cos(lat*Math.PI/180)*110.54; };
+  const multi = de.rings.length>1;
+  de.rings.forEach((r,k)=>{
+    const a = ringArea(r);
+    const c2 = multi ? ["#e6194b","#f58231","#4363d8"][k%3] : col;
+    const pg = L.polygon(r.map(q=>[q[1],q[0]]),
+        {color:c2, weight:3, fillOpacity:.15}).addTo(layers.me);
+    pg.bindTooltip(`${de.name}${multi?` 第${k+1}块`:''} ${a.toFixed(1)}km²`,
+                   {sticky:true});
+    if (multi){
+      const bb = pg.getBounds().getCenter();
+      L.marker(bb,{opacity:0, keyboard:false})
+        .bindTooltip(`第${k+1}块 ${a.toFixed(1)}km²`,{permanent:true,direction:'center',
+          className:'blklabel'}).addTo(layers.me);
+    }
+  });
   layers.me.addTo(map);
   if (de.center.length)
     layers.center = L.circleMarker([de.center[1],de.center[0]],
@@ -264,25 +286,6 @@ document.getElementById('ckTruth').onchange = e=>{
 toggle('ckAdmin', layers.admin);
 toggle('ckSub', layers.sub);
 // 描述重建对比（按需加载）
-function loadRecon(){
-  if (layers.recon) { map.addLayer(layers.recon); return; }
-  fetch('/api/north_desc').then(r=>r.json()).then(d=>{
-    document.getElementById('ver').textContent =
-      `页面 v15 · 重建数据 ${Object.keys(d).join('/')} · 绿块${d.roadB ? d.roadB.length : '?'}点`;
-    layers.recon = L.layerGroup();
-    L.polygon(d.roadB.map(q=>[q[1],q[0]]),
-        {color:'#1b5e20',weight:4,dashArray:'6 5',fillColor:'#2e7d32',fillOpacity:.85})
-      .bindTooltip('描述重建（道路链，IoU 0.897）',{sticky:true}).addTo(layers.recon);
-    L.polyline(d.cutline.map(q=>[q[1],q[0]]),
-        {color:'#1b5e20',weight:1.5,opacity:.6,dashArray:'1 4'}).addTo(layers.recon);
-    map.addLayer(layers.recon);
-  });
-}
-document.getElementById('ckRecon').onchange = e=>{
-  if (!e.target.checked) {
-    if (layers.recon) map.removeLayer(layers.recon);
-  } else loadRecon();
-};
 </script>
 </body>
 </html>
