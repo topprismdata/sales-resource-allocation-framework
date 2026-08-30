@@ -270,11 +270,11 @@ function select(i){
     Object.entries(fb).map(([k,v])=>
       `<div class="fb"><span class="tag">${k}</span> ${v||'—'}</div>`).join('')+
     (dc ? `<div class="fb" style="margin-top:6px"><span class="tag">自动描述</span> `+
-         `${dc.desc.join('；')} <small>J=${dc.J}</small></div>`+
+         `${dc.desc_compact.join('；')} <small>J=${dc.J}</small></div>`+
          `<button id="loadledger" style="margin-top:4px;padding:3px 10px;border:1px solid #d32f2f;`+
          `background:#fdecea;border-radius:6px;cursor:pointer">载入台账</button>` : '');
   if (dc) document.getElementById('loadledger').onclick =
-      ()=>loadToLedger(de.name, dc.desc);
+      ()=>loadToLedger(de.name, dc.desc_compact);
   const b = [];
   de.rings.forEach(r=>r.forEach(q=>b.push([q[1],q[0]])));
   map.fitBounds(b, {padding:[40,40]});
