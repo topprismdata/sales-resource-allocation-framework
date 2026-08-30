@@ -661,7 +661,7 @@ class Handler(BaseHTTPRequestHandler):
                     if hit is None and dealer:
                         hit = next((x for x in descrows if x["dealer"] == dealer), None)
                     if hit:
-                        terms = hit["desc"]
+                        terms = hit.get("desc_compact") or hit.get("desc")
                         area_id = area_id or hit.get("area_id")
                 if terms:
                     led: Ledger = STATE["ledger"]
