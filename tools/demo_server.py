@@ -398,6 +398,11 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, {"dealers": dealers, "admin": admin,
                                  "subdistricts": subs})
                 return
+            if path == "/api/territory_desc":
+                df = pack["data_dir"] / "territory_compiled.json"
+                self._send(200, json.loads(df.read_text(encoding="utf-8"))
+                           if df.exists() else [])
+                return
             if path == "/api/dealer_desc":
                 df = pack["data_dir"] / "desc_cover_eval.json"
                 self._send(200, json.loads(df.read_text(encoding="utf-8"))
