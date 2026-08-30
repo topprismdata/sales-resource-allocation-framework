@@ -27,7 +27,6 @@ class UnitLibrary:
         """条款名 → 边界要素几何（WGS 线网），供可视性约束使用。"""
         d = json.load(open(f"{DATA}/gz_osm_full.json", encoding="utf-8"))
         target = name.split("（")[0].split("(")[0].strip().replace("边缘", "").replace("界", "")
-        cbuf = shapely.geometry.Point(center).buffer(0.0045)
         best = None   # (score, geom)：离中心更近的要素优先
         for grp in ("roads", "rivers", "adm6", "adm8"):
             for r in d[grp]:
@@ -50,11 +49,8 @@ class UnitLibrary:
                 if not plines:
                     continue
                 lg = unary_union(plines)
-                if not lg.intersects(cbuf):
-                    continue  # 离中心 >500m，与条款无关
-                sc = lg.distance(shapely.geometry.Point(center))
-                if best is None or sc < best[0]:
-                    best = (sc, lg)
+                if best is None or lg.length > best[0]:
+                    best = (lg.length, lg)
         return None if best is None else best[1]
 
 
