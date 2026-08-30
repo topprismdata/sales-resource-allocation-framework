@@ -45,6 +45,16 @@
       <div class="legend">实线填充=当前围栏</div>
       <div class="legend" id="ver">页面 v15 · 数据未知</div>
     </div>
+    <div id="searchbox" style="position:absolute;top:14px;left:10px;z-index:1000;background:#fff;
+         border-radius:8px;padding:8px 10px;box-shadow:0 2px 8px rgba(0,0,0,.15);font-size:12.5px;width:430px">
+      <b>围栏检索</b> <span style="color:#888">任意描述：街道/路名/区县/方位/面积…</span>
+      <div style="display:flex;gap:6px;margin-top:4px">
+        <input id="fq" placeholder="例：海珠荔湾那一带，南边珠江，西边鹤洞大桥"
+               style="flex:1;padding:5px 8px;border:1px solid #ccc;border-radius:6px">
+        <button id="fsearch" style="padding:3px 12px;border:1px solid #1a73e8;background:#e8f0fe;border-radius:6px;cursor:pointer">检索</button>
+      </div>
+      <div id="fresults" style="margin-top:4px"></div>
+    </div>
     <div id="yedbox" style="position:absolute;bottom:14px;left:10px;z-index:1000;background:#fff;
          border-radius:8px;padding:8px 10px;box-shadow:0 2px 8px rgba(0,0,0,.15);font-size:12.5px;width:420px">
       <b>业代围栏调整</b>
@@ -107,6 +117,26 @@ fetch('/api/fences').then(r=>r.json()).then(d=>{
   });
   document.getElementById('ckYed').onchange = e=>{
     e.target.checked ? map.addLayer(yeLayers) : map.removeLayer(yeLayers);
+  };
+  // 围栏检索
+  document.getElementById('fsearch').onclick = async ()=>{
+    const q = document.getElementById('fq').value.trim();
+    if (!q) return;
+    const r = await fetch('/api/fence_search',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({text:q})}).then(x=>x.json());
+    const box = document.getElementById('fresults');
+    box.innerHTML = (r.results||[]).slice(0,5).map((x,i)=>
+      `<div class="dl" style="margin:2px 0" data-fs="${x.area_id}">
+         <b>${x.name}</b> <small>${x.score}分 ${x.area_km2}km² 命中:${x.matched.join('/')}</small>
+       </div>`).join('');
+    [...box.children].forEach(el=>{
+      el.onclick = ()=>{
+        const aid = el.dataset.fs;
+        let hit = DATA.dealers.findIndex(dd=>dd.area_ids && dd.area_ids.includes(aid));
+        if (hit>=0) select(hit);
+      };
+    });
   };
   // 业代命令
   const ycmd=document.getElementById('ycmd'), ymeg=document.getElementById('ymeg');

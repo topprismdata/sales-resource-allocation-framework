@@ -374,6 +374,7 @@ class Handler(BaseHTTPRequestHandler):
                               for s in w.stores if de in s.dealers]
                     dealers.append({
                         "name": de,
+                        "area_ids": sorted(set(f.area_id for f in fences)),
                         "area_km2": round(sum(f.area_km2 for f in fences), 1),
                         "store_count": len(stores),
                         "rings": [list(map(list, f.ring)) for f in fences],
@@ -742,6 +743,42 @@ class Handler(BaseHTTPRequestHandler):
                     "conflicts": _conflicts(in_fence),
                     "lines_used": detail, "missing": missing,
                     "bounds_geometry": bounds_geo, "dealer": dealer})
+                return
+            if self.path == "/api/fence_search":
+                q = str(body.get("text", ""))
+                regd = json.load(open(str(ROOT / "data" / "gz" / "fence_registry.json"),
+                                      encoding="utf-8"))["registry"]
+                results = []
+                for r in regd:
+                    score = 0.0
+                    matched = []
+                    prof = r["profile"]
+                    for road in r["boundary_roads"]:
+                        if road and road in q:
+                            score += 3; matched.append(road)
+                    for st in r["streets"]:
+                        core = st.split("·")[-1].replace("街道", "").replace("镇", "")
+                        if core and core in q:
+                            score += 3; matched.append(st)
+                    for dn in r["districts"]:
+                        if dn in q:
+                            score += 1; matched.append(dn)
+                    for nb in r["neighbors"]:
+                        if nb in q:
+                            score += 2; matched.append(nb)
+                    import re as _re
+                    m = _re.search(r"(\d+(?:\.\d+)?)\s*(?:平方公里|km²|km2|平方公里)", q)
+                    if m:
+                        v = float(m.group(1))
+                        if 0.6 * v <= r["area_km2"] <= 1.6 * v:
+                            score += 1; matched.append(f"~{v}km²")
+                    if score > 0:
+                        results.append({"area_id": r["area_id"],
+                                        "name": r["dealer"], "score": round(score, 1),
+                                        "area_km2": r["area_km2"],
+                                        "matched": matched[:6]})
+                results.sort(key=lambda x: -x["score"])
+                self._send(200, {"results": results[:8]})
                 return
             if self.path == "/api/yeidai_adjust":
                 text = str(body.get("text", ""))
