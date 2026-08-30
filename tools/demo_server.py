@@ -36,6 +36,7 @@ from intelligence.coords import pack_from_disk, pack_for_disk  # noqa: E402
 from intelligence.knowledge import KnowledgeBase  # noqa: E402
 sys.path.insert(0, str(ROOT / "tools"))
 from yeidai_ops import YeidaiState, llm_parse_op  # noqa: E402
+from allocation_ledger import Ledger, ring_of  # noqa: E402
 from intelligence.world import World, point_in_ring  # noqa: E402
 
 
@@ -159,7 +160,8 @@ def _list_regions() -> list[dict]:
 STATE_LOCK = threading.Lock()
 STATE = {"pack": _load_pack(_resolve_data_dir(DATA_DIR_ARG)),
          "world": None, "proposal": None,
-         "yeidai": YeidaiState(), "yeidai_snapshot": YeidaiState().snapshot()}
+         "yeidai": YeidaiState(), "yeidai_snapshot": YeidaiState().snapshot(),
+         "ledger": Ledger()}
 STATE["world"] = STATE["pack"]["world"]
 
 
@@ -391,6 +393,25 @@ class Handler(BaseHTTPRequestHandler):
                         .get("subdistricts", {})) if sdf.exists() else {}
                 self._send(200, {"dealers": dealers, "admin": admin,
                                  "subdistricts": subs})
+                return
+            if path == "/api/dealer_desc":
+                df = pack["data_dir"] / "desc_cover_eval.json"
+                self._send(200, json.loads(df.read_text(encoding="utf-8"))
+                           if df.exists() else [])
+                return
+            if path == "/api/ledger":
+                led: Ledger = STATE["ledger"]
+                summ = led.summary()
+                for s in summ:
+                    g = led.fence_geom(s["owner"])
+                    s["rings"] = ([[[round(x, 6), round(y, 6)]
+                                    for x, y in g.exterior.coords]]
+                                  if g is not None and g.geom_type == "Polygon"
+                                  else ([[list(map(list, pp.exterior.coords))]
+                                        for pp in g.geoms]
+                                        if g is not None else []))
+                self._send(200, {"owners": summ,
+                                 "total_units": len(led.owner)})
                 return
             if path == "/api/yeidai":
                 zf = pack["data_dir"] / "haizhu_liwan_zones.json"
@@ -743,6 +764,17 @@ class Handler(BaseHTTPRequestHandler):
                     "conflicts": _conflicts(in_fence),
                     "lines_used": detail, "missing": missing,
                     "bounds_geometry": bounds_geo, "dealer": dealer})
+                return
+            if self.path == "/api/ledger_cmd":
+                q = str(body.get("text", ""))
+                led: Ledger = STATE["ledger"]
+                try:
+                    owner, n = led.execute(q)
+                except ValueError as e:
+                    self._send(400, {"error": str(e)})
+                    return
+                self._send(200, {"message": f"{owner} 名下 {n} 单元",
+                                 "summary": led.summary()})
                 return
             if self.path == "/api/fence_search":
                 q = str(body.get("text", ""))
