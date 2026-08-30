@@ -1,7 +1,7 @@
 {
   "pilot": "cc-unit-selection-pilot",
-  "contracts_version": "v1.7",
-  "current_phase": "DONE",
+  "contracts_version": "v1.8",
+  "current_phase": "P5",
   "phases": {
     "P0": {
       "status": "done",
@@ -65,12 +65,6 @@
         "T-304": "done"
       }
     },
-    "P3b": {
-      "status": "conditional",
-      "trigger": "需要 side_of 原语",
-      "owner": "L2",
-      "tasks": []
-    },
     "P4": {
       "status": "done",
       "gate": "G4",
@@ -87,6 +81,16 @@
         "T-403": "done",
         "T-404": "done"
       }
+    },
+    "P5": {
+      "status": "ready",
+      "gate": "G5",
+      "note": "side_of 八方位 + near；快速实验天花板 0.7931"
+    },
+    "P6": {
+      "status": "conditional",
+      "gate": "G6",
+      "note": "DSL 迁移到 L2 细面（带属性）"
     }
   },
   "gates": {
@@ -167,5 +171,11 @@
       "ESCALATION仍需L0裁定"
     ]
   },
-  "tests_total": 367
+  "tests_total": 367,
+  "main_sync": {
+    "date": "2026-08-30",
+    "main_head": "b572539",
+    "conflicts": "none",
+    "crs_recheck": "SAME_CRS_GCJ02 由贴路距离第三方法证实"
+  }
 }
