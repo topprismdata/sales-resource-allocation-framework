@@ -321,6 +321,8 @@ function renderLegend(){
 // ---------- 启动 ----------
 async function boot(){
   BOOT = await (await fetch("/api/bootstrap")).json();
+  let TERR = [];
+  try{ TERR = await (await fetch("/api/territory_desc")).json(); }catch(e){}
   const regs = await (await fetch("/api/regions")).json();
   const sel = document.getElementById("regionSel");
   sel.innerHTML = regs.regions.map(r=>{
@@ -351,6 +353,7 @@ function renderContracts(){
       <div class="muted">${esc(c.district||"")} · 合同店数 ${c.store_count}
         ${c.reserved_channels&&c.reserved_channels.length? " · 保留渠道 "+c.reserved_channels.length:""}</div>
       <div class="muted">北:${esc(c.four_bounds&&c.four_bounds["北"]||"—")} 南:${esc(c.four_bounds&&c.four_bounds["南"]||"—")} 东:${esc(c.four_bounds&&c.four_bounds["东"]||"—")} 西:${esc(c.four_bounds&&c.four_bounds["西"]||"—")}</div>
+      <div class="muted" style="color:#1a73e8;font-size:11px">TerritoryIR: ${(TERR.find(x=>x.area_id===c.area_id)||{}).human_terms?.join(";")||"—"}</div>
       <span class="muted" id="gr-${i}">${generated.has(c.dealer_id)?"已生成":"点击生成区域 →"}</span>
     </div>`;}).join("");
 }
