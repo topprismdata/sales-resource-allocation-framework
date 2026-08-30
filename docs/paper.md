@@ -216,7 +216,20 @@ We distinguish three formally distinct fidelity levels:
 | Zheng Ming | 1.000 | 0.500 | 0.500 |
 | Ding Sen | 1.000 | 0.990 | 0.010 |
 
-Mean drop: 0.227. Heng Fei Yuan (street-boundary slivers) and Zheng Ming (micro-fence, 1 cell) depend most heavily on P# atoms.
+Mean drop: 0.227.
+
+**Threshold sensitivity.** The truth-selection threshold τ ∈ {0.3, 0.4, 0.5, 0.6, 0.7} has minimal impact on J (remains 1.000 for all τ) and small impact on IoU (≤0.03 variation). This is because P# atoms guarantee representational completeness regardless of the threshold. The main effect is on |T|: higher τ reduces the truth set size, which slightly reduces the number of clauses needed.
+
+**Atomic fallback rate.** Across all 32 dealers, P# atoms constitute:
+- Mean: 26.9% of clauses
+- Median: 21.9%
+- Range: 0% (fully expressed by named clauses) to 100% (micro-fence, single cell)
+
+This means 73–78% of the representation uses human-readable named clauses (block, feat, slice, band). The compression ratio against pure P# enumeration is:
+
+$$\text{compression} = 1 - \frac{|\text{chosen clauses}|}{|T|}$$
+
+Median compression: 1 − (median clauses / median |T|) = 1 − (47/102) ≈ 0.54 (54% reduction). Heng Fei Yuan (street-boundary slivers) and Zheng Ming (micro-fence, 1 cell) depend most heavily on P# atoms.
 
 ### 4.4 Linguistic Round-trip Consistency
 
