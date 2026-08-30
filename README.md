@@ -1,165 +1,117 @@
-<p align="center">
-  <img src="https://raw.githubusercontent.com/topprismdata/.github/main/assets/brand/topprism-repo-header.png" alt="TopPrism dual-prism visual" width="100%" />
-</p>
+# TerritoryIR: Bidirectional Compilation Between Human Geographic Descriptions and Executable Regions
 
-# Sales Resource Allocation Framework
+**Bidirectional territory semantics** · **Finite Boolean region algebra** · **Executable IR** · **Round-trip verification**
 
-> **Language:** English (all repository documentation normalized to
-> English per `docs/CHANGELOG_v1.2.3.md`).
+> **Decision question:** A sales manager draws a territory polygon on a digital map. A field rep describes the same territory in natural language: "凤凰街道 + 龙洞街道沿华南快速，西至龙洞街道—长兴街道界". Are they talking about the same place? TerritoryIR bridges these two representations through bidirectional compilation.
 
-**An allocation-intelligence layer for distributor territory management:
-world model + evidence-governed knowledge base + reasoning that proposes
-to humans — and never auto-executes.**
+Part of **TopPrism Decision Intelligence**. 
 
-`WORLD MODEL` · `DECISION INTELLIGENCE` · `REAL-DATA VALIDATED` ·
-`NO OPERATIONAL DATA IN REPO` · `MIT`
-
-> **Decision question:** Given dealer territories derived from contracts,
-> observed supply footprints, and road/river landmarks — which coverage
-> gaps are real, which organizational layer owns them, and what happens
-> if a sub-area is transferred between dealers?
->
-> Part of **TopPrism Decision Intelligence**. Existing tools (fence
-> drawing, store classification, visit scheduling) are the muscle — the
-> *how*. SRAF supplies the brain — the *why*: identity, gap diagnosis,
-> impact prediction, and advice with a full evidence chain.
-
-------------------------------------------------------------------------
+---
 
 ## Why this exists
 
-Territory adjustments in the field today carry "function without
-business knowledge": a fence can be redrawn, but nothing can answer
-*why* a gap exists, *who* should own the fix, or *what breaks* if the
-boundary moves.
+Chinese FMCG companies manage hundreds of dealer territories. These territories exist in two incompatible representations:
 
-```text
-Intelligence = World Model (skeleton)
-             + Knowledge Base (flesh, 33 sourced entries)
-             + Reasoning (advice for humans, every "why" lands on an entry)
+- **In the field:** staff describe territories linguistically (street names, road segments, boundaries)
+- **In the system:** territories are stored as GIS polygons
+
+Bridging these two representations is a real operational problem. Contracts must be written in natural language but executed as geometric boundaries. Territory changes must be communicated to field staff as text but applied to the system as polygons. Neither representation alone suffices.
+
+**TerritoryIR solves this through bidirectional compilation:**
+
+```
+Human Description  ⟷  TerritoryIR  ⟷  Executable Region
 ```
 
-The output is always a **proposal for a human to approve** — with
-signals, risks, and provenance attached (governance workflow GW,
-approval gate A2/A3 forbidden for auto-execute).
+The IR is the **canonical semantic contract** — neither the text nor the polygon is authoritative. Both are projections of the same IR.
 
-------------------------------------------------------------------------
+---
 
-## Architecture: three independent decision layers
+## Core contributions
 
-Layers mirror the organization. Each layer decides independently and
-hands off only through interfaces (D10):
+| # | Contribution | Description |
+|---|---|---|
+| 1 | **Bidirectional territory semantics** | Human geographic language ↔ executable region geometry through a shared semantic IR |
+| 2 | **Executable region algebra** | Finite Boolean algebra over heterogeneous geographic partitions, with typed AST and denotational semantics |
+| 3 | **Semantics-preserving compression** | Named expressions (street, road, boundary) are formal compressions of atomic expressions |
+| 4 | **Bidirectional evaluation** | 4-direction evaluation on 43 real-world territories |
 
-```text
- Human   city manager (D) / dealer supervisor (B) / field rep (V)
-          ↑ advice + evidence chain          ↑ per-layer approval (GW)
-├────────────────────────────────────────────────────────────┤
-│  04 Allocation Intelligence: locate the layer, then diagnose│
-├─────────────────────────┬──────────────────────────────────┤
-│  World Model (skeleton) │  Knowledge Base (flesh, 31)      │
-│  F1/F2/F3 fence ontology│  principles·rules·facts·cases…   │
-│  events E1–E11          │  no-provenance-no-entry governance│
-├─────────────────────────┴──────────────────────────────────┤
-│  Layer D  dealer territory  → I-D: store → dealer          │
-│  Layer B  rep beat routes   → I-B: store → beat → rep+freq │
-│  Layer V  visit scheduling  → visit plan (read-only dep.)  │
-└────────────────────────────────────────────────────────────┘
-```
+## Formal properties
 
-## What v1.2.2 establishes
+Five theorems establish the system's formal guarantees:
 
-- **Area-first adjustment semantics (K-PRIN-006 / D11).** The decision
-  object is a *sub-area* of a territory — whole region, half-region,
-  district, out-of-fence pocket, or store-neighborhood. Stores follow
-  the area as a derived effect; editing stores directly is a CRM job,
-  not a decision.
-- **Logical fence merge, no polygon surgery.** Applying a transfer
-  reassigns store ownership (the only fact — conservation trivially
-  holds); a dealer's fence is a derived convex hull of its current
-  stores. ~150 lines of union/difference geometry surgery deleted with
-  it.
-- **CRS boundary normalization (D13).** Business packs are declared
-  GCJ-02 (Amap); OSM is WGS-84. Mixed naively, that is a ~623 m
-  systematic offset in Guangzhou (measured) — enough to make four-bound
-  direction checks fiction. All geometry runs pure WGS-84 internally:
-  one-shot `pack_from_disk` on load, exact inverse on write
-  (round-trip residual 0.000 m, tested).
-- **Rules-first parsing, LLM as fallback (D12).** An `@`-mention engine
-  guarantees the LLM only ever sees full legal names; the deterministic
-  rule path answers standard commands in &lt;1 s.
+- **Theorem 1:** Atomic Representational Completeness — every $T \subseteq U$ has an exact IR expression
+- **Theorem 2:** Semantic Compression — named clauses are semantics-preserving compressions
+- **Theorem 3:** Error Decomposition — all geometric error is bounded by atomic discretization
+- **Theorem 4:** R→L→R Round-trip — Region → Language → Region preserves semantics
+- **Theorem 5:** L→R→L Round-trip — Language → Region → Language preserves semantics
 
-## Demo: the three-step loop
+## Results
 
-```bash
-python3 tools/demo_server.py          # stdlib server, Leaflet single page
-# ① contract text → four bounds → OSM landmark rebuild → fence draft + conflicts
-# ② natural-language area transfer:  "move @A's east half to @B"
-#    → proposal card (area, stores, contract signals, materiality) → apply / reject
-# ③ analysis: per-fence health (Q1) + coverage-gap taxonomy (Q2)
-```
+| Metric | Dealers (32) | Sales-rep zones (11) |
+|---|---|---|
+| J (representational exactness) | 1.0 (32/32) | 1.0 (10/11) |
+| IoU (geometric fidelity) | 0.992 | 0.971 |
+| Coverage | 99.81% | 99.17% |
+| R→L→R round-trip | 32/32 | 11/11 |
+| L→R→L round-trip | 32/32 | 11/11 |
+| Human sentences | 5–51 | 2–10 |
 
-Business data packs (`data/<region>/`) are **not** included; assemble
-your own per [data/README.md](data/README.md) (schema + `crs`
-contract).
-
-------------------------------------------------------------------------
+---
 
 ## Repository layout
 
 | Path | Contents |
 |---|---|
-| `docs/` | Normative specs 00–08 (**v1.2.1 FROZEN**) + governance files; language normalization per `CHANGELOG_v1.2.3.md` |
-| `docs/DESIGN.md` | Living implementation design + ADR log (D1–D14) |
-| `intelligence/` | World-model slice, area-first adjust engine, GCJ⇄WGS boundary, road semantics, vision verification, LLM parse |
-| `dealer_territory/` | Layer-D fence split / allocation / four-bounds / analysis |
-| `knowledge_base/` | 31 knowledge entries (JSON machine-readable + human index) |
-| `tools/` | Demo server + frontend, OSM fetch, pack validation, consistency & reference checks |
-| `tests/` | 13 unit tests (`python3 -m unittest discover tests`) |
+| `docs/paper/` | Paper (paper.md), outline, formal specification, screenshot |
+| `docs/territory/` | Method docs, ontology, design specs, validation checklists |
+| `docs/sraf/` | SRAF normative specs 00–08 |
+| `tools/` | `territory_compile.py` (compiler), `dealer_describe_all.py`, `yeidai_compile.py`, `territory_ir.py` |
+| `intelligence/` | World-model slice, GCJ⇄WGS boundary, road semantics |
+| `data/gz/` | Business data (excluded from git per `.gitignore`) |
 
-## Evidence
+## Key tools
 
-- World-model semantics validated on an anonymizable 38-fence /
-  33,109-store Guangzhou snapshot (six-way `kind` classification,
-  79% three-layer alignment rate — aggregate figures only; raw data is
-  out of scope for this repository).
-- Fence-vertex → OSM-road distance test discriminated the CRS question
-  (338 m under GCJ-02 direct comparison vs 123 m after conversion).
-- Consistency and cross-reference gates run in CI-able scripts:
-  `tools/consistency_check.py`, `tools/ref_check.py`.
+| Tool | Purpose |
+|---|---|
+| `tools/territory_compile.py` | Main compiler: fence → IR → human terms + engine terms |
+| `tools/territory_ir.py` | IR schema, eval, verbalize, lower (pure functions) |
+| `tools/yeidai_compile.py` | 业代 (sales-rep) zone compiler |
+| `tools/dealer_describe_all.py` | Batch description generator for all dealers |
 
-## Where it fits at TopPrism
+## Demo
 
-SRAF is the decision-intelligence layer above
-[market-partition](https://github.com/topprismdata/market-partition)
-(spatial partitioning),
-[bge-entity-match](https://github.com/topprismdata/bge-entity-match)
-(entity resolution), and
-[visit-scheduling-optimizer](https://github.com/topprismdata/visit-scheduling-optimizer)
-(execution layer, consumed read-only through an adapter — D2).
+```bash
+# Static file server (for compare page)
+python3 -m http.server 8801 --directory data/gz/
 
-------------------------------------------------------------------------
+# Full recompile
+python3 tools/territory_compile.py
+
+# Compare page
+open http://127.0.0.1:8801/j_compare.html
+```
+
+## Paper
+
+A full paper is under development: `docs/paper/paper.md`. Target venues: IJGIS, ACM SIGSPATIAL, Transactions in GIS.
+
+---
 
 ## TopPrism metadata
 
 ```yaml
 topprism:
   purpose: decision-intelligence
-  capability: territory-allocation
+  capability: territory-description
   platform_layer: business-world-model
   maturity: applied-internal
   evidence:
     type: operational-data-validated
-    source: anonymized business snapshot + public OSM
+    source: anonymized Guangzhou business snapshot + public OSM + Amap
     validation: programmatic-plus-visual
-  spec_baseline: docs v1.2.1 FROZEN
-  product_context:
-    - dealer-territory-design
-    - coverage-gap-diagnosis
-    - area-transfer-what-if
 ```
 
 ## License
 
-MIT. No operational business data or credentials are distributed with
-this repository; `data/*` and `analysis/*` are excluded by contract
-(`.gitignore`).
+MIT. No operational business data or credentials are distributed with this repository; `data/*` is excluded by `.gitignore`.
