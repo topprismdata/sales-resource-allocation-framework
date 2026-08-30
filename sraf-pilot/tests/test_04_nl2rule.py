@@ -926,6 +926,16 @@ class TestTranslateCli(T402Base):
         (Path(self._tmp.name) / "unit_graph.json").write_text(json.dumps({
             "adjacency": {"0": [1], "1": [0]}, "link_min_m": 50}),
             encoding="utf-8")
+        # 04 CLI 经 03_dsl.load_pilot_context 读全部五文件（T-502 起 lines.json 必备）
+        (Path(self._tmp.name) / "lines.json").write_text(json.dumps({
+            "schema_version": "p5-lines-v1", "crs": "GCJ-02",
+            "source_crs": "WGS-84", "source_sha256": "a" * 64,
+            "counts": {"source_elements": 1, "source_named_ways": 1,
+                       "output_names": 1, "output_parts": 1},
+            "lines": [{"name": "环岛路", "classes": ["highway"],
+                       "osm_way_ids": [1],
+                       "geom": "LINESTRING (113.0 23.0, 113.1 23.1)"}]},
+            ensure_ascii=False), encoding="utf-8")
         self._data_dir = self._tmp.name
         self._text = "凤阳街道"
 
@@ -1762,6 +1772,15 @@ class TestG4Cli(T404Base):
         (self.data_dir / "unit_graph.json").write_text(json.dumps({
             "adjacency": {"0": [1], "1": [0], "2": [3], "3": [2]},
             "link_min_m": 50}), encoding="utf-8")
+        (self.data_dir / "lines.json").write_text(json.dumps({
+            "schema_version": "p5-lines-v1", "crs": "GCJ-02",
+            "source_crs": "WGS-84", "source_sha256": "a" * 64,
+            "counts": {"source_elements": 1, "source_named_ways": 1,
+                       "output_names": 1, "output_parts": 1},
+            "lines": [{"name": "环岛路", "classes": ["highway"],
+                       "osm_way_ids": [1],
+                       "geom": "LINESTRING (113.0 23.0, 113.1 23.1)"}]},
+            ensure_ascii=False), encoding="utf-8")
         # g4 子命令生产门禁固定 21 条（dealer 4 + yeidai 17）：生成式夹具。
         # dealer 围栏引用凤阳+南华西 {0,1}；yeidai 围栏引用华洲 {2,3}。
         fences = {}

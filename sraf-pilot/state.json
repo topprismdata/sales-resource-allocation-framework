@@ -1,7 +1,7 @@
 {
   "pilot": "cc-unit-selection-pilot",
-  "contracts_version": "v1.8",
-  "current_phase": "P5",
+  "contracts_version": "v1.9",
+  "current_phase": "P6",
   "phases": {
     "P0": {
       "status": "done",
@@ -83,14 +83,27 @@
       }
     },
     "P5": {
-      "status": "ready",
+      "status": "done",
       "gate": "G5",
+      "owner": "L2+L1",
+      "tasks": [
+        "T-501",
+        "T-502",
+        "T-503",
+        "T-504"
+      ],
+      "task_status": {
+        "T-501": "done",
+        "T-502": "done",
+        "T-503": "done",
+        "T-504": "done"
+      },
       "note": "side_of 八方位 + near；快速实验天花板 0.7931"
     },
     "P6": {
       "status": "conditional",
       "gate": "G6",
-      "note": "DSL 迁移到 L2 细面（带属性）"
+      "note": "优先级下调：需细面的案例由 19→5 条（side_of 已解决大部分）"
     }
   },
   "gates": {
@@ -144,6 +157,14 @@
       "components_accuracy": "13/21",
       "parse_success": "21/21",
       "l0_crosscheck": "一致"
+    },
+    "G5": {
+      "result": "pass",
+      "tests": 425,
+      "exact_match_rate": 1.0,
+      "ceiling_median_jaccard": 0.9444,
+      "baseline": 0.5,
+      "ge_0_8": "16/21"
     }
   },
   "model_escalation": {
@@ -171,7 +192,7 @@
       "ESCALATION仍需L0裁定"
     ]
   },
-  "tests_total": 367,
+  "tests_total": 425,
   "main_sync": {
     "date": "2026-08-30",
     "main_head": "b572539",
