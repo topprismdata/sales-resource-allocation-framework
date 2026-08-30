@@ -618,9 +618,19 @@ class Handler(BaseHTTPRequestHandler):
             pack = _current()
             w = STATE["world"]
             if self.path == "/api/generate":
-                bounds = body.get("bounds") or {}
-                center = body.get("center")
-                dealer = body.get("dealer", "合同重建围栏")
+                area_id = body.get("area_id")
+                if area_id:
+                    ce = next((c for c in pack["contracts"]
+                               if c.get("area_id") == area_id), None)
+                    if ce:
+                        bounds = ce.get("four_bounds") or {}
+                        center = ce.get("center")
+                        dealer = ce.get("dealer_id", "合同重建围栏")
+                if not bounds:
+                    bounds = body.get("bounds") or {}
+                if not center:
+                    center = body.get("center")
+                dealer = body.get("dealer") or dealer
                 if pack["osm"] is None:
                     self._send(400, {"error": f"数据包缺 osm_parsed.json"
                                               f"（{pack['data_dir']}），四至重建不可用"})
@@ -710,6 +720,10 @@ class Handler(BaseHTTPRequestHandler):
                         rb = build_from_landmark_ratios(dealer, spec, tuple(center), osm)
                     except Exception as e:  # noqa: BLE001
                         self._send(400, {"error": f"重建失败: {e}; missing={missing}"})
+                        return
+                    if "error" in rb:
+                        self._send(400, {"error": f"重建失败: {rb['error']}; "
+                                                  f"missing={missing}"})
                         return
                 ring = rb["ring"]
                 lons = [p[0] for p in ring]; lats = [p[1] for p in ring]

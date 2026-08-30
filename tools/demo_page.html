@@ -365,7 +365,7 @@ async function genContract(i){
   const sp = document.getElementById("gr-"+i); sp.textContent = "生成中…";
   const r = await (await fetch("/api/generate",{method:"POST",
     headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({bounds:c.four_bounds, center:c.center, dealer:c.dealer_id})})).json();
+    body: JSON.stringify({area_id:c.area_id, bounds:c.four_bounds, center:c.center, dealer:c.dealer_id})})).json();
   if (r.error){ sp.textContent = "✗ "+esc(r.error); return; }
   drawDraft(r);
   sp.textContent = "已生成";
@@ -504,7 +504,7 @@ document.getElementById("genAll").onclick = async ()=>{
     stat.textContent = `生成中 ${done+1}/${BOOT.contracts.length}`;
     const r = await (await fetch("/api/generate",{method:"POST",
       headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({bounds:c.four_bounds, center:c.center, dealer:c.dealer_id})})).json();
+      body: JSON.stringify({area_id:c.area_id, bounds:c.four_bounds, center:c.center, dealer:c.dealer_id})})).json();
     done++;
     if (r.error) continue;
     generated.add(c.dealer_id);
