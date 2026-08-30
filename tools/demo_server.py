@@ -653,7 +653,45 @@ class Handler(BaseHTTPRequestHandler):
                 dealer = body.get("dealer")
                 bounds = {}
                 center = None
-                # 首选：台账重放（自动描述/手动话术 → 单元并集），零几何切割
+                # 首选：TerritoryIR 编译结果（精确回放）
+                tcf = pack["data_dir"] / "territory_compiled.json"
+                trows = json.loads(tcf.read_text(encoding="utf-8")) if tcf.exists() else []
+                hit = None
+                if area_id:
+                    hit = next((x for x in trows if x.get("area_id") == area_id), None)
+                if hit is None and dealer:
+                    hit = next((x for x in trows if x["dealer"] == dealer), None)
+                if hit:
+                    # 从 territory_compiled.json 获取引擎词
+                    terms = hit.get("engine_terms") or hit.get("desc_compact")
+                    area_id = area_id or hit.get("area_id")
+                    if terms:
+                        led: Ledger = STATE["ledger"]
+                        owner_key = f"{dealer or (area_id or '')}#{area_id or 'manual'}"
+                        errt = []
+                        for tm in terms:
+                            try:
+                                led.assign(tm, owner_key)
+                            except ValueError:
+                                errt.append(tm)
+                        sel = set(led.fence_units(owner_key))
+                        if sel:
+                            u = led.fence_geom(owner_key)
+                            rings = ([list(u.exterior.coords)] if u.geom_type == "Polygon"
+                                     else [list(p.exterior.coords) for p in u.geoms])
+                            self._send(200, {
+                                "ring": [list(pp) for pp in rings[0]],
+                                "rings": [[list(map(list, pp))] for pp in rings],
+                                "area_km2": round(u.area * 11320 * 1.0084, 2),
+                                "units": len(sel),
+                                "interpretation": "territory-ir", "draft_quality": "ok",
+                                "conflicts": _conflicts([]),
+                                "lines_used": {"allocator": "territory-ir-compiler",
+                                               "terms": terms, "unresolved": errt},
+                                "missing": [], "bounds_geometry": {},
+                                "dealer": dealer or owner_key})
+                            return
+                # 回退：描述词台账重放
                 descrows = []
                 dcf = pack["data_dir"] / "desc_cover_eval.json"
                 if dcf.exists():
