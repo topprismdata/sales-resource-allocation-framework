@@ -229,7 +229,7 @@ const KIND_NAME = {OK:"围栏内一致", OOF:"非围栏供货", DIRECT_IN:"直�
 
 const canvasR = L.canvas({padding: 0.3});
 const map = L.map("map", {zoomSnap: 0.25}).setView([23.05, 113.35], 10);
-L.tileLayer("https://webst0{s}.is.autonavi.com/appmaptile?style=6&x={x}&y={y}&z={z}",
+L.tileLayer("https://webrd01.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}",
             {attribution:"© OpenStreetMap"}).addTo(map);
 const storeLayer = L.layerGroup().addTo(map);
 const fenceLayer = L.layerGroup().addTo(map);
