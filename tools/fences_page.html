@@ -78,6 +78,25 @@
 const DCOLORS = ["#e6194b","#3cb44b","#4363d8","#f58231","#911eb4","#46f0f0","#f032e6",
                  "#bcf60c","#fabebe","#008080","#9a6324","#800000"];
 const map = L.map('map');
+// 自动描述（顶层作用域）
+let DESC = [];
+fetch('/api/dealer_desc').then(r=>r.json()).then(d=>{DESC = d;});
+const ledgerLayer = L.layerGroup().addTo(map);
+async function loadToLedger(dealerName, terms){
+  for (const tm of terms){
+    await fetch('/api/ledger_cmd',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({text:`${tm}给${dealerName}`})});
+  }
+  const r = await fetch('/api/ledger').then(x=>x.json());
+  ledgerLayer.clearLayers();
+  r.owners.forEach((o)=>{
+    o.rings.forEach(rg=>L.polygon(rg.map(q=>[q[1],q[0]]),
+      {color:'#d32f2f',weight:2.5,fillColor:'#d32f2f',fillOpacity:.12})
+      .bindTooltip(`台账: ${o.owner} (${o.units}单元/${o.area_km2}km²)`,{sticky:true})
+      .addTo(ledgerLayer));
+  });
+}
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
             {maxZoom: 18, attribution: '© OSM'}).addTo(map);
 let DATA, cur = -1;
@@ -174,25 +193,6 @@ fetch('/api/fences').then(r=>r.json()).then(d=>{
     const d=await r.json(); ymeg.textContent=d.message;
     yeLayers.clearLayers(); location.reload();
   };
-  // 自动描述
-  let DESC = [];
-  fetch('/api/dealer_desc').then(r=>r.json()).then(d=>{DESC = d;});
-  const ledgerLayer = L.layerGroup().addTo(map);
-  async function loadToLedger(dealerName, terms){
-    for (const tm of terms){
-      await fetch('/api/ledger_cmd',{method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({text:`${tm}给${dealerName}`})});
-    }
-    const r = await fetch('/api/ledger').then(x=>x.json());
-    ledgerLayer.clearLayers();
-    r.owners.forEach((o,i)=>{
-      o.rings.forEach(rg=>L.polygon(rg.map(q=>[q[1],q[0]]),
-        {color:'#d32f2f',weight:2.5,fillColor:'#d32f2f',fillOpacity:.12})
-        .bindTooltip(`台账: ${o.owner} (${o.units}单元/${o.area_km2}km²)`,{sticky:true})
-        .addTo(ledgerLayer));
-    });
-  }
   // 列表
   const list = document.getElementById('list');
   d.dealers.forEach((de,i)=>{
