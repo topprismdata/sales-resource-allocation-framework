@@ -319,9 +319,9 @@ function renderLegend(){
 }
 
 // ---------- 启动 ----------
+var TERR = [];
 async function boot(){
   BOOT = await (await fetch("/api/bootstrap")).json();
-  let TERR = [];
   try{ TERR = await (await fetch("/api/territory_desc")).json(); }catch(e){}
   const regs = await (await fetch("/api/regions")).json();
   const sel = document.getElementById("regionSel");
