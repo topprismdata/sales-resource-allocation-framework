@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""逐经销商：真实单元构成 vs 紧描述推演（文献接地版）。
+"""逐经销商：真实单元构成 vs 紧描述（文献+贪心混合）。
 
-真实构成 = 质心落入围栏的基础单元，按街道归并 + 占比标签。
-紧描述 = 从构成推演的街道名（去重，按占比降序）。
-J 诊断 = 紧描述投影能否复现单元集（整街高，飞地低）。
+三输出：
+  desc_compact = 贪心选的紧描述（净增益，高J，台账重演用）
+  desc_full    = 结构化事实完整描述（含占比，正确答案）
+  compose      = 结构化事实（全部街道+占比）
 """
 import json, sys
-from collections import Counter, OrderedDict
+from collections import Counter
 sys.path.insert(0, "/Users/ghb/sales-resource-allocation-framework")
 import shapely
 from shapely.geometry import Polygon
@@ -26,7 +27,7 @@ for a in attrs:
 
 
 def human_compose(orig):
-    """真实单元组合 → 结构化事实：[(街道名, 单元数, 街道总数, 占比标签)]"""
+    """结构化事实"""
     cnt = Counter(attrs[u]["street"] for u in orig if attrs[u]["street"])
     items = []
     for stn, n in cnt.most_common():
@@ -46,23 +47,29 @@ def human_compose(orig):
     return items
 
 
-def compact_desc(compose):
-    """紧描述 = 街道名（去重，按占比降序）"""
-    seen = set()
-    return [stn for stn, _, _, _ in compose if not (stn in seen or seen.add(stn))]
-
-
-def full_desc(compose):
-    """完整描述 = 街道名+占比"""
-    return " + ".join(f"{stn}({tag})" for stn, _, _, tag in compose)
-
-
-def project(terms):
-    """紧描述投影到单元集"""
-    proj = set()
-    for stn in terms:
-        proj |= by_street.get(stn, set())
-    return proj
+def greedy_compact(orig, max_terms=10):
+    """贪心紧描述"""
+    covered = set()
+    terms = []
+    cand = [(stn, by_street.get(stn, set())) for stn, _, _, _ in
+            sorted(human_compose(orig), key=lambda x: -x[1]/x[2])]
+    while len(terms) < max_terms:
+        best = None
+        for label, s in cand:
+            new = s - covered
+            gain = len(new & orig) - len(new - orig)
+            if gain < 1:
+                continue
+            sc = (len(new & orig), len(new & orig) / len(new) if new else 0)
+            if best is None or sc > best[0]:
+                best = (sc, label, s)
+        if best is None:
+            break
+        covered |= best[2]
+        terms.append(best[1])
+        if orig <= covered:
+            break
+    return terms
 
 
 def main():
@@ -79,28 +86,28 @@ def main():
         if not orig:
             continue
         compose = human_compose(orig)
-        terms = compact_desc(compose)
-        proj = project(terms)
+        compact = greedy_compact(orig)
+        proj = set()
+        for stn in compact:
+            proj |= by_street.get(stn, set())
         j = len(proj & orig) / len(proj | orig) if proj | orig else 0
+        full = " + ".join(f"{stn}({tag})" for stn, n, tot, tag in compose)
         out.append({"area_id": f["area_id"], "dealer": f["dealer"],
                     "orig_units": len(orig),
                     "compose": compose,
-                    "desc_compact": terms,
-                    "desc_full": full_desc(compose),
+                    "desc_compact": compact,
+                    "desc_full": full,
                     "J": round(j, 2)})
-    # 打印
     for r in sorted(out, key=lambda x: -(x["J"] or 0)):
         comp = "；".join(f"{s}({tag})" for s, n, tot, tag in r["compose"][:6])
         print(f"【{r['dealer'][:18]}】{r['orig_units']}单元 J={r['J']}")
         print(f"    真实构成: {comp}")
-        print(f"    紧描述: {';'.join(r['desc_compact'][:8])}")
-        print(f"    完整描述: {r['desc_full']}")
+        print(f"    紧描述({len(r['desc_compact'])}项): {';'.join(r['desc_compact'][:8])}")
     import statistics as st
     js = [r["J"] for r in out if r["J"] is not None]
     print(f"\n=== 共{len(out)}家 诊断J 中位={st.median(js):.2f} "
           f"≥0.9={sum(1 for x in js if x>=0.9)} ≥0.8={sum(1 for x in js if x>=0.8)} ===")
-    json.dump(out, open(f"{DATA}/dealer_unit_descriptions.json", "w"),
-              ensure_ascii=False, indent=1)
+    json.dump(out, open(f"{DATA}/dealer_unit_descriptions.json", "w"), ensure_ascii=False, indent=1)
     print("saved dealer_unit_descriptions.json")
 
 

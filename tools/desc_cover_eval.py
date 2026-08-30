@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""区域构成描述生成（文献接地版）。
+"""区域构成描述（文献 + 贪心混合）。
 
-管线：围栏多边形 → 质心入选 → 按街道归并 → 结构化事实 → 紧描述推演 → J诊断。
-
-J 是诊断指标：紧描述（街道名）能否复现单元集。对整街型 J≈1.0，飞地型 J≈0.0。
-完整描述（含占比）才是正确答案。
+双输出：
+  desc_compact = 贪心选的街道名（净增益，高J，台账重演用）
+  desc_full    = 结构化事实完整描述（含占比，正确答案）
+  compose      = 结构化事实（全部街道+占比，文献接地）
 """
 import json, sys, math
 from collections import Counter
@@ -24,7 +24,6 @@ attrs = [{"id": i, "street": u.get("street"), "district": u.get("district")}
 units = [shapely.from_wkt(u["geom"]) for u in OFF]
 utree = STRtree(units)
 
-# 预计算：街道 → 全部单元集
 by_street = {}
 for a in attrs:
     if a["street"]:
@@ -32,7 +31,7 @@ for a in attrs:
 
 
 def human_compose(orig):
-    """真实单元组合 → 结构化事实：[(街道名, 单元数, 街道总数, 占比标签)]"""
+    """结构化事实：[(街道名, 单元数, 街道总数, 占比标签, 占比)]"""
     cnt = Counter(attrs[u]["street"] for u in orig if attrs[u]["street"])
     items = []
     for stn, n in cnt.most_common():
@@ -52,23 +51,29 @@ def human_compose(orig):
     return items
 
 
-def make_description(compose, orig):
-    """从结构化事实推演紧描述和完整描述。"""
-    # 紧描述 = 街道名（按占比降序, 去重），用于台账重演
-    seen = set()
-    compact = []
-    for stn, n, tot, tag, frac in compose:
-        if stn not in seen:
-            compact.append(stn)
-            seen.add(stn)
-    # 完整描述 = 街道名+占比（人类可读）
-    full_parts = [f"{stn}({tag})" for stn, n, tot, tag, frac in compose]
-    full = " + ".join(full_parts)
-    # 紧描述投影到单元集
-    proj = set()
-    for stn in compact:
-        proj |= by_street.get(stn, set())
-    return compact, full, proj
+def greedy_compact(orig, max_terms=10):
+    """贪心选紧描述（净增益），高J。选完即止，不要求全。"""
+    covered = set()
+    terms = []
+    cand = [(stn, by_street.get(stn, set())) for stn, _, _, _, _ in
+            sorted(human_compose(orig), key=lambda x: -x[4])]
+    while len(terms) < max_terms:
+        best = None
+        for label, s in cand:
+            new = s - covered
+            gain = len(new & orig) - len(new - orig)
+            if gain < 1:
+                continue
+            sc = (len(new & orig), len(new & orig) / len(new) if new else 0)
+            if best is None or sc > best[0]:
+                best = (sc, label, s)
+        if best is None:
+            break
+        covered |= best[2]
+        terms.append(best[1])
+        if orig <= covered:
+            break
+    return terms
 
 
 def main():
@@ -84,23 +89,29 @@ def main():
         orig = {int(i) for i in utree.query(zg) if units[int(i)].centroid.within(zg)}
         if not orig:
             continue
+        # 结构化事实（文献）
         compose = human_compose(orig)
-        compact, full, proj = make_description(compose, orig)
+        full_parts = [f"{stn}({tag})" for stn, n, tot, tag, _ in compose]
+        # 贪心紧描述（高J，台账重演用）
+        compact = greedy_compact(orig)
+        # 投影计算J
+        proj = set()
+        for stn in compact:
+            proj |= by_street.get(stn, set())
         j = len(proj & orig) / len(proj | orig) if proj | orig else 0
         p = len(proj & orig) / len(proj) if proj else 0
         r = len(proj & orig) / len(orig) if orig else 0
         rows.append({"dealer": f["dealer"], "area_id": f["area_id"],
                      "orig": len(orig), "sel": len(proj),
-                     "P": round(p, 2), "R": round(r, 2),
-                     "J": round(j, 2),
+                     "P": round(p, 2), "R": round(r, 2), "J": round(j, 2),
                      "desc_compact": compact,
-                     "desc_full": full,
+                     "desc_full": " + ".join(full_parts),
                      "compose": [[stn, n, tot, tag] for stn, n, tot, tag, _ in compose]})
     import statistics as st
     rows.sort(key=lambda x: -x["J"])
     for r in rows:
-        info = f"J={r['J']:.2f} P={r['P']:.2f} R={r['R']:.2f}  {r['dealer'][:14]:<16} {r['orig']}→{r['sel']}单元"
-        print(f"{info}  {r['desc_full'][:60]}")
+        print(f"J={r['J']:.2f} {r['dealer'][:14]:<16} {r['orig']}→{r['sel']}单元 "
+              f"{len(r['desc_compact'])}项: {';'.join(r['desc_compact'][:5])}")
     print(f"\n中位 J={st.median(x['J'] for x in rows):.2f} "
           f"≥0.9: {sum(1 for x in rows if x['J']>=0.9)}/{len(rows)} "
           f"≥0.8: {sum(1 for x in rows if x['J']>=0.8)}/{len(rows)}")
