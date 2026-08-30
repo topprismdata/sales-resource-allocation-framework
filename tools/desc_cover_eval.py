@@ -22,7 +22,7 @@ reg = json.load(open(f"{DATA}/region.json", encoding="utf-8"))
 pack_from_disk(reg, [], meta)
 attrs = json.load(open(f"{DATA}/unit_attributes.json", encoding="utf-8"))["units"]
 units = [shapely.from_wkt(u["wkt"]) for u in
-         json.load(open(f"{DATA}/basic_units_v5_wgs.json", encoding="utf-8"))["units"]]
+         json.load(open(f"{DATA}/basic_units_hybrid.json", encoding="utf-8"))["units"]]
 utree = STRtree(units)
 
 # 预计算集合

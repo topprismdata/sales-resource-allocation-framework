@@ -23,7 +23,7 @@ class Ledger:
         d = json.load(open(f"{DATA}/unit_attributes.json", encoding="utf-8"))
         self.attrs = d["units"]                       # id → district/street/roads
         self.geoms = [shapely.from_wkt(u["wkt"]) for u in
-                      json.load(open(f"{DATA}/basic_units_v5_wgs.json",
+                      json.load(open(f"{DATA}/basic_units_hybrid.json",
                                      encoding="utf-8"))["units"]]
         self.owner = {}                               # unit_id → owner
         self.log = []
@@ -44,14 +44,24 @@ class Ledger:
             if a["district"]:
                 self.by_district.setdefault(a["district"], set()).add(a["id"])
 
-    def resolve_units(self, term):
-        """街道名/区名/路名 → 单元 id 集合。"""
+    def _one(self, term):
         if term in self.by_street:
             return set(self.by_street[term])
         if term in self.by_road:
             return set(self.by_road[term])
         if term in self.by_district:
             return set(self.by_district[term])
+        return set()
+
+    def resolve_units(self, term):
+        """街道名/区名/路名/复合(街道沿路) → 单元 id 集合。"""
+        if "沿" in term:
+            a, b = term.split("沿", 1)
+            sa, sb = self._one(a.strip()), self._one(b.strip())
+            return (sa & sb) if (sa and sb) else (sa | sb)
+        r = self._one(term)
+        if r:
+            return r
         # 模糊：街道名包含
         hits = set()
         for k, v in self.by_street.items():
@@ -72,13 +82,15 @@ class Ledger:
         owner = m.group(1) if m else owner_hint
         if not owner:
             raise ValueError("缺少接收方（…给XX）")
-        # 术语：抓取方位词前的地名
-        m2 = re.search(r"([^\s，。；,;]+?)(?:的)?(北|南|东|西)(?:部|边|侧)?", t)
-        direction = m2.group(2) if m2 else None
-        term = m2.group(1) if m2 else None
-        if term is None:
-            m3 = re.search(r"^([^\s，。；,;]+?)给", t)
-            term = m3.group(1) if m3 else None
+        # 术语 = "给X" 之前整段；方位仅当以 …的北部/…北部 结尾时识别
+        m3 = re.search(r"(.+?)给", t)
+        raw = m3.group(1).strip() if m3 else t.split("给")[0].strip()
+        direction = None
+        md = re.search(r"^(.+?)的?(北|南|东|西)(?:部|边|侧)$", raw)
+        if md:
+            term, direction = md.group(1).strip(), md.group(2)
+        else:
+            term = raw
         if not term:
             raise ValueError("未识别分配对象（街道/区/路名）")
         units = self.resolve_units(term)
@@ -101,6 +113,26 @@ class Ledger:
         for u in units:
             self.owner[u] = owner
         self.log.append(f"{text} → {owner} +{len(units)}单元")
+        return owner, len(units)
+
+    def assign(self, term, owner):
+        """直接按术语指派（无 NL 解析，供自动重放）。"""
+        md = re.search(r"^(.+?)的?(北|南|东|西)(?:部|边|侧)$", term)
+        direction = None
+        if md:
+            term, direction = md.group(1), md.group(2)
+        units = self.resolve_units(term)
+        if not units:
+            raise ValueError(f"找不到『{term}』")
+        if direction:
+            dv = {"北": (0, 1), "南": (0, -1), "东": (1, 0), "西": (-1, 0)}[direction]
+            g = unary_union([self.geoms[u] for u in units])
+            c = g.centroid
+            units = {u for u in units if
+                     (self.geoms[u].centroid.x - c.x) * dv[0]
+                     + (self.geoms[u].centroid.y - c.y) * dv[1] > 0}
+        for u in units:
+            self.owner[u] = owner
         return owner, len(units)
 
     def fence_units(self, owner):

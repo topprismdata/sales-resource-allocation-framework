@@ -641,13 +641,58 @@ class Handler(BaseHTTPRequestHandler):
             w = STATE["world"]
             if self.path == "/api/generate":
                 area_id = body.get("area_id")
+                dealer = body.get("dealer")
+                bounds = {}
+                center = None
+                # 首选：台账重放（自动描述/手动话术 → 单元并集），零几何切割
+                descrows = []
+                dcf = pack["data_dir"] / "desc_cover_eval.json"
+                if dcf.exists():
+                    descrows = json.loads(dcf.read_text(encoding="utf-8"))
+                terms = body.get("terms")
+                if terms is None:
+                    hit = None
+                    if area_id:
+                        hit = next((x for x in descrows if x.get("area_id") == area_id), None)
+                    if hit is None and dealer:
+                        hit = next((x for x in descrows if x["dealer"] == dealer), None)
+                    if hit:
+                        terms = hit["desc"]
+                        area_id = area_id or hit.get("area_id")
+                if terms:
+                    led: Ledger = STATE["ledger"]
+                    owner_key = f"{dealer or (area_id or '')}#{area_id or 'manual'}"
+                    errt = []
+                    for tm in terms:
+                        try:
+                            led.assign(tm, owner_key)
+                        except ValueError:
+                            errt.append(tm)
+                    sel = set(led.fence_units(owner_key))
+                    if sel:
+                        u = led.fence_geom(owner_key)
+                        rings = ([list(u.exterior.coords)] if u.geom_type == "Polygon"
+                                 else [list(p.exterior.coords) for p in u.geoms])
+                        self._send(200, {
+                            "ring": [list(pp) for pp in rings[0]],
+                            "rings": [[list(map(list, pp))] for pp in rings],
+                            "area_km2": round(u.area * 11320 * 1.0084, 2),
+                            "units": len(sel),
+                            "interpretation": "ledger", "draft_quality": "ok",
+                            "conflicts": _conflicts([]),
+                            "lines_used": {"allocator": "ledger-replay",
+                                           "terms": terms, "unresolved": errt},
+                            "missing": [], "bounds_geometry": {},
+                            "dealer": dealer or owner_key})
+                        return
+                ce = None
                 if area_id:
                     ce = next((c for c in pack["contracts"]
                                if c.get("area_id") == area_id), None)
-                    if ce:
-                        bounds = ce.get("four_bounds") or {}
-                        center = ce.get("center")
-                        dealer = ce.get("dealer_id", "合同重建围栏")
+                if ce:
+                    bounds = ce.get("four_bounds") or {}
+                    center = ce.get("center")
+                    dealer = ce.get("dealer_id", "合同重建围栏")
                 if not bounds:
                     bounds = body.get("bounds") or {}
                 if not center:
