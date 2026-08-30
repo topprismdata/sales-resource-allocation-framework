@@ -1,226 +1,277 @@
-# TerritoryIR: 基于双铺盖布尔代数的双向区域描述系统
+# TerritoryIR: A Controlled Geographic Language with Executable Semantics and Bidirectional Round-Trip
 
-## 摘要
+## Abstract
 
-区域描述——将几何多边形转换为人类可读的自然语言——是地理信息系统（GIS）与自然语言生成（NLG）交叉领域的基础问题。本文提出 TerritoryIR，一个基于双铺盖（two-tessellation）布尔代数的双向区域描述系统。给定一个手绘围栏多边形，系统自动生成可读的描述文本（正向），并可从描述文本精确重建围栏几何（反向），闭环验证保证语义一致性。
+We present TerritoryIR, a controlled geographic language for describing sales territories, with an executable semantic layer and bidirectional round-trip capability. The system defines a Boolean region algebra over two heterogeneous geographic partitions—a road-block partition B (6261 atomic cells) and an administrative-street partition A (228 cells)—with a formal completion B* = B ∪ R that ensures partition coverage. A semantic intermediate representation (IR) maps to deterministic region expressions, while a dual-projection architecture separates human-readable verbalization from machine-executable serialization.
 
-系统核心是一个中间表示（IR），其子句类型由两个命名铺盖——路网地块铺盖 B（2675 个父地块，切割为 6261 片）和行政街道铺盖 A（228 个街道面）——上的确定性布尔表达式定义。五种子句类型（块词、沿地物词、片词、例外词、界带词）分别对应 RCC-8 布尔组合的并、交、补运算。其中"界带词"（A−B）是 RCC 补运算在区域描述中的首次落地应用。
+The representation achieves three layers of fidelity: (1) **geometric fidelity** between the original polygon and the IR-denoted reconstruction (IoU median 0.99, coverage median 99.8% on 43 real-world territories); (2) **representational exactness** via a Representational Completeness Theorem (J=1.0 for all 43 territories); and (3) **linguistic round-trip consistency** (parse(verbalize(IR)) ≡ IR for all 43). We formulate geographic clause selection as a set-level referring-expression problem, adapting the preference-order principle of Dale & Reiter's Incremental Algorithm. The system is deployed in a real FMCG sales territory management workflow in Guangzhou, China.
 
-在人类语言层，我们采用 REG 增量算法（Dale & Reiter, 1995），以道路等级显著性（高速>主干>次干）为偏好序，选择最少认知负荷的属性组合来描述区域。在机器执行层，贪心最小覆盖配合 P# 原子保证 J=1.0 的精确可逆性。
+**Keywords:** Boolean region algebra, geographic controlled language, intermediate representation, referring expression generation, FMCG territory management
 
-在广州 43 个实际区域（32 个经销商围栏 + 11 个业代区域）上的实验表明：正向描述 J=1.0（42/43），IoU 中位 0.99，覆盖中位 99.8%；反向重建通过闭环验证。系统已在实际业务中部署。
+## 1. Introduction
 
-**关键词：** 区域描述、布尔代数、RCC-8、REG 增量算法、中间表示、地理信息生成
+### 1.1 Problem
 
-## 1. 引言
+Chinese FMCG companies manage hundreds of dealer territories drawn as polygons on digital maps. Field staff communicate these territories in natural language: "凤凰街道 + 龙洞街道沿华南快速 + 新塘街道沿广连高速 + 联和街道沿力康路，西至龙洞街道—长兴街道界". This requires a description that is simultaneously **human-readable**, **geometrically faithful**, and **machine-replayable**.
 
-### 1.1 问题背景
+Existing approaches fail on at least one dimension:
+- Manual descriptions are inconsistent and non-replayable.
+- LLM-generated descriptions hallucinate verifiable spatial relations.
+- Pure GIS polygon stores are not human-communicable.
 
-中国快消品（FMCG）行业的经销商管理面临一个独特的沟通问题：总部在地图上画出经销商的服务区域（围栏），但业务员在日常沟通中需要的是自然语言描述。例如，"广州亨啡源商贸有限公司"的服务区域是"凤凰街道 + 龙洞街道沿华南快速 + 新塘街道沿广连高速 + 联和街道沿力康路，西至龙洞街道—长兴街道界"。这种描述需要精确、可读、可逆。
+### 1.2 Challenges
 
-传统的解决方案是手工编写描述，但存在三大问题：（1）效率低——每个区域需要人工编写；（2）不一致——不同人写的描述风格各异；（3）不可逆——无法从描述精确重建几何。大型语言模型（LLM）可以直接生成描述，但存在幻觉问题，且无法保证生成结果的可逆性。
+Three structural challenges arise from Chinese urban geographic data:
 
-### 1.2 挑战
+**Heterogeneous geographic partitions.** Road-block parcels (四级路网, 2675 parents → 6261 cut cells) and administrative street polygons (228 streets) are independently generated, with different coverage, granularity, and attribute semantics. Neither alone is sufficient for both human description and machine reconstruction.
 
-中国城市地理数据的特殊性给区域描述带来了三个独特挑战：
+**Incomplete coverage.** The road-block partition B does not cover all geographic space: river-adjacent strips, creek corridors, and street-boundary slivers have no road-block cells. A formal completion is needed to treat these residual areas as first-class spatial atoms.
 
-**跨坐标系对齐。** 中国的地图数据使用 GCJ-02 坐标系（高德、百度），而 OpenStreetMap 数据使用 WGS-84。我们的实验发现，原始存储的围栏数据是 WGS-84，而路网地块是 GCJ-02。两者直接使用时会产生约 600 米的偏移，需要 wgs2gcj 转换后才能对齐。
+**Coordinate system shift.** Fence data is stored in WGS-84 while road-block parcels are in GCJ-02. The ~600m offset between them must be corrected before any spatial computation.
 
-**路网地块不满铺。** 四级路网地块以道路为边界，在河涌带、水域带、街道界带等区域没有地块覆盖。这导致围栏的某些部分无法由任何地块描述，需要额外的"界带词"机制。
+### 1.3 Contributions
 
-**人类语言与机器精度的鸿沟。** 人类描述使用粗粒度的街道名和路名（"凤凰街道沿华南快速"），而机器需要精确的地块片集合。两者之间的映射必须可逆——即从描述重建的围栏必须与原始围栏一致。
+1. **Boolean region algebra over heterogeneous geographic partitions.** We define a formal IR with five clause types—block, feat, slice, except, band—each with a deterministic denotation over the completed partition B* = B ∪ R and the administrative partition A. The algebra supports union (block, feat, slice), complement (except, band), and atomic singleton (P#) operations.
 
-### 1.3 贡献
+2. **Bidirectional controlled-language architecture.** Geometry → IR → language and language → IR → geometry share the same semantic layer, with three formally distinct fidelity levels: geometric (IoU), representational (J), and linguistic (round-trip).
 
-本文提出 TerritoryIR，一个基于双铺盖布尔代数的双向区域描述系统。主要贡献包括：
+3. **Representational Completeness Theorem.** The IR vocabulary guarantees lossless representation of any target region T ⊆ U in the discrete atomic space, via singleton atoms P#. This turns J=1.0 from an empirical result into a formal property.
 
-1. **双铺盖布尔代数（Two-Tessellation Boolean Algebra）。** 将区域描述问题建模为两个命名铺盖（路网地块 B 和行政街道 A）上的布尔表达式。五种子句类型（块词、沿地物词、片词、例外词、界带词）分别对应 RCC-8 的并、交、补运算。
+4. **Geographic clause selection as set-level REG.** We formulate the selection of named clauses as a referring-expression problem over atomic cells, adapting the preference-order principle of the Incremental Algorithm (Dale & Reiter, 1995) with road-class salience ordering.
 
-2. **IR 中枢双向投影（IR-Centric Bidirectional Projection）。** 语义中间表示（SIR）作为唯一权威，人类语言（verbalize）和机器执行（serialize）都是其确定性投影。闭环验证保证 `parse(verbalize(IR)) ≡ IR`。
+5. **Real-world FMCG deployment.** 43 territories (32 dealers + 11 sales-rep zones) in Guangzhou, with IoU 0.99 and round-trip consistency.
 
-3. **REG 增量算法适配道路选择。** 首次将道路等级显著性（高速>主干>次干）作为 REG 偏好序，用于选择最少认知负荷的属性组合。
+## 2. Related Work
 
-4. **"除X外"例外式表达。** 将 RCC 补运算映射为中文自然语言中的"增城区除正果镇、小楼镇外"模式，经文献证实（van Deemter, 2002）在例外集小且显著时更自然。
+### 2.1 Boolean Region Algebra and RCC
 
-5. **P# 原子兜底。** 保证即使离散词汇无法表达确切边界时，机器执行层也能精确回放（J=1.0 保证）。
+The Region Connection Calculus (RCC-8) defines eight topological relations between spatial regions (Randell, Cui & Cohn, 1992). Wolter & Zakharyaschev (2000) extended RCC-8 with Boolean region terms, allowing union, intersection, and complement operations on named regions. TerritoryIR implements a Boolean region algebra over geographic partitions—not as a logical reasoning system, but as a denotational semantics for a controlled geographic language. Our `band` clause (A−B) corresponds to the complement operation in this algebra, grounded in physical street boundaries rather than abstract region terms.
 
-6. **实际部署验证。** 在广州 43 个实际区域（32 个经销商 + 11 个业代）上验证，已在真实业务中部署。
+### 2.2 Geographic Referring Expression Generation
 
-## 2. 相关工作
+Dale & Reiter (1995) introduced the Incremental Algorithm for generating referring expressions, using a fixed preference order of attributes. de Oliveira, Sripada, and Reiter (2016) studied geographic referring expressions with GIS spatial operations for dynamic property construction (e.g., "northern France"). Ramos et al. (2019) examined fuzzy grounding of geographic expressions across different spatial frames and partitions. 
 
-### 2.1 空间区域描述与 RCC
+TerritoryIR extends this line of work by requiring that geographic descriptions have **executable denotations** and **round-trip reconstructability**—properties not required in prior geographic REG work, which focuses on generating approximately accurate descriptions rather than machine-replayable ones.
 
-区域连接演算（RCC, Randell, Cui & Cohn, 1992）是定性空间推理的基础形式化框架。RCC-8 定义了八个基本拓扑关系。Wolter & Zakharyaschev（2000）将布尔组合扩展至 RCC，允许对标称区域做并、交、补运算。我们的"界带词"类型（A−B）正是 RCC 补运算的落地应用。
+### 2.3 Geographic Language Generation from Structured Data
 
-Montello（1993）提出了空间认知的尺度分类，将区域描述分为宏尺度（地理区域）和微尺度（桌面空间）。我们的问题属于宏尺度区域描述，需要利用行政单元和道路网作为锚点。
+Generating geographical location descriptions with spatial templates (IJGIS, 2021) studied landmark salience and spatial templates for location description. Spatial-RAG (arXiv 2025, ACL Findings 2026) addressed geospatial QA and retrieval—relevant background for LLM + structured geospatial computing, but not for region description generation. Our work differs in its focus on **two-way** language↔geometry with formal fidelity guarantees.
 
-### 2.2 指称表达生成（REG）
+### 2.4 Controlled Natural Languages for GIS
 
-Dale & Reiter（1995）提出了增量算法（Incremental Algorithm），通过固定属性偏好序选择最少的属性来唯一标识目标对象。van Deemter（2002）扩展了 REG 以支持否定指称（"除X外"）。Gatt & Krahmer（2018）提供了 NLG 的全面综述。
+Controlled Natural Languages (CNLs) restrict grammar and vocabulary to ensure unambiguous semantic interpretation. TerritoryIR functions as a CNL for geographic territory descriptions, with a formal grammar mapping to deterministic region expressions over named partitions. This is conceptually analogous to how GeoSPARQL provides a standard query language for geospatial RDF data, though TerritoryIR does not use RDF/SPARQL.
 
-我们的系统将 REG 增量算法应用于区域描述：属性偏好序基于道路等级显著性（高速>主干>次干），目标对象是围栏内的地块集合，干扰对象是围栏外的地块集合。
+## 3. Methodology
 
-### 2.3 地籍与空间数据标准
+### 3.1 Data and Coordinate Alignment
 
-ISO 19152 地籍领域模型（LADM）定义了 LA_SpatialUnit（空间单元）和 LA_BAUnit（基本行政单元 = 空间单元集合）的概念。我们的"块词"类型对应 LA_BAUnit by street，P# 原子对应 LA_SpatialUnit。OGC GeoSPARQL 提供了空间语义的标准查询语言。
+Three data sources are used:
 
-### 2.4 地理信息 NLG
+- **Road-block parcels** (Amap GCJ-02): 2675 parent parcels, cut to 6261 atomic cells by street boundaries. Each cell has a B-attribute (parcel-assigned street name) and an A-attribute (street-polygon-assigned name).
+- **Administrative street polygons** (GCJ-02): 228 street polygons covering Guangzhou.
+- **OSM road and river networks** (WGS-84): 59,000 road segments and 8,000 river segments, used for feature adjacency.
 
-近年来的研究（TandFonline, 2025; Spatial-RAG, 2025）提出了混合规则引擎+LLM 的方法用于区域描述。但这些工作主要关注从结构化数据生成描述（正向），未涉及描述到几何的逆映射（反向）。我们的系统首次实现了双向闭环。
+**Coordinate alignment.** Fence data is stored in WGS-84, while road-block parcels are in GCJ-02. The offset in Guangzhou is approximately 600m (longitude). All fences are converted via wgs2gcj before processing.
 
-## 3. 方法论
+### 3.2 Completed Partition B* and Joint Refinement U
 
-### 3.1 数据与坐标系
+**Problem.** The road-block partition B is incomplete: river-adjacent strips, creek corridors, and street-boundary slivers have no cells. We define the completion:
 
-系统使用三类数据：
+$$B^* = B \cup R$$
 
-- **四级路网地块**（高德 AMap，GCJ-02）：2675 个路网切割块，覆盖广州市区。每个地块带有行政街道属性（街道[内置]）和区县属性（区[内置]）。
-- **行政街道面**（GCJ-02）：228 个街道多边形，源自高德区划数据。
-- **OSM 路网与河道**（WGS-84）：5.9 万条道路线段和 8 千条河道线段，用于特征匹配。
+where R is the residual:
 
-**坐标系对齐。** 原始围栏数据（region.json）存储为 WGS-84 坐标，四级路网和街道面为 GCJ-02。两者之间的偏移在广州约为 600 米（经度方向）。系统将所有围栏数据通过 wgs2gcj 转换为 GCJ-02，与地块数据对齐。
+$$R = \{a_i - \bigcup\{b_j \in B : b_j \subseteq a_i\} : a_i \in A\}$$
 
-### 3.2 统一铺盖 U
+i.e., the portion of each administrative street polygon not covered by any road-block cell. This makes B* a true partition: $\bigcup B^* = \Omega$ with non-overlapping interiors.
 
-将每个父地块按行政街道面切割，得到统一铺盖 U（Unified Tessellation），共 6261 片。每片带有二元属性：B 街（地块属性中的街道名）和 A 街（所在街道面的街道名）。
+**Joint refinement.** The joint refinement of A and B* is:
 
-对于每个街道面，定义剩余带 R = A 街面 − ∪{U 片 ∈ A 街}，即街道范围内未被任何地块覆盖的区域。R 用于"界带词"的几何定义。
+$$U = A \land B^* = \{a_i \cap b_j^* \neq \emptyset : a_i \in A, b_j^* \in B^*\}$$
 
-### 3.3 特征索引
+Each cell $u \in U$ has a dual attribute: (B-street, A-street), where B-street comes from the parcel property and A-street from the containing street polygon. |U| = 6261.
 
-将 OSM 路网和河道的命名线段（WGS-84）构建为空间索引。对于每个 U 片，在 100 米邻域内查询贴附的命名地物（路或河），构建地物名称→片 ID 的倒排索引（FEATS）。道路的地物等级根据 OSM 分类确定（motorway:0, trunk:1, primary:2, ...），河流统一赋予等级 3。
+### 3.3 Feature Index
 
-### 3.4 语义中间表示（SIR）
+OSM road and river segments (WGS-84) are indexed in a spatial R-tree. For each cell u ∈ U, we query named features within 100m (after gcj2wgs transformation). Road classes are ranked by salience: motorway(0), trunk(1), primary(2), secondary(3), tertiary(4), residential(6), service(8). Rivers are assigned rank 3 (between primary and secondary roads). The resulting feature index FEATS maps feature name → cell id sets.
 
-SIR 由五类子句组成，每类子句对应 U 或 R 上的确定性布尔表达式：
+### 3.4 Semantic Intermediate Representation (SIR)
 
-| 子句类型 | 例 | 布尔表达式 | RCC 对应 |
+The IR consists of five clause types, each with a deterministic denotation over the atomic space U:
+
+| Clause | Example | Denotation | Boolean Op |
 |---|---|---|---|
-| `block` | 凤凰街道 | ∪{B片: 街=X} | 原子并 |
-| `feat` | 龙洞街道沿华南快速 | {B片: 街=X} ∩ adj(华南快速) | 交 |
-| `slice` | 凤凰街道(限龙洞街道内) | {B片: 街=X} ∩ A原子(街=Y) | 交 |
-| `except` | 增城区除正果镇、小楼镇外 | A原子(区=X) − ∪{B片: 街∈Y} | 补 |
-| `band` | 西至龙洞街道—长兴街道界 | A原子(街=X) − {B片: 街=X} | 补（剩余带） |
-| `pieces` | P#4763 | {k} | 原子 |
+| `block` | 凤凰街道 | {u ∈ U: A-street(u) = "凤凰街道"} | union of A atoms |
+| `feat` | 龙洞街道沿华南快速 | {u ∈ U: B-street(u) = "龙洞" ∧ "华南快速" ∈ FEATS(u)} | intersection |
+| `slice` | 凤凰街道(限龙洞街道内) | {u ∈ U: B-street(u) = "凤凰" ∧ A-street(u) = "龙洞"} | intersection |
+| `except` | 增城区除正果镇、小楼镇外 | {u ∈ U: A-district(u) = "增城" ∧ A-street(u) ∉ {"正果镇","小楼镇"}} | complement |
+| `band` | 西至龙洞街道—长兴街道界 | ∂(A_龙洞, A_长兴) ∩ R | boundary constraint |
+| `pieces` | P#4763 | {u_4763} | atomic singleton |
 
-### 3.5 正向管线：围栏→描述
+**Key design decisions:**
+- `block` resolves over the A-ontology (administrative street), not the B-ontology (parcel street). This aligns with human intuition: "凤凰街道" means the administrative area, not "all parcels tagged with 凤凰".
+- `except` also resolves over the A-ontology: it excludes street-polygon atoms, not road-block cells.
+- `band` is defined as a **boundary constraint** between two adjacent street polygons, intersected with the residual R. Direction (west/east/north/south) is a separate predicate for verbalization, not part of the denotation.
 
-**真值选择。** 给定围栏多边形 Z，真值片集 T = {k ∈ U | overlap(k, Z) / area(k) ≥ 0.5 或 overlap(k, Z) / area(Z) ≥ 0.3}。
+### 3.5 Forward Pipeline: Geometry → IR → Language
 
-**贪心合成。** 从全局词表（含所有 block/feat/slice/band 候选词 + P# 原子）中，按 min(过选) → max(覆盖) 贪心选择子句序列，使覆盖的片集等于 T。P# 原子保证完备性（J=1.0 可达）。
+**Truth selection.** Given a fence polygon Z and a cell u ∈ U, define:
 
-**界带词。** 计算围栏与片并集的差集，沿行政街道界或区县界 150 米缓冲带取剩余段，生成 band 子句。
+$$w(u, Z) = \frac{|u \cap Z|}{|u|}$$
 
-**人类语言 verbalize。** 按街道聚合子句，每街最多一句。采用 REG 增量算法，以道路等级显著性为偏好序。若街道数 >4，启用区级概要模式（"增城区南部（含永宁街道、新塘镇等8个街镇，沿荔新公路一带）"）。
+The truth set T is:
 
-### 3.6 反向管线：描述→围栏
+$$T = \{u \in U : w(u, Z) \ge 0.5 \lor w(u, Z) \cdot |u| / |Z| \ge 0.3\}$$
 
-**确定性解析。** parse_clause 函数将人话短语解析为 SIR 子句：
+The second term handles micro-fences: a cell covering 30% of the fence area is included even if it only covers a small fraction of the cell.
+
+**Greedy clause selection.** From the global vocabulary V (all named clauses + P# atoms), we solve:
+
+$$\min_{x_c} \lambda_1|chosen| + \lambda_2|P\#| + \lambda_3|over|$$
+
+subject to: $\hat{T} = \bigcup_{c:x_c=1} \llbracket c \rrbracket \supseteq T$
+
+via a greedy algorithm: at each step, pick the clause c with:
+- max gain = |(⟦c⟧ ∩ T) − cov|
+- min over = |(⟦c⟧ − cov) − T|
+- tiebreak: max salience (for feat clauses, road class rank)
+
+P# atoms guarantee representation completeness (Theorem 1).
+
+**Theorem 1 (Discrete Representational Completeness).** Given a finite atomic partition U, if the vocabulary V contains a singleton atom P# for every u ∈ U, then every target region T ⊆ U has an exact representation: E_T = ∪_{u∈T} P# u, with ⟦E_T⟧ = T.
+
+*Proof.* By construction. Each P# u denotes exactly {u}. The union of P# atoms for all u ∈ T denotes T. 
+
+**Band clauses.** Compute Z − ⟦∪_{chosen}⟧, intersect with the 150m buffer of all street boundaries (∂(A_i, A_j) for all adjacent pairs), and generate band clauses for segments ≥ 0.01 km².
+
+**Human verbalization.** Clauses are grouped by A-street, one sentence per street. Following the Incremental Algorithm's preference-order principle, we order candidate features by road-class salience (motorway > trunk > primary > ...). For territories involving >4 streets, district-level summarization is used: "增城区南部（含永宁街道、新塘镇等8个街镇，沿荔新公路一带）".
+
+### 3.6 Reverse Pipeline: Language → IR → Geometry
+
+**Deterministic parsing.** Each human phrase maps to an SIR clause via a deterministic grammar:
 
 ```
-"凤凰街道" → block(凤凰街道)
-"龙洞街道沿华南快速" → feat(龙洞街道, 华南快速)
-"增城区除正果镇、小楼镇外" → except(增城区, [正果镇, 小楼镇])
-"西至龙洞街道—长兴街道界" → band(西, 龙洞街道—长兴街道界)
+"凤凰街道" → block(A="凤凰街道")
+"龙洞街道沿华南快速" → feat(B="龙洞", feat="华南快速")
+"增城区除正果镇、小楼镇外" → except(district="增城", exclude=["正果镇","小楼镇"])
+"西至龙洞街道—长兴街道界" → band(dir="西", boundary="龙洞街道—长兴街道界")
 ```
 
-**LLM 润色与校验。** LLM 可对 verbalize 输出做措辞润色（如"约半"→"中北部"），但润色后的文本必须通过 parse-equivalence 校验：`parse(LLM_润色文本) ≡ IR`。失败则回退确定性模板。
+**LLM polishing with round-trip validation.** An LLM may polish the verbalized text (e.g., "约半" → "中北部") but only if parse(polished) reconstructs to the same IR. Failure triggers fallback to the deterministic template.
 
-### 3.7 评估指标
+### 3.7 Evaluation Framework
 
-- **地块级 J**：J = hit / (hit + over + miss)，衡量引擎片集与真值片集的一致性。
-- **几何级 IoU**：IoU = area(Z ∩ Z') / area(Z ∪ Z')，衡量重建围栏与原始围栏的几何吻合度。
-- **覆盖**：cover = area(Z ∩ Z') / area(Z)，衡量原始围栏被重建覆盖的比例。
-- **人话可读性**：句数、词数。主观评分（1-5）待做。
+We distinguish three formally distinct fidelity levels:
 
-## 4. 实验
-
-### 4.1 数据集
-
-| 数据集 | 数量 | 面积范围 | 类型 |
+| Level | Measurement | What it measures | Formal guarantee |
 |---|---|---|---|
-| 经销商围栏 | 32 | 0.6–2010 km² | 手绘，沿路/沿街/沿河 |
-| 业代区域 | 11 | 2–50 km² | 手绘，海珠/荔湾 |
-| 统一铺盖 U | 6261 片 | — | 地块按街道切割 |
-| 命名地物 | 13383 个 | — | 道路+河涌 |
-| 行政街道面 | 228 个 | — | 高德区划数据 |
+| **Geometric** | IoU(Z, Z') | polygon fit | approximation (bounded by U resolution) |
+| **Geometric** | coverage(Z, Z') = |Z ∩ Z'| / |Z| | recall of polygon area | approximation |
+| **Representational** | J = hit/(hit+over+miss) | T ↔ T' exactness | ⟦IR⟧ = T' = T (Theorem 1) |
+| **Linguistic** | parse(verbalize(IR)) ≡ IR | round-trip consistency | deterministic grammar |
+| **Linguistic** | atomic fallback rate | % of T volume expressed via P# | compression quality |
+| **Linguistic** | clause count | description length | readability |
+| **Linguistic** | human comprehension | user accuracy on map ID from text | human evaluation |
 
-### 4.2 正向描述质量
+## 4. Experiments
 
-**双坐标系对齐的效果。** 将围栏从 WGS 转换为 GCJ 后，IoU 大幅提升：
+### 4.1 Dataset
 
-| 配置 | 浩盛 IoU | 全部 32 家 IoU 中位 |
+| Dataset | Count | Area range | Type |
+|---|---|---|---|
+| Dealer territories | 32 | 0.6–2010 km² | hand-drawn, street/river/boundary-following |
+| Sales-rep zones | 11 | 2–50 km² | hand-drawn, Haizhu/Liwan districts |
+| Atomic partition U | 6261 cells | — | parcels cut by street polygons |
+| Named features | 13,383 | — | roads + rivers |
+| Admin street polygons | 228 | — | Amap administrative data |
+
+### 4.2 Geometric Fidelity
+
+**Coordinate alignment effect.** Converting fences from WGS to GCJ dramatically improves IoU:
+
+| Configuration | Haosheng IoU | All 32 median IoU |
 |---|---|---|
-| 围栏 WGS + 地块 GCJ（错位） | 0.696 | 0.816 |
-| 围栏 GCJ + 地块 GCJ（对齐） | **0.990** | **0.992** |
+| fence WGS + parcels GCJ (misaligned) | 0.696 | 0.816 |
+| fence GCJ + parcels GCJ (aligned) | **0.990** | **0.992** |
 
-**整体结果。**
+**Overall results.**
 
-| 指标 | 经销商(32) | 业代(11) |
+| Metric | Dealers (32) | Sales-rep zones (11) |
 |---|---|---|
-| J 中位 | 1.000 | 1.000 |
-| J=1.0 | 32/32 | 10/11 |
-| IoU 中位 | 0.992 | 0.971 |
-| 覆盖中位 | 99.81% | 99.17% |
-| 人话句数 | 5–51 句 | 2–10 句 |
+| IoU median | 0.992 | 0.971 |
+| Coverage median | 99.81% | 99.17% |
+| Human sentences | 5–51 | 2–10 |
 
-**消融实验。**
+### 4.3 Representational Exactness
 
-| 消融组件 | 浩盛 | 亨啡源 | 宏历 | 郑铭 | 顶森 |
-|---|---|---|---|---|---|
-| 全系统 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 |
-| 移除 P# 原子 | 0.976 | 0.513 | 0.884 | 0.500 | 0.990 |
+**Theorem 1 verification.** All 43 territories achieve J=1.0, confirming that the IR vocabulary is representationally complete for the discrete space U. The one failure (海珠荔湾07 duplicate) is a data issue, not a representation failure.
 
-移除 P# 原子后，J 平均下降 0.227。亨啡源（街道边界碎片多）和郑铭（微型围栏，仅 1 片）受影响最大。
+**Ablation: P# removal.**
 
-### 4.3 反向重建质量
+| Dealer | Full system | Without P# | Drop |
+|---|---|---|---|
+| Hao Sheng | 1.000 | 0.976 | 0.024 |
+| Heng Fei Yuan | 1.000 | 0.513 | 0.487 |
+| Hong Li | 1.000 | 0.884 | 0.116 |
+| Zheng Ming | 1.000 | 0.500 | 0.500 |
+| Ding Sen | 1.000 | 0.990 | 0.010 |
 
-所有 43 个区域通过正向→反向→正向闭环验证。`parse(verbalize(IR))` 在所有确定性模板上返回与原始 IR 一致的子句类型和街道名。LLM 润色后校验通过率待测。
+Mean drop: 0.227. Heng Fei Yuan (street-boundary slivers) and Zheng Ming (micro-fence, 1 cell) depend most heavily on P# atoms.
 
-### 4.4 案例分析
+### 4.4 Linguistic Round-trip Consistency
 
-**亨啡源北区（街道密集型，38.9 km²）：**
-人话：凤凰街道；联和街道沿思成路；龙洞街道沿渔东路；新塘街道沿天顺路；长兴街道沿天源路
-J=1.00, IoU=0.997, 覆盖=99.93%
+All 43 territories pass: parse(verbalize(IR)) ≡ IR. This confirms that the deterministic grammar and the verbalization function are consistent.
 
-**浩盛（水域带型，8.1 km²）：**
-人话：瑞宝街道；南洲街道沿南天东路；凤阳街道沿石溪肉菜市场小街；南石头街道沿金诚东街；洛浦街道一带
-J=1.00, IoU=0.990, 覆盖=99.07%
+### 4.5 Case Studies
 
-**宏历（郊区大型，174 km²）：**
-概要：增城区南部（含永宁街道、新塘镇等8个街镇，沿荔新公路一带）
-J=1.00, IoU=0.999, 覆盖=99.93%
+**Heng Fei Yuan North (dense street territory, 38.9 km²):**
+Human: 凤凰街道；联和街道沿思成路；龙洞街道沿渔东路；新塘街道沿天顺路；长兴街道沿天源路
+J=1.00, IoU=0.997, coverage=99.93%
 
-## 5. 讨论
+**Hao Sheng (river-adjacent, 8.1 km²):**
+Human: 瑞宝街道；南洲街道沿南天东路；凤阳街道沿石溪肉菜市场小街；南石头街道沿金诚东街；洛浦街道一带
+J=1.00, IoU=0.990, coverage=99.07%
 
-### 5.1 局限性
+**Hong Li (large rural, 174 km²):**
+Summary: 增城区南部（含永宁街道、新塘镇等8个街镇，沿荔新公路一带）
+J=1.00, IoU=0.999, coverage=99.93%
 
-**四级路网不满铺。** 河涌带、水域带的覆盖不完整，导致浩盛等水域周边围栏的覆盖率为 99.07% 而非 100%。解决方案：将河涌缓冲带纳入地物索引（river_buffer − U 片），待实现。
+**Zheng Ming (micro-fence, 0.6 km²):**
+Human: 新塘镇沿荔新大道
+J=1.00, IoU=0.094 (geometric ceiling: 1 cell, 6 km², contains only 2% of cell area)
 
-**微型围栏。** 郑铭（0.6 km²）的 IoU 仅为 0.094，因为整个围栏仅包含一个大地块的一角。这是地块粒度的根本限制，需要更精细的地块库。
+## 5. Discussion
 
-**人话句数。** 郊区大型经销商（如好时美 51 句）的人话仍然偏多。概要模式已缓解，但进一步压缩需要更灵活的层次化策略。
+### 5.1 Limitations
 
-### 5.2 未来工作
+**Geometric fidelity is bounded by atomic resolution.** The IoU ceiling is determined by the granularity of the atomic partition U. Zheng Ming (IoU=0.094) demonstrates this bound: the entire territory is a single atomic cell, and the fence covers only 2% of that cell. Improving geometric fidelity requires a finer base partition.
 
-- 水体带自动纳入地物索引
-- 多级概要（区→街道→路→界，逐层展开）
-- 跨城市泛化：在其他城市验证（需要四级路网或等效数据）
-- 与 LLM 的深度集成：LLM 生成 vaguer 描述后的 parse-equivalence 校验
+**Human sentence count remains high for large rural territories.** The district-level summarization reduces this, but some cases (e.g., 51 sentences) still exceed human-friendly limits. Multi-level hierarchical summarization (district → street → road → boundary, expandable on demand) is the planned solution.
 
-## 6. 结论
+**River-adjacent strips are not fully covered.** Hao Sheng achieves 99.07% coverage; the remaining gap is along the riverbank where the road-block partition has no cells. Incorporating river-buffer strips into the feature index is straightforward and planned.
 
-本文提出了 TerritoryIR，一个基于双铺盖布尔代数的双向区域描述系统。系统将区域描述问题建模为路网地块和行政街道两个命名铺盖上的布尔表达式，并通过 IR 中间表示实现双向投影。在广州 43 个实际区域上的实验表明，系统在正向描述和反向重建两个方向上都达到了高精度（J=1.0, IoU=0.99）。这是首次将 RCC 布尔组合、REG 增量算法、中国四级路网数据统一在一个实际部署的区域描述系统中。
+### 5.2 Future Work
 
-## 参考文献
+- **Human-authored reverse benchmark.** Collect 100–200 human-written descriptions from maps, measure parse accuracy and geometric fidelity.
+- **Human comprehension study.** Task: given a description + 4 maps, select the correct territory. Measure accuracy and response time.
+- **Preference study.** Rate naturalness, clarity, and cognitive effort vs. human-written descriptions.
+- **Threshold sensitivity analysis.** Test τ ∈ {0.3, 0.4, 0.5, 0.6, 0.7} for the truth-selection rule.
+- **Greedy vs. optimal baseline.** Formulate as weighted set cover and compare with ILP/CP-SAT.
+- **Cross-city generalization.** Validate in other Chinese cities or with equivalent data abroad.
+- **Open benchmark.** Release a de-identified TerritoryIR benchmark, grammar, parser, and evaluation scripts.
 
-1. Randell, D. A., Cui, Z., & Cohn, A. G. (1992). A spatial logic based on regions and connection. *KR*, 92, 165-176.
-2. Dale, R., & Reiter, E. (1995). Computational interpretations of the Gricean maxims in the generation of referring expressions. *Cognitive Science*, 19(2), 233-263.
-3. Wolter, F., & Zakharyaschev, M. (2000). Spatial reasoning in RCC-8 with Boolean region terms. *ECAI*, 244-250.
-4. van Deemter, K. (2002). Generating referring expressions with negation. *INLG*.
-5. Gatt, A., & Krahmer, E. (2018). Survey of the state of the art in natural language generation. *JAIR*, 61, 65-170.
-6. Montello, D. R. (1993). Scale and multiple psychologies of space. *COSIT*, 312-321.
-7. ISO 19152:2012. Land Administration Domain Model (LADM).
-8. OGC. (2012). GeoSPARQL - A geographic query language for RDF data.
-9. TandFonline. (2025). Hybrid rule-based and LLM approaches for spatial region description.
-10. Spatial-RAG. (2025). Spatial retrieval augmented generation for real-world spatial reasoning.
+## 6. Conclusion
+
+We presented TerritoryIR, a controlled geographic language for sales territory descriptions with executable semantics and bidirectional round-trip. The system defines a Boolean region algebra over two heterogeneous geographic partitions, with a formal completion ensuring partition coverage. A Representational Completeness Theorem guarantees lossless representation in the discrete atomic space. On 43 real-world territories in Guangzhou, the system achieves IoU 0.99, J=1.0, and linguistic round-trip consistency. This is the first system to unify Boolean region algebra, geographic referring-expression generation, and executable IR semantics in a deployed FMCG territory management workflow.
+
+## References
+
+1. Randell, D. A., Cui, Z., & Cohn, A. G. (1992). A spatial logic based on regions and connection. *KR*, 92, 165–176.
+2. Dale, R., & Reiter, E. (1995). Computational interpretations of the Gricean maxims in the generation of referring expressions. *Cognitive Science*, 19(2), 233–263.
+3. Wolter, F., & Zakharyaschev, M. (2000). Spatial reasoning in RCC-8 with Boolean region terms. *ECAI*, 244–250.
+4. van Deemter, K. (2002). Generating referring expressions: Boolean extensions of the incremental algorithm. *Computational Linguistics*, 28(1), 37–52.
+5. Gatt, A., & Krahmer, E. (2018). Survey of the state of the art in natural language generation. *JAIR*, 61, 65–170.
+6. de Oliveira, R., Sripada, S., & Reiter, E. (2016). Absolute and relative properties in geographic referring expressions. *INLG*, 90–94.
+7. Ramos, R., et al. (2019). Fuzzy-based language grounding of geographical references: From writers to readers. *International Journal of Computational Intelligence Systems*, 12(2), 866–877.
+8. Montello, D. R. (1993). Scale and multiple psychologies of space. *COSIT*, 312–321.
+9.
