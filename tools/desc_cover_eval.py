@@ -52,6 +52,7 @@ def gen_description(orig, max_terms=16, min_gain=1):
             s = street_road.get(k + (rd,))
             if s:
                 cand.append((f"{k[1]}沿{rd}", k + (rd,), s))
+    # 阶段1：净增益贪心（主体，已验证最优）
     while len(terms) < max_terms:
         best = None
         for label, key, s in cand:
@@ -59,7 +60,6 @@ def gen_description(orig, max_terms=16, min_gain=1):
             gain = len(new & orig) - len(new - orig)
             if gain < min_gain:
                 continue
-            # 打分：净新增覆盖，平手时选精确率高的
             prec = (len(new & orig) / len(new)) if new else 0
             sc = (len(new & orig), prec)
             if best is None or sc > best[0]:
@@ -71,6 +71,25 @@ def gen_description(orig, max_terms=16, min_gain=1):
         cand = [(l, k, s) for (l, k, s) in cand if s != best[2]]
         if orig <= covered:
             break
+    # 阶段2：飞地补词——对仍未覆盖的单元，选含它且精度最高的路级词
+    leftover = orig - covered
+    while leftover and len(terms) < max_terms:
+        best = None
+        for label, key, s in cand:
+            new = s - covered
+            hit = len(new & leftover)
+            if hit == 0:
+                continue
+            prec = hit / len(new) if new else 0
+            sc = (round(prec, 4), hit)
+            if best is None or sc > best[0]:
+                best = (sc, label, s)
+        if best is None:
+            break
+        covered |= best[2]
+        terms.append((best[1], len(best[2])))
+        cand = [(l, k, s) for (l, k, s) in cand if s != best[2]]
+        leftover = orig - covered
     return terms, covered
 
 
