@@ -1,7 +1,7 @@
 {
   "pilot": "cc-unit-selection-pilot",
   "contracts_version": "v1.7",
-  "current_phase": "P4",
+  "current_phase": "DONE",
   "phases": {
     "P0": {
       "status": "done",
@@ -72,10 +72,21 @@
       "tasks": []
     },
     "P4": {
-      "status": "ready",
+      "status": "done",
       "gate": "G4",
       "owner": "L2+L0",
-      "tasks": []
+      "tasks": [
+        "T-401",
+        "T-402",
+        "T-403",
+        "T-404"
+      ],
+      "task_status": {
+        "T-401": "done",
+        "T-402": "done",
+        "T-403": "done",
+        "T-404": "done"
+      }
     }
   },
   "gates": {
@@ -121,7 +132,15 @@
       "l0_crosscheck": "14/14 exact",
       "note": "首轮FAIL捕获契约缺陷v1.7，修正后通过"
     },
-    "G4": null
+    "G4": {
+      "result": "reported_no_threshold",
+      "corpus": "[合成语料]",
+      "llm": "not_configured_not_called",
+      "median_jaccard": 0.5,
+      "components_accuracy": "13/21",
+      "parse_success": "21/21",
+      "l0_crosscheck": "一致"
+    }
   },
   "model_escalation": {
     "L2_current": "glm-5.3-flash",
@@ -147,5 +166,6 @@
       "G3必须100%",
       "ESCALATION仍需L0裁定"
     ]
-  }
+  },
+  "tests_total": 367
 }
