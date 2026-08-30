@@ -1,7 +1,7 @@
 {
   "pilot": "cc-unit-selection-pilot",
-  "contracts_version": "v1.3",
-  "current_phase": "P2",
+  "contracts_version": "v1.5",
+  "current_phase": "P3",
   "phases": {
     "P0": {
       "status": "done",
@@ -28,19 +28,28 @@
       }
     },
     "P2": {
-      "status": "ready",
+      "status": "done",
       "gate": "G2-a/b/c",
       "owner": "L2",
-      "tasks": []
+      "tasks": [
+        "T-201",
+        "T-202",
+        "T-203",
+        "T-204"
+      ],
+      "task_status": {
+        "T-201": "done",
+        "T-202": "done",
+        "T-203": "done",
+        "T-204": "done"
+      }
     },
     "P2b": {
-      "status": "conditional",
-      "trigger": "G2-c < 0.90",
-      "owner": "L2",
-      "tasks": []
+      "status": "done_by_L0_experiment",
+      "result": "浩盛 0.8382→0.9500，触发解除"
     },
     "P3": {
-      "status": "todo",
+      "status": "ready",
       "gate": "G3",
       "owner": "L2+L1",
       "tasks": []
@@ -69,11 +78,32 @@
       "date": "2026-08-30",
       "by": "L0 独立验收",
       "tests": 56,
-      "assertions": 26
+      "assertions": 26,
+      "signed_by": "业务方（/goal 授权连续执行）"
     },
-    "G2-a": null,
-    "G2-b": null,
-    "G2-c": null,
+    "G2-a": {
+      "result": "pass",
+      "overlap_ratio": 3.68766e-11,
+      "edges": 538,
+      "isolated": 0
+    },
+    "G2-b": {
+      "result": "pass",
+      "median_iou": 0.969111,
+      "n": 17
+    },
+    "G2-c": {
+      "result": "baseline",
+      "n": 4,
+      "iou": [
+        0.83825,
+        0.987194,
+        0.944507,
+        0.947839
+      ],
+      "p2b_triggered": true,
+      "p2b_resolved_by_fine_faces": true
+    },
     "G3": null,
     "G4": null
   },
@@ -90,5 +120,16 @@
     "yeidai_fences": 17
   },
   "dispatch_mechanism": "L0→L2 直接派发（L1 沙箱无法运行 omp，见 JOURNAL 01:30）",
-  "crs_verdict": "SAME_CRS_GCJ02 (median_A=0.00175m, median_C=623.8m)"
+  "crs_verdict": "SAME_CRS_GCJ02 (median_A=0.00175m, median_C=623.8m)",
+  "autonomous_mode": {
+    "authorized": true,
+    "scope": "P2→P4",
+    "red_lines": [
+      "D-1",
+      "D-2",
+      "D-3",
+      "G3必须100%",
+      "ESCALATION仍需L0裁定"
+    ]
+  }
 }
