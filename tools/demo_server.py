@@ -280,8 +280,12 @@ class Handler(BaseHTTPRequestHandler):
         pass
 
     def _send(self, code: int, body: dict | str, ctype="application/json; charset=utf-8"):
-        data = body.encode("utf-8") if isinstance(body, str) else \
-            json.dumps(body, ensure_ascii=False).encode("utf-8")
+        if isinstance(body, str):
+            data = body.encode("utf-8")
+        elif isinstance(body, bytes):
+            data = body
+        else:
+            data = json.dumps(body, ensure_ascii=False).encode("utf-8")
         self.send_response(code)
         self.send_header("Content-Type", ctype)
         self.send_header("Cache-Control", "no-store")

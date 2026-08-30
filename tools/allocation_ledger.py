@@ -22,8 +22,8 @@ class Ledger:
     def __init__(self):
         d = json.load(open(f"{DATA}/unit_attributes.json", encoding="utf-8"))
         self.attrs = d["units"]                       # id → district/street/roads
-        self.geoms = [shapely.from_wkt(u["wkt"]) for u in
-                      json.load(open(f"{DATA}/basic_units_hybrid.json",
+        self.geoms = [shapely.from_wkt(u["geom"]) for u in
+                      json.load(open(f"{DATA}/basic_units_wgs.json",
                                      encoding="utf-8"))["units"]]
         self.owner = {}                               # unit_id → owner
         self.log = []

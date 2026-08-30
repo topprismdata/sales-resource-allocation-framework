@@ -20,9 +20,10 @@ DATA = "/Users/ghb/sales-resource-allocation-framework/data/gz"
 meta = json.load(open(f"{DATA}/meta.json", encoding="utf-8"))
 reg = json.load(open(f"{DATA}/region.json", encoding="utf-8"))
 pack_from_disk(reg, [], meta)
-attrs = json.load(open(f"{DATA}/unit_attributes.json", encoding="utf-8"))["units"]
-units = [shapely.from_wkt(u["wkt"]) for u in
-         json.load(open(f"{DATA}/basic_units_hybrid.json", encoding="utf-8"))["units"]]
+_off = json.load(open(f"{DATA}/basic_units_wgs.json", encoding="utf-8"))["units"]
+attrs = [{"id": i, "street": u.get("street"), "district": u.get("district"),
+          "roads": []} for i, u in enumerate(_off)]
+units = [shapely.from_wkt(u["geom"]) for u in _off]
 utree = STRtree(units)
 
 # 预计算集合
@@ -90,7 +91,8 @@ def main():
         j = len(sel & orig) / len(sel | orig) if sel | orig else 0
         p = len(sel & orig) / len(sel) if sel else 0
         r = len(sel & orig) / len(orig) if orig else 0
-        rows.append({"dealer": f["dealer"], "orig": len(orig),
+        rows.append({"dealer": f["dealer"], "area_id": f["area_id"],
+                     "orig": len(orig),
                      "sel": len(sel), "P": round(p, 2), "R": round(r, 2),
                      "J": round(j, 2), "nterms": len(terms),
                      "desc": [t[0] for t in terms]})
