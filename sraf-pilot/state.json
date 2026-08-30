@@ -1,7 +1,7 @@
 {
   "pilot": "cc-unit-selection-pilot",
-  "contracts_version": "v1.5",
-  "current_phase": "P3",
+  "contracts_version": "v1.7",
+  "current_phase": "P4",
   "phases": {
     "P0": {
       "status": "done",
@@ -49,10 +49,21 @@
       "result": "浩盛 0.8382→0.9500，触发解除"
     },
     "P3": {
-      "status": "ready",
+      "status": "done",
       "gate": "G3",
       "owner": "L2+L1",
-      "tasks": []
+      "tasks": [
+        "T-301",
+        "T-302",
+        "T-303",
+        "T-304"
+      ],
+      "task_status": {
+        "T-301": "done",
+        "T-302": "done",
+        "T-303": "done",
+        "T-304": "done"
+      }
     },
     "P3b": {
       "status": "conditional",
@@ -61,7 +72,7 @@
       "tasks": []
     },
     "P4": {
-      "status": "todo",
+      "status": "ready",
       "gate": "G4",
       "owner": "L2+L0",
       "tasks": []
@@ -104,7 +115,12 @@
       "p2b_triggered": true,
       "p2b_resolved_by_fine_faces": true
     },
-    "G3": null,
+    "G3": {
+      "result": "pass",
+      "tests": 231,
+      "l0_crosscheck": "14/14 exact",
+      "note": "首轮FAIL捕获契约缺陷v1.7，修正后通过"
+    },
     "G4": null
   },
   "model_escalation": {
