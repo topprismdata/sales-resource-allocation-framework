@@ -43,7 +43,7 @@
       <label><input type="checkbox" id="ckSub" checked> 街道/乡镇界（紫点线）</label>
       <label><input type="checkbox" id="ckAdmin" checked> 区界线（深蓝粗虚线）</label>
       <label><input type="checkbox" id="ckTruth" checked> 真实围栏（当前经销商）</label>
-      <label><input type="checkbox" id="ckYed" checked> 业代片区·海珠荔湾（橙）</label>
+      <label><input type="checkbox" id="ckYed"> 业代片区·海珠荔湾（橙）</label>
       <div class="legend">
         <span style="color:#e6194b">■</span>/<span style="color:#f58231">■</span> 当前经销商围栏（多块时分色+标注面积）<br>
         <span style="color:#7b1fa2">┅</span> 街道/乡镇界 <span style="color:#0d47a1">┅</span> 区界<br>
@@ -110,6 +110,7 @@ const layers = {
   admin: L.layerGroup(), sub: L.layerGroup(),
   me: null, center: null
 };
+const yeLayers = L.layerGroup();
 fetch('/api/fences').then(r=>r.json()).then(d=>{
   DATA = d;
   document.getElementById('dcount').textContent = `经销商（${d.dealers.length}）`;
@@ -128,7 +129,6 @@ fetch('/api/fences').then(r=>r.json()).then(d=>{
             opacity:.95}).bindTooltip('▫ '+name, {sticky:true}).addTo(layers.sub);
   layers.sub.addTo(map);
   // 业代片区（橙）
-  const yeLayers = L.layerGroup();
   fetch('/api/yeidai').then(r=>r.json()).then(d=>{
     const DC = ["#e67e22","#f1c40f","#8e44ad","#16a085","#c0392b","#2980b9",
                 "#27ae60","#d35400","#7f8c8d","#2c3e50","#e84393"];
@@ -138,7 +138,7 @@ fetch('/api/fences').then(r=>r.json()).then(d=>{
         {color:DC[i%DC.length],weight:2,fillColor:DC[i%DC.length],fillOpacity:.18})
         .bindTooltip(`业代 ${z.name} (${z.area}km²)`,{sticky:true}).addTo(yeLayers));
     });
-    yeLayers.addTo(map);
+    if (document.getElementById('ckYed').checked) yeLayers.addTo(map);
   });
   document.getElementById('ckYed').onchange = e=>{
     e.target.checked ? map.addLayer(yeLayers) : map.removeLayer(yeLayers);
@@ -241,7 +241,7 @@ function select(i){
     const a = ringArea(r);
     const c2 = multi ? ["#e6194b","#f58231","#4363d8"][k%3] : col;
     const pg = L.polygon(r.map(q=>[q[1],q[0]]),
-        {color:c2, weight:3, fillOpacity:.15}).addTo(layers.me);
+        {color:c2, weight:4, fillOpacity:.28, className:'selglow'}).addTo(layers.me);
     pg.bindTooltip(`${de.name}${multi?` 第${k+1}块`:''} ${a.toFixed(1)}km²`,
                    {sticky:true});
     if (multi){
@@ -252,6 +252,11 @@ function select(i){
     }
   });
   layers.me.addTo(map);
+  // 选中即独显：自动关掉业代/区界/街道，避免多套图层叠加致糊
+  for (const [id,ly] of [["ckYed",yeLayers],["ckAdmin",layers.admin],["ckSub",layers.sub]]){
+    const cb=document.getElementById(id);
+    if (cb && cb.checked){ cb.checked=false; if(ly) map.removeLayer(ly); }
+  }
   if (de.center.length)
     layers.center = L.circleMarker([de.center[1],de.center[0]],
       {radius:6,color:'#000',fillColor:'#fff',fillOpacity:1,weight:2})
