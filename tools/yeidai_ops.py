@@ -19,7 +19,8 @@ class YeidaiState:
     def __init__(self):
         d = json.load(open(f"{DATA}/basic_units_wgs.json", encoding="utf-8"))
         self.unit_geoms = [shapely.from_wkt(u["geom"]) for u in d["units"]]
-        g = json.load(open(f"{DATA}/unit_graph_hzlw.json", encoding="utf-8"))
+        try: g = json.load(open(f"{DATA}/unit_graph_hzlw.json", encoding="utf-8"))
+        except (FileNotFoundError, json.JSONDecodeError): g = {"nodes": [], "edges": [], "adjacency": {}, "unit_zone": {}, "zone_units": {}}
         self.adj = {int(k): set(v) for k, v in g["adjacency"].items()}
         self.unit_zone0 = {int(k): v for k, v in g["unit_zone"].items()}
         self.zone_units0 = g["zone_units"]
