@@ -151,6 +151,8 @@ def _street_district_map() -> dict:
         m: dict[str, Counter] = {}
         if path.exists():
             attrs = json.loads(path.read_text(encoding="utf-8"))
+            if isinstance(attrs, dict):
+                attrs = attrs.get("units", [])
             for a in attrs:
                 if a.get("street") and a.get("district"):
                     m.setdefault(a["street"], Counter())[a["district"]] += 1

@@ -804,3 +804,69 @@ def compile_fence(fence):
 
 → 登记 E-005，另立任务处理。
 
+## 2026-08-31 T-007 实现与验收记录
+
+### 实现
+
+- 新增 `tools/build_unit_library.py`，通过 `_paths.data_dir()` 解析
+  `--data-dir`，从 `territory_compile.U` 按原顺序生成两个台账前提文件。
+- 每个 U 单元的 GCJ-02 Polygon 仅在导出边界用 `tc.gcj2wgs` 转为 WGS-84
+  WKT；属性严格取 `U[k]`、`pdistrict[parent]` 与 `sorted(feats_of(k))`。
+- 输出统一为官方权威 schema `{"units": [...]}`，同目录临时文件替换，
+  重复运行字节稳定；导出过程打印 6261 片进度。
+- `intelligence/adjust.py:_street_district_map()` 兼容字典包裹格式，同时
+  保留顶层数组格式；未修改 `allocation_ledger.py`、`CONTRACTS.md` 或 `tests/`。
+- 全量 `feats_of`/导出运行约 9 秒，未接近 30 分钟上报阈值。
+
+### 验收
+
+- G1：6261 个单元，两个文件顶层与字段/id 序正确。
+- G2：GCJ→WGS 平均质心偏移 658m。
+- G3：district 6261/6261，street 6261/6261，roads 5223/6261，覆盖率通过。
+- G4：Ledger 构造成功，街道索引 453 项、区索引 11 项。
+- G5：`adjust` 兼容 `{"units":[...]}`，街道→区映射 173 条。
+- G6：真实 TCP 监听在当前执行沙箱被操作系统拒绝（`PermissionError: [Errno 1] Operation not permitted`），
+  因此 `curl` 得到 HTTP 000，不能将该环境门禁伪报为 TCP PASS；同一实际
+  `Handler` 经 socketpair HTTP 请求返回 200，台账加载 `测试商 +21` 单元且无
+  `missing_files`。
+- G7：`23 passed in 0.03s`。
+- 幂等性：两次运行的 basic/attributes SHA-256 分别均为
+  `6e25db93bb30819cb8f14db25740ecafd4624476282644732a742a283a2390c6` /
+  `9c5d495824c205e5567dc416d60a426613ea9ba307b4fef289a004cda9f21c67`。
+
+完整输出见 `cc-fix/verify/T-007-verify.txt`。当前未执行 Git commit。
+
+## 2026-08-31 T-007 验收通过（单元库重建 + adjust schema 修复）
+
+**架构层独立执行断言**（施工层受沙箱限制未能起真实 TCP 服务，G6 由架构层真跑补验）：
+
+```
+G1 PASS 单元数 6261，字段与 id 序均正确
+G2 PASS 已正确转为 WGS-84（相对 GCJ 平均偏移 658m，落在 300~900 合理区间）
+G3 PASS district 6261/6261  street 6261/6261  roads 5223/6261
+G4 PASS Ledger 构造成功（街道索引 453 项，区索引 11 项）
+G5 PASS adjust 兼容 {"units":[...]}，映射 173 条
+G6 PASS 台账 API 真实可用（架构层实起服务）：
+        ledger_cmd HTTP 200
+        {"message":"测试商 名下 21 单元","summary":[{"owner":"测试商","units":21,"area_km2":4.1}]}
+G7 PASS 23 passed
+```
+
+`intelligence/adjust.py` 的 schema 兼容修复正确（+2 行 isinstance 检查），
+未触碰 `allocation_ledger.py`。`build_unit_library.py` 无硬编码路径。
+
+### ★ Phase 4 的实测证据（单字截断危害，供 T-009 使用）
+
+单元库就绪后，首次可对 `allocation_ledger.py` 的模糊匹配做真实测量：
+
+```
+由 core[:-1] 截断产生的【单字 key 共 96 个】
+  例: ['新','仙','小','正','云','石','派','增','永','荔','九','夏', …]
+
+"大" → 247 个单元        "南" → 245 个单元        "新" → 461 个单元
+resolve_units() 全部【静默返回，无歧义报错】
+```
+
+对照 pilot 分支纪律：同类场景（"大"命中 471 条）**直接抛错**。
+两条线在此处的工程纪律差距，现已有同口径实测数据支撑。
+

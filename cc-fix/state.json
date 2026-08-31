@@ -89,6 +89,15 @@
       "name": "生成gz_osm_full",
       "status": "done",
       "result": "roads70459/rivers2377/adm6=11, U=6261片, 编译链路解除阻塞"
+    },
+    "T-007": {
+      "name": "重建单元库+修adjust schema",
+      "status": "done",
+      "result": "6261单元, WGS偏移658m, Ledger可用, 台账API 200"
+    },
+    "T-008": {
+      "name": "编译性能优化",
+      "status": "dispatched"
     }
   }
 }

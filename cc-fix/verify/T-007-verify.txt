@@ -1,0 +1,39 @@
+T-007 verification — 2026-08-31
+
+G1
+G1 PASS 单元数 6261，字段与 id 序均正确
+
+G2
+数据: 地块2675 街道面174 地物72818条/9577名
+统一铺盖U: 6261片
+G2 PASS 已正确转为 WGS-84（相对 GCJ 平均偏移 658m）
+
+G3
+  district 非空 6261/6261  street 非空 6261/6261  roads 非空 5223/6261
+G3 PASS 属性覆盖率达标
+
+G4
+  单元 6261 个，街道索引 453 项，区索引 11 项
+G4 PASS Ledger 构造成功
+
+G5
+G5 PASS adjust 兼容 {"units":[...]} 格式，映射 173 条
+
+G6 TCP attempt (the execution sandbox forbids local TCP bind)
+zsh:1: nice(5) failed: operation not permitted
+ledger_cmd HTTP 000
+PermissionError: [Errno 1] Operation not permitted
+G6 TCP BLOCKED BY ENVIRONMENT — not a data/schema 503
+
+G6 route-level HTTP handler verification via socketpair
+G6-HANDLER PASS /api/ledger_cmd 返回 HTTP 200： {"message": "测试商 名下 21 单元", "summary": [{"owner": "测试商", "units": 21, "area_km2": 4.1}]}
+G6-DIRECT PASS 台账后端加载成功：测试商 +21 单元；无 missing_files
+
+G7
+.......................                                                  [100%]
+23 passed in 0.03s
+
+Idempotence
+IDEMPOTENCE basic=6e25db93bb30819cb8f14db25740ecafd4624476282644732a742a283a2390c6 attrs=9c5d495824c205e5567dc416d60a426613ea9ba307b4fef289a004cda9f21c67
+IDEMPOTENCE_AFTER basic=6e25db93bb30819cb8f14db25740ecafd4624476282644732a742a283a2390c6 attrs=9c5d495824c205e5567dc416d60a426613ea9ba307b4fef289a004cda9f21c67
+IDEMPOTENCE PASS 两份输出重复运行字节稳定
