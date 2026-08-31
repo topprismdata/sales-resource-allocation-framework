@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 """围栏指纹注册表：每围栏的区/街道归属、贴边路名、邻接围栏、中心、面积。"""
 import json, sys, math
-sys.path.insert(0, "/Users/ghb/sales-resource-allocation-framework")
+import _paths
+sys.path.insert(0, str(_paths.ROOT))
 import shapely
 from shapely.geometry import Polygon, Point
 from shapely.strtree import STRtree
 from shapely.ops import unary_union
 from intelligence.coords import pack_from_disk
 
-DATA = "/Users/ghb/sales-resource-allocation-framework/data/gz"
+DATA = _paths.DATA
 meta = json.load(open(f"{DATA}/meta.json", encoding="utf-8"))
 reg = json.load(open(f"{DATA}/region.json", encoding="utf-8"))
 pack_from_disk(reg, [], meta)

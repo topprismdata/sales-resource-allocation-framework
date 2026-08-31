@@ -2,13 +2,14 @@
 """混合库属性索引：街道/区/贴边路名。无 adm6 依赖（区界不可信），
 district 由官方单元的 street→district 映射推导。"""
 import json, sys
-sys.path.insert(0, "/Users/ghb/sales-resource-allocation-framework")
+import _paths
+sys.path.insert(0, str(_paths.ROOT))
 import shapely
 from shapely.geometry import LineString
 from shapely.strtree import STRtree
 from shapely.ops import unary_union
 
-DATA = "/Users/ghb/sales-resource-allocation-framework/data/gz"
+DATA = _paths.DATA
 d = json.load(open(f"{DATA}/gz_osm_full.json", encoding="utf-8"))
 
 # 街道面（adm8，不裁剪）

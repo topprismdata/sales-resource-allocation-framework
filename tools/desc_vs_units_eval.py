@@ -8,14 +8,15 @@
 4. 单元重合度 P/R/J（按单元数）
 """
 import json, sys, math
-sys.path.insert(0, "/Users/ghb/sales-resource-allocation-framework")
+import _paths
+sys.path.insert(0, str(_paths.ROOT))
 import shapely
 from shapely.geometry import Polygon, Point, LineString
 from shapely.strtree import STRtree
 from shapely.ops import unary_union
 from intelligence.coords import pack_from_disk
 
-DATA = "/Users/ghb/sales-resource-allocation-framework/data/gz"
+DATA = _paths.DATA
 
 meta = json.load(open(f"{DATA}/meta.json", encoding="utf-8"))
 reg = json.load(open(f"{DATA}/region.json", encoding="utf-8"))

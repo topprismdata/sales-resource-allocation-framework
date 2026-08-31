@@ -1,0 +1,52 @@
+T-002 verification run: 2026-08-31
+Working directory: /Users/cai/Desktop/达能-SRP-AI/sraf
+Scope: path replacement only; no network access; no generated data files.
+
+B1
+command: test "$(grep -rl '/Users/ghb' tools/ 2>/dev/null | wc -l | tr -d ' ')" = "0"
+stdout/stderr:
+B1 PASS 无 /Users/ghb 残留
+exit_code: 0
+
+B2
+command: python3 -c '<provided _paths priority assertions>'
+stdout/stderr:
+B2 PASS _paths 三级优先级正确
+exit_code: 0
+
+B3
+command: python3 -c '<provided Ledger/YeidaiState path assertions>'
+stdout/stderr:
+  allocation_ledger.Ledger 缺数据但路径正确: /Users/cai/Desktop/达能-SRP-AI/sraf/data/gz/unit_attributes.json
+  yeidai_ops.YeidaiState 缺数据但路径正确: /Users/cai/Desktop/达能-SRP-AI/sraf/data/gz/basic_units_wgs.json
+B3 PASS 关键模块路径已本地化
+exit_code: 0
+
+B4
+command: python3 -m pytest tests/ -q 2>&1 | tail -3
+stdout/stderr:
+.......................                                                  [100%]
+23 passed in 0.05s
+exit_code: 0
+
+B5
+command: python3 -c '<provided territory_compile import assertion>'
+stdout/stderr:
+B5 PASS 两个 geojson 已读通，错误如期推进到 gz_osm_full.json
+exit_code: 0
+
+B6
+command: python3 tools/demo_server.py --data-dir data/gz 8798 2>&1 | tail -5
+stdout/stderr:
+              ^^^^^^^^^^^^^
+  File "/Users/cai/Desktop/达能-SRP-AI/sraf/tools/yeidai_ops.py", line 20, in __init__
+    d = json.load(open(f"{DATA}/basic_units_wgs.json", encoding="utf-8"))
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/Users/cai/Desktop/达能-SRP-AI/sraf/data/gz/basic_units_wgs.json'
+B6 PASS 启动报错已本地化
+assertion_exit_code: 0
+underlying_demo_server_exit_code: 1 (expected: missing derived data; no /Users/ghb path)
+
+Overall: B1-B6 PASS
+Additional syntax check: py_compile PASS (28 files)
+Additional whitespace check: git diff --check PASS

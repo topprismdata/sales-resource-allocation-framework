@@ -3,7 +3,9 @@
 真值T → (词label, 子句)对贪心覆盖 → SIR → 双投影(人话/引擎词)
 规范: data/gz/ONTOLOGY.md
 """
-import sys; sys.path.insert(0, "/Users/ghb/sales-resource-allocation-framework")
+import sys
+import _paths
+sys.path.insert(0, str(_paths.ROOT))
 import json
 from shapely.geometry import Polygon
 from shapely import wkt, ops
@@ -11,13 +13,13 @@ from shapely.strtree import STRtree
 from intelligence.coords import gcj2wgs
 from collections import Counter, defaultdict
 
-DATA = "/Users/ghb/sales-resource-allocation-framework/data/gz"
+DATA = _paths.DATA
 KM2 = 12364.0
 FEAT_BUF = 100 / 111000
 BAND_BUF = 150 / 111000
 
 # ---------- 数据 ----------
-d = json.load(open('/Users/ghb/Downloads/边界数据-路网-到区县带海岸线-四级路网-广东省-广州市.geojson'))
+d = json.load(open(_paths.SOURCE / "边界数据-路网-到区县带海岸线-四级路网-广东省-广州市.geojson"))
 parents = []; pstreet = []; pdistrict = []
 for f in d["features"]:
     g = f["geometry"]
@@ -28,7 +30,7 @@ for f in d["features"]:
     pdistrict.append(pr.get("区[内置]", ""))
 pt = STRtree(parents)
 
-sd = json.load(open('/Users/ghb/Downloads/区划数据-街道-广东省-广州市.geojson'))
+sd = json.load(open(_paths.SOURCE / "区划数据-街道-广东省-广州市.geojson"))
 spoly = []; sname = []
 for f in sd["features"]:
     g = f["geometry"]
@@ -279,7 +281,7 @@ def compile_fence(fence):
                 chosen.append((f"{pc.centroid.x:.4f}界带", band_clause(zg, pc)))
     # IR
     clauses = [cl for _, cl in chosen]
-    libhash = __import__("hashlib").sha256(open('/Users/ghb/Downloads/边界数据-路网-到区县带海岸线-四级路网-广东省-广州市.geojson','rb').read()).hexdigest()[:16]
+    libhash = __import__("hashlib").sha256(open(_paths.SOURCE / "边界数据-路网-到区县带海岸线-四级路网-广东省-广州市.geojson",'rb').read()).hexdigest()[:16]
     ir = {"area_id": fence["area_id"], "ir_version": 1, "tessellation": "U",
           "unit_library": f"{libhash}+cutv2", "clauses": clauses, "annotations": {}}
     # 验证: eval(ir) ⊇ T

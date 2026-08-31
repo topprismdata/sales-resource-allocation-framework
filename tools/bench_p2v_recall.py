@@ -7,13 +7,14 @@
   Recall@300 < 0.6 → 需要更强的隐式边界机制（face assignment / fuzzy field）
 """
 import json, sys, math
-sys.path.insert(0, "/Users/ghb/sales-resource-allocation-framework")
+import _paths
+sys.path.insert(0, str(_paths.ROOT))
 from intelligence.coords import pack_from_disk
 from shapely.geometry import LineString, box
 from shapely.ops import unary_union
 from shapely.strtree import STRtree
 
-DATA = "/Users/ghb/sales-resource-allocation-framework/data/gz"
+DATA = _paths.DATA
 meta = json.load(open(f"{DATA}/meta.json", encoding="utf-8"))
 reg = json.load(open(f"{DATA}/region.json", encoding="utf-8"))
 cons = []

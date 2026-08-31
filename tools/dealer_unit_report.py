@@ -8,11 +8,12 @@
 """
 import json, sys
 from collections import Counter
-sys.path.insert(0, "/Users/ghb/sales-resource-allocation-framework")
+import _paths
+sys.path.insert(0, str(_paths.ROOT))
 import shapely
 from shapely.geometry import Polygon
 from shapely.strtree import STRtree
-DATA = "/Users/ghb/sales-resource-allocation-framework/data/gz"
+DATA = _paths.DATA
 reg = json.load(open(f"{DATA}/region.json", encoding="utf-8"))
 OFF = json.load(open(f"{DATA}/basic_units_wgs.json", encoding="utf-8"))["units"]
 attrs = [{"id": i, "street": u.get("street"), "district": u.get("district")}

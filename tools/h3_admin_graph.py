@@ -19,6 +19,7 @@ import time
 from collections import defaultdict
 
 sys.path.insert(0, ".")
+import _paths
 import h3
 from dealer_territory.four_bounds import _pip as pip
 
@@ -116,7 +117,7 @@ print(f"L2 街道 H3 索引: {len(street_h3)} 街道, 格子总数 "
 # ---- 围栏（测试输入）----
 import csv
 csv.field_size_limit(10**7)
-with open("/Users/ghb/Downloads/广州办事处经销商围栏数据-20260827.csv", encoding="utf-8-sig") as f:
+with open(_paths.ROOT.parent / "客户数据" / "广州办事处经销商围栏数据-20260827.csv", encoding="utf-8-sig") as f:
     frows = list(csv.DictReader(f))
 def parse_any(wkt):
     return [(float(a), float(b)) for a, b in re.findall(r"(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)", wkt)]

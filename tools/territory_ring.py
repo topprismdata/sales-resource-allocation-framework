@@ -4,7 +4,8 @@
 理论：边界=路网上围绕中心的闭合回路（min-cycle 的贪心近似，锚定弧强制在场）。
 """
 import json, sys, math
-sys.path.insert(0, "/Users/ghb/sales-resource-allocation-framework")
+import _paths
+sys.path.insert(0, str(_paths.ROOT))
 import networkx as nx
 import shapely
 from shapely.geometry import LineString, Polygon, Point, box
@@ -12,7 +13,7 @@ from shapely.strtree import STRtree
 from shapely.ops import unary_union, transform as sh_transform, polygonize
 from intelligence.coords import pack_from_disk, convert
 
-DATA = "/Users/ghb/sales-resource-allocation-framework/data/gz"
+DATA = _paths.DATA
 GRID = 0.00025  # ~25m 节点吸附
 ORDER = ["北", "东", "南", "西"]
 

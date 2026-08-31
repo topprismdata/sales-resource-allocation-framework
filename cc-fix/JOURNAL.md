@@ -334,3 +334,36 @@ A6 PASS 三个 geojson 字节一致
 **诊断价值**：错误信息可区分层次——`SSL_ERROR_SYSCALL` 为网络层未连通，
 `403` 表示已连通但认证失败。带 token 仍 403 即为 helper 被 keychain 抢占。
 
+## 2026-08-31 T-002 路径去硬编码（Phase 1）执行完成
+
+### 实施
+
+- 新建 `tools/_paths.py`，实现显式参数 → `SRAF_DATA_DIR` → 仓库根
+  `data/gz` 的三级解析；`ROOT` 由 `__file__` 推导，`SOURCE` 指向
+  `data/gz/source`。
+- 按卡片规则完成 26 个命中文件的路径替换：ROOT/DATA 使用 `_paths`，
+  两个 GeoJSON 使用 `_paths.SOURCE`，经销商 CSV 和同目录的 `广州.xlsx`
+  使用仓库根同级 `客户数据`，两个 SVG 输出使用数据包目录。
+- `yeidai_compile.py` 与 `demo_server.py` 原本没有 `/Users/ghb` 命中，保持未改。
+
+### 独立验收
+
+B1–B6 全部 PASS，具体命令输出已写入 `cc-fix/verify/T-002-verify.txt`。
+B4 为 `23 passed in 0.05s`；B5 已越过两个 source GeoJSON 并推进到缺失的
+`data/gz/gz_osm_full.json`；B6 的启动异常已指向本地
+`data/gz/basic_units_wgs.json`，不再指向原作者目录。另行执行的 28 文件
+`py_compile` 与 `git diff --check` 也通过。
+
+### 失败与归因修正
+
+- 中间一次批 B 大补丁因 `unit_allocator.py` 的实际 import 上下文与补丁假设
+  不一致而失败；补丁未落盘，随后按实际上下文拆分修正，最终无遗留失败。
+- B5/B6 底层的 `FileNotFoundError` 是卡片明确允许的缺失派生数据现象，包装后的
+  B5/B6 断言均通过；没有联网拉取、没有伪造 `gz_osm_full.json` 或单元库。
+- 被推翻/修正的旧归因是“import 失败仍说明必须依赖 ghb 的 Downloads 或原作者
+  数据目录”。B5 证明两个根源 GeoJSON 已从仓库 `data/gz/source` 读通；剩余
+  错误仅是本地缺少派生 `gz_osm_full.json`，不再是用户目录硬编码问题。
+- 另发现 `component_matcher.py` 的 `/tools` 子路径变体，已按同一 ROOT 规则
+  改为 `_paths.ROOT / "tools"`；没有无法由卡片规则覆盖的第五种残留模式。
+
+本次未修改 `cc-fix/CONTRACTS.md`，未联网，未生成或删除数据文件，未执行 Git commit。

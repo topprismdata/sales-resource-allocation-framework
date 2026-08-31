@@ -17,6 +17,7 @@ import math
 import re
 import sys
 from collections import Counter, defaultdict
+import _paths
 
 sys.path.insert(0, ".")
 from dealer_territory.four_bounds import (  # noqa: E402
@@ -25,7 +26,7 @@ from dealer_territory.four_bounds import (  # noqa: E402
 
 csv.field_size_limit(10**7)
 
-csv_path = sys.argv[1] if len(sys.argv) > 1 else "/Users/ghb/Downloads/广州办事处经销商围栏数据-20260827.csv"
+csv_path = sys.argv[1] if len(sys.argv) > 1 else _paths.ROOT.parent / "客户数据" / "广州办事处经销商围栏数据-20260827.csv"
 osm_parsed_path = sys.argv[2] if len(sys.argv) > 2 else "/tmp/osm_parsed.json"
 towns_path = sys.argv[3] if len(sys.argv) > 3 else "/tmp/gz_l8.json"
 out_path = sys.argv[4] if len(sys.argv) > 4 else "analysis/FENCE_TOWNSHIP_DESCRIPTIONS.md"

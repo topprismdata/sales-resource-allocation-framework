@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """生成亨啡源北围栏示意图SVG"""
-import sys; sys.path.insert(0, "/Users/ghb/sales-resource-allocation-framework")
+import sys
+import _paths
+sys.path.insert(0, str(_paths.ROOT))
 import json
 from shapely.geometry import Polygon
 from shapely.strtree import STRtree
@@ -8,7 +10,7 @@ from shapely import wkt
 from collections import defaultdict
 from intelligence.coords import pack_from_disk
 
-DATA = "data/gz"
+DATA = _paths.DATA
 ATTR = json.load(open(f"{DATA}/unit_attributes.json"))["units"]
 OFF = json.load(open(f"{DATA}/basic_units_wgs.json"))["units"]
 units = [wkt.loads(u["geom"]) for u in OFF]; ut = STRtree(units)
@@ -62,6 +64,6 @@ for st, ul in streets.items():
 fx = [tx(p[0]) for p in pts]; fy = [ty(p[1]) for p in pts]
 L.append(f'<rect x="{min(fx)-10:.0f}" y="{min(fy)-10:.0f}" width="{max(fx)-min(fx)+20:.0f}" height="{max(fy)-min(fy)+20:.0f}" fill="none" stroke="#333" stroke-width="1.5" stroke-dasharray="5,4"/>')
 L.append('</svg>')
-with open("/Users/ghb/sales-resource-allocation-framework/data/gz/hengfeiyuan_north.svg","w") as f:
+with open(_paths.data_dir() / "hengfeiyuan_north.svg", "w") as f:
     f.write("\n".join(L))
 print("saved hengfeiyuan_north.svg")

@@ -9,14 +9,15 @@
 源侧分区 = 分配给该经销商的单元集合。
 """
 import json, sys, math, statistics
-sys.path.insert(0, "/Users/ghb/sales-resource-allocation-framework")
+import _paths
+sys.path.insert(0, str(_paths.ROOT))
 import networkx as nx
 import shapely
 from shapely.geometry import LineString, Polygon, Point, box
 from shapely.strtree import STRtree
 from shapely.ops import unary_union
 
-DATA = "/Users/ghb/sales-resource-allocation-framework/data/gz"
+DATA = _paths.DATA
 
 
 def load_blocks(path=f"{DATA}/basic_units_v5_wgs.json"):

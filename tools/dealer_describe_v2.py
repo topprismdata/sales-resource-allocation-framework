@@ -3,7 +3,9 @@
 四类词：块词 / 片词 / 路词 / 界带词，解析全部与围栏无关。
 评估双口径：地块级J + 几何IoU。
 """
-import sys; sys.path.insert(0, "/Users/ghb/sales-resource-allocation-framework")
+import sys
+import _paths
+sys.path.insert(0, str(_paths.ROOT))
 import json
 from shapely.geometry import Polygon
 from shapely import wkt, ops
@@ -11,12 +13,12 @@ from shapely.strtree import STRtree
 from intelligence.coords import gcj2wgs
 from collections import Counter, defaultdict
 
-DATA = "/Users/ghb/sales-resource-allocation-framework/data/gz"
+DATA = _paths.DATA
 KM2 = 12364.0
 ROAD_BUF = 100 / 111000   # 语言常量：路词缓冲100m，固化
 
 # ---------- 数据 ----------
-d = json.load(open('/Users/ghb/Downloads/边界数据-路网-到区县带海岸线-四级路网-广东省-广州市.geojson'))
+d = json.load(open(_paths.SOURCE / "边界数据-路网-到区县带海岸线-四级路网-广东省-广州市.geojson"))
 parents = []; pstreet = []
 for f in d["features"]:
     g = f["geometry"]
@@ -24,7 +26,7 @@ for f in d["features"]:
     parents.append(Polygon(g["coordinates"][0], g["coordinates"][1:]))
     pstreet.append(f["properties"].get("街道[内置]", ""))
 
-sd = json.load(open('/Users/ghb/Downloads/区划数据-街道-广东省-广州市.geojson'))
+sd = json.load(open(_paths.SOURCE / "区划数据-街道-广东省-广州市.geojson"))
 spoly = []; sname = []
 for f in sd["features"]:
     g = f["geometry"]

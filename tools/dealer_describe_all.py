@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """全部经销商描述生成（METHOD.md v1.0 管线）"""
-import sys; sys.path.insert(0, "/Users/ghb/sales-resource-allocation-framework")
+import sys
+import _paths
+sys.path.insert(0, str(_paths.ROOT))
 import json
 from shapely.geometry import Polygon
 from shapely import wkt, ops
@@ -8,10 +10,10 @@ from shapely.strtree import STRtree
 from intelligence.coords import gcj2wgs
 from collections import Counter, defaultdict
 
-DATA = "/Users/ghb/sales-resource-allocation-framework/data/gz"
+DATA = _paths.DATA
 KM2 = 12364.0
 
-d = json.load(open('/Users/ghb/Downloads/边界数据-路网-到区县带海岸线-四级路网-广东省-广州市.geojson'))
+d = json.load(open(_paths.SOURCE / "边界数据-路网-到区县带海岸线-四级路网-广东省-广州市.geojson"))
 parents = []; pstreet = []; pdistrict = []
 for f in d["features"]:
     g = f["geometry"]
@@ -22,7 +24,7 @@ for f in d["features"]:
     pdistrict.append(pr.get("区[内置]") or pr.get("区县编码", ""))
 pt = STRtree(parents)
 
-sd = json.load(open('/Users/ghb/Downloads/区划数据-街道-广东省-广州市.geojson'))
+sd = json.load(open(_paths.SOURCE / "区划数据-街道-广东省-广州市.geojson"))
 spoly = []; sname = []
 for f in sd["features"]:
     g = f["geometry"]

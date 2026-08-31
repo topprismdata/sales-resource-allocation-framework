@@ -8,8 +8,8 @@ import networkx as nx
 from shapely.geometry import Polygon, Point
 from shapely.strtree import STRtree
 from shapely.ops import unary_union
+from _paths import DATA
 
-DATA = "/Users/ghb/sales-resource-allocation-framework/data/gz"
 LINK_MIN_M = 50          # 单元邻接判定：共享边界最短长度
 
 

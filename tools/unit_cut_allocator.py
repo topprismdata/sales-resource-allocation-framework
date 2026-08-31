@@ -9,7 +9,8 @@ n-link 容量 = 共享边长 × 标签匹配因子：
 min cut 的源侧 = 分配给该经销商的基础单元集合。
 """
 import json, sys, math
-sys.path.insert(0, "/Users/ghb/sales-resource-allocation-framework")
+import _paths
+sys.path.insert(0, str(_paths.ROOT))
 import networkx as nx
 import statistics
 import shapely
@@ -17,7 +18,7 @@ from shapely.geometry import LineString, Polygon, Point, box
 from shapely.strtree import STRtree
 from shapely.ops import unary_union
 
-DATA = "/Users/ghb/sales-resource-allocation-framework/data/gz"
+DATA = _paths.DATA
 DIRVEC = {"北": (0, 1), "南": (0, -1), "东": (1, 0), "西": (-1, 0)}
 QUADS = {"北": 0, "东北": 45, "东": 90, "东南": 135, "南": 180,
          "西南": 225, "西": 270, "西北": 315}

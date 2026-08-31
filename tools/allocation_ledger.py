@@ -14,8 +14,7 @@ import shapely
 from shapely.geometry import Polygon, Point, LineString
 from shapely.strtree import STRtree
 from shapely.ops import unary_union
-
-DATA = "/Users/ghb/sales-resource-allocation-framework/data/gz"
+from _paths import DATA
 
 
 class Ledger:

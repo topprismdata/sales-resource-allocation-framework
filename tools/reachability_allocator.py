@@ -6,14 +6,15 @@
 可达的街区集合的并集 = 围栏。全自动，无人工。
 """
 import json, sys, math
-sys.path.insert(0, "/Users/ghb/sales-resource-allocation-framework")
+import _paths
+sys.path.insert(0, str(_paths.ROOT))
 import shapely
 from shapely.geometry import Polygon, LineString, Point, box
 from shapely.strtree import STRtree
 from shapely.ops import unary_union
 from intelligence.coords import pack_from_disk
 
-DATA = "/Users/ghb/sales-resource-allocation-framework/data/gz"
+DATA = _paths.DATA
 
 
 def load_enclosures():

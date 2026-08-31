@@ -10,8 +10,8 @@ import shapely
 from shapely.ops import unary_union
 from shapely.geometry import LineString, Polygon, Point
 from shapely.strtree import STRtree
+from _paths import DATA
 
-DATA = "/Users/ghb/sales-resource-allocation-framework/data/gz"
 AXIS = {"北": ("y", "max"), "南": ("y", "min"), "东": ("x", "max"), "西": ("x", "min")}
 
 

@@ -3,13 +3,14 @@
 细库覆盖城区；官方库（四级路网，覆盖全部地域）补齐无路区空洞。
 互斥：官方单元两两不交，残余=O−细并集 亦互斥。"""
 import json, sys, math
-sys.path.insert(0, "/Users/ghb/sales-resource-allocation-framework")
+import _paths
+sys.path.insert(0, str(_paths.ROOT))
 import shapely
 from shapely.geometry import Polygon
 from shapely.strtree import STRtree
 from shapely.ops import unary_union
 
-DATA = "/Users/ghb/sales-resource-allocation-framework/data/gz"
+DATA = _paths.DATA
 d = json.load(open(f"{DATA}/gz_osm_full.json", encoding="utf-8"))
 GZ11 = ["天河区", "越秀区", "荔湾区", "海珠区", "番禺区", "白云区",
         "黄埔区", "花都区", "从化区", "增城区", "南沙区"]

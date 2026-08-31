@@ -10,13 +10,14 @@ import math
 import re
 import sys
 import zipfile
+import _paths
 
 sys.path.insert(0, ".")
 csv.field_size_limit(10**7)
 
 from dealer_territory.fence_from_text import build_from_landmark_ratios  # noqa: E402
 
-DL = "/Users/ghb/Downloads"
+DL = _paths.ROOT.parent / "客户数据"
 osm = json.load(open("/tmp/osm_parsed.json", encoding="utf-8"))
 
 

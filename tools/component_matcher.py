@@ -9,17 +9,18 @@
 3. 分量并集 vs 真值 IoU
 """
 import json, sys, math, statistics
-sys.path.insert(0, "/Users/ghb/sales-resource-allocation-framework")
+import _paths
+sys.path.insert(0, str(_paths.ROOT))
 import networkx as nx
 import shapely
 from shapely.geometry import LineString, Polygon, box
 from shapely.strtree import STRtree
 from shapely.ops import unary_union
 
-DATA = "/Users/ghb/sales-resource-allocation-framework/data/gz"
+DATA = _paths.DATA
 DEALER = "亨啡源"
 
-sys.path.insert(0, "/Users/ghb/sales-resource-allocation-framework/tools")
+sys.path.insert(0, str(_paths.ROOT / "tools"))
 import boundary_matcher as bm
 
 meta = json.load(open(f"{DATA}/meta.json", encoding="utf-8"))

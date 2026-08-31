@@ -4,8 +4,8 @@ Index-line translation, batch=150, gap-retry only."""
 import json, os, re, sys, threading, time, urllib.request
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from _paths import ROOT
 
-ROOT = Path("/Users/ghb/sales-resource-allocation-framework")
 conf = json.load(open(Path.home()/".claude"/"settings.json", encoding="utf-8")).get("env", {})
 BASE = os.environ.get("ANTHROPIC_BASE_URL", conf["ANTHROPIC_BASE_URL"]).rstrip("/")
 TOK = os.environ.get("ANTHROPIC_AUTH_TOKEN", conf["ANTHROPIC_AUTH_TOKEN"])

@@ -5,13 +5,14 @@
 相邻采样间图上最短路（转移：|路网距离−导引距离|指数）→ Viterbi → 闭环。
 """
 import json, sys, math
-sys.path.insert(0, "/Users/ghb/sales-resource-allocation-framework")
+import _paths
+sys.path.insert(0, str(_paths.ROOT))
 import networkx as nx
 import shapely
 from shapely.geometry import LineString, Polygon
 from shapely.strtree import STRtree
 
-DATA = "/Users/ghb/sales-resource-allocation-framework/data/gz"
+DATA = _paths.DATA
 SIGMA = 120.0 / 111000
 BETA = 200.0 / 111000
 STEP = 200.0 / 111000

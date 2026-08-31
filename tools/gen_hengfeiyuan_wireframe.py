@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """生成亨啡源北围栏线框图SVG——每个基础单元多边形轮廓，沿边标路名"""
-import sys; sys.path.insert(0, "/Users/ghb/sales-resource-allocation-framework")
+import sys
+import _paths
+sys.path.insert(0, str(_paths.ROOT))
 import json
 from shapely.geometry import Polygon, MultiPolygon
 from shapely.strtree import STRtree
@@ -8,7 +10,7 @@ from shapely import wkt, ops
 from collections import defaultdict
 from intelligence.coords import pack_from_disk
 
-DATA = "data/gz"
+DATA = _paths.DATA
 ATTR = json.load(open(f"{DATA}/unit_attributes.json"))["units"]
 OFF = json.load(open(f"{DATA}/basic_units_wgs.json"))["units"]
 units = [wkt.loads(u["geom"]) for u in OFF]; ut = STRtree(units)
@@ -86,7 +88,7 @@ fence_pts = " ".join(f"{tx(x)},{ty(y)}" for x, y in zg.exterior.coords)
 L.append(f'<polygon points="{fence_pts}" style="fill:none;stroke:#333;stroke-width:2;stroke-dasharray:6,4"/>')
 
 L.append('</svg>')
-with open("/Users/ghb/sales-resource-allocation-framework/data/gz/hengfeiyuan_north_wireframe.svg","w") as f:
+with open(_paths.data_dir() / "hengfeiyuan_north_wireframe.svg", "w") as f:
     f.write("\n".join(L))
 print("saved hengfeiyuan_north_wireframe.svg")
 print("28个单元的多边形轮廓，按街道着色，每个单元内标ID+贴路名")

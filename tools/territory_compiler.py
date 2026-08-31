@@ -5,7 +5,9 @@
 人类层：每街道≤1句(可读优先)；>4街镇 → 区县补集/方位概要
 引擎层：限定词精确组合 + P#片原子 (J=1.0)
 """
-import sys; sys.path.insert(0, "/Users/ghb/sales-resource-allocation-framework")
+import sys
+import _paths
+sys.path.insert(0, str(_paths.ROOT))
 import json
 from shapely.geometry import Polygon
 from shapely import wkt, ops
@@ -14,12 +16,12 @@ from intelligence.coords import gcj2wgs
 from territory_ir import make_ir, library_hash
 from collections import Counter, defaultdict
 
-DATA = "/Users/ghb/sales-resource-allocation-framework/data/gz"
+DATA = _paths.DATA
 KM2 = 12364.0
 FEAT_BUF = 100 / 111000   # 沿地物词贴附距离（语言常量）
 
 # ---------- 数据（全GCJ；OSM为WGS，匹配时gcj2wgs） ----------
-d = json.load(open('/Users/ghb/Downloads/边界数据-路网-到区县带海岸线-四级路网-广东省-广州市.geojson'))
+d = json.load(open(_paths.SOURCE / "边界数据-路网-到区县带海岸线-四级路网-广东省-广州市.geojson"))
 parents = []; pstreet = []; pdistrict = []
 for f in d["features"]:
     g = f["geometry"]
@@ -30,7 +32,7 @@ for f in d["features"]:
     pdistrict.append(pr.get("区[内置]", ""))
 pt = STRtree(parents)
 
-sd = json.load(open('/Users/ghb/Downloads/区划数据-街道-广东省-广州市.geojson'))
+sd = json.load(open(_paths.SOURCE / "区划数据-街道-广东省-广州市.geojson"))
 spoly = []; sname = []
 for f in sd["features"]:
     g = f["geometry"]
@@ -341,7 +343,7 @@ def compile_fence(fence):
         else:
             norm.append({"type": "block", "street": w})
     clauses = norm
-    ir = make_ir(f["area_id"], clauses, library_hash('/Users/ghb/Downloads/边界数据-路网-到区县带海岸线-四级路网-广东省-广州市.geojson'))
+    ir = make_ir(f["area_id"], clauses, library_hash(_paths.SOURCE / "边界数据-路网-到区县带海岸线-四级路网-广东省-广州市.geojson"))
     # 回环校验: IR eval 必须等于贪心覆盖 T
     ctx = {"U": U, "FEATS": FEATS, "street_residual": {}, "river_bands": {},
            "spoly_by_name": dict(zip(sname, spoly)), "adm6": adm6}
