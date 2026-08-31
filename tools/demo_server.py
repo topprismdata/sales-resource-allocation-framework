@@ -306,6 +306,13 @@ def _conflicts(stores) -> dict:
     return {"oof_n": len(oof), "oof_sample": [s.name for s in oof[:5]],
             "multi_n": len(mul), "multi_sample": [s.name for s in mul[:5]],
             "gap_n": len(gap), "gap_sample": [s.name for s in gap[:5]]}
+
+
+def _draft_confidence(quality: str | None) -> str:
+    """把草稿质量映射为对外展示的置信度。"""
+    return "medium" if quality == "ok" else "low"
+
+
 def _slug(name: str) -> str:
     s = re.sub(r"[^\w\u4e00-\u9fff]+", "", name).lower()
     return s or f"region{int(time.time())}"
@@ -791,6 +798,7 @@ class Handler(BaseHTTPRequestHandler):
                 tcf = pack["data_dir"] / "territory_compiled.json"
                 trows = json.loads(tcf.read_text(encoding="utf-8")) if tcf.exists() else []
                 hit = None
+                replay_error = None
                 if area_id:
                     hit = next((x for x in trows if x.get("area_id") == area_id), None)
                 if hit is None and dealer:
@@ -814,7 +822,8 @@ class Handler(BaseHTTPRequestHandler):
                             "rings": [[list(map(list, pp))] for pp in rings],
                             "area_km2": hit.get("km2"),
                             "units": len(pieces),
-                            "interpretation": "territory-ir", "draft_quality": "ok",
+                            "interpretation": "territory-ir", "confidence": "high",
+                            "draft_quality": "ok",
                             "conflicts": _conflicts([]),
                             "lines_used": {"allocator": "territory-ir-replay",
                                            "terms": terms, "unresolved": []},
@@ -822,7 +831,10 @@ class Handler(BaseHTTPRequestHandler):
                             "dealer": dealer or hit.get("dealer")})
                         return
                     except Exception as e:  # noqa: BLE001
-                        print(f"[generate] S片回放失败({e})，退回台账重演")
+                        replay_error = f"{type(e).__name__}: {e}"
+                        print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] [generate] "
+                              f"area_id={area_id!r} S片回放失败({replay_error})，"
+                              "退回台账重演", flush=True)
                 if hit:
                     # 回退：从 territory_compiled.json 获取引擎词走台账
                     terms = hit.get("engine_terms") or hit.get("desc_compact")
@@ -843,12 +855,21 @@ class Handler(BaseHTTPRequestHandler):
                             u = led.fence_geom(owner_key)
                             rings = ([list(u.exterior.coords)] if u.geom_type == "Polygon"
                                      else [list(p.exterior.coords) for p in u.geoms])
+                            degraded_reason = replay_error
+                            if degraded_reason is None:
+                                degraded_reason = (
+                                    "territory_compiled.json 记录没有可回放的 S 片")
+                                print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] "
+                                      f"[generate] area_id={area_id!r} "
+                                      f"{degraded_reason}，退回台账重演", flush=True)
                             self._send(200, {
                                 "ring": [list(pp) for pp in rings[0]],
                                 "rings": [[list(map(list, pp))] for pp in rings],
                                 "area_km2": round(u.area * 11320 * 1.0084, 2),
                                 "units": len(sel),
-                                "interpretation": "territory-ir", "draft_quality": "ok",
+                                "interpretation": "territory-ir-degraded",
+                                "confidence": "low", "degraded_reason": degraded_reason,
+                                "draft_quality": "ok",
                                 "conflicts": _conflicts([]),
                                 "lines_used": {"allocator": "territory-ir-compiler",
                                                "terms": terms, "unresolved": errt},
@@ -891,7 +912,8 @@ class Handler(BaseHTTPRequestHandler):
                             "rings": [[list(map(list, pp))] for pp in rings],
                             "area_km2": round(u.area * 11320 * 1.0084, 2),
                             "units": len(sel),
-                            "interpretation": "ledger", "draft_quality": "ok",
+                            "interpretation": "ledger", "confidence": "low",
+                            "draft_quality": "ok",
                             "conflicts": _conflicts([]),
                             "lines_used": {"allocator": "ledger-replay",
                                            "terms": terms, "unresolved": errt},
@@ -935,7 +957,8 @@ class Handler(BaseHTTPRequestHandler):
                         self._send(200, {
                             "ring": [list(p) for p in ugeom.exterior.coords],
                             "area_km2": round(area_u, 2),
-                            "interpretation": "draft", "draft_quality": "ok",
+                            "interpretation": "draft", "confidence": _draft_confidence("ok"),
+                            "draft_quality": "ok",
                             "area_estimate_km2": round(area_est, 1),
                             "conflicts": _conflicts([]),
                             "lines_used": {"allocator": "unit-v2",
@@ -1017,7 +1040,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, {
                     "ring": [list(p) for p in ring],
                     "area_km2": round(rb["area_km2"], 2),
-                    "interpretation": "draft", "draft_quality": quality,
+                    "interpretation": "draft", "confidence": _draft_confidence(quality),
+                    "draft_quality": quality,
                     "area_estimate_km2": round(area_est, 1),
                     "conflicts": _conflicts(in_fence),
                     "lines_used": detail, "missing": missing,

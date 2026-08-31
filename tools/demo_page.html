@@ -29,6 +29,13 @@
   .muted { color: #777; font-size: 11px; }
   .warn { color: #c62828; font-size: 11px; }
   .ok-c { color: #2e7d32; font-size: 11px; }
+  .generation-alert { display: none; margin: 0 0 8px; padding: 8px 10px;
+    border: 2px solid #e65100; border-radius: 8px; background: #fff3e0;
+    color: #bf360c; font-size: 12px; box-shadow: 0 1px 4px rgba(230,81,0,.18); }
+  .generation-alert strong { color: #b71c1c; }
+  .generation-alert-item { margin-top: 4px; color: #8d2f00; }
+  .generation-alert-reason { margin-top: 2px; padding-left: 8px; color: #b71c1c;
+    font-size: 11px; overflow-wrap: anywhere; }
   .btn { display: inline-block; border: 0; border-radius: 6px; padding: 5px 12px;
          background: #1a237e; color: #fff; cursor: pointer; font-size: 12px; margin: 4px 4px 0 0; }
   .btn.gray { background: #757575; }
@@ -174,6 +181,7 @@
     </div>
 
     <div id="genResult"></div>
+    <div id="generationAlert" class="generation-alert" role="alert" aria-live="polite"></div>
 
     <div class="muted" style="margin-bottom:6px">
       已有合同卡（点击生成区域）：
@@ -364,22 +372,47 @@ function conflictHtml(cf){
   return `<div class="warn">⚠ 冲突 ${total}：错位 ${cf.oof_n} · 重叠 ${cf.multi_n} · 缺口 ${cf.gap_n}
     <br>处置：登记矛盾簿 → 08 核验 / GW 审批，不自动裁决</div>`;
 }
+function isDegradedGenerate(r){ return r && r.confidence !== "high"; }
+function generationFenceStyle(r){
+  if (isDegradedGenerate(r)) return {color:"#b71c1c", weight:5, dashArray:"4 4",
+    fillColor:"#ff6d00", fillOpacity:.25};
+  return {color:"#e53935", weight:4, dashArray:"8 5",
+    fillColor:"#e53935", fillOpacity:.10};
+}
+function renderGenerationAlert(results){
+  const el = document.getElementById("generationAlert");
+  const rows = (Array.isArray(results) ? results : [results]).filter(isDegradedGenerate);
+  if (!rows.length){ el.innerHTML = ""; el.style.display = "none"; return; }
+  el.innerHTML = `<strong>⚠ 降级结果</strong>：这是降级结果，精度可能显著偏低。` +
+    rows.map(r=>{
+      const who = r.dealer ? `（${esc(r.dealer)}）` : "";
+      const reason = r.degraded_reason
+        ? `<div class="generation-alert-reason">降级原因：${esc(r.degraded_reason)}</div>` : "";
+      return `<div class="generation-alert-item">${esc(r.interpretation||"结果")}${who}`+
+        ` · 置信度 ${esc(r.confidence)}${reason}</div>`;
+    }).join("");
+  el.style.display = "block";
+}
 async function genContract(i){
   const c = BOOT.contracts[i];
   const sp = document.getElementById("gr-"+i); sp.textContent = "生成中…";
+  renderGenerationAlert([]);
   const r = await (await fetch("/api/generate",{method:"POST",
     headers:{"Content-Type":"application/json"},
     body: JSON.stringify({area_id:c.area_id, bounds:c.four_bounds, center:c.center, dealer:c.dealer_id})})).json();
   if (r.error){ sp.textContent = "✗ "+esc(r.error); return; }
   drawDraft(r);
-  sp.textContent = "已生成";
+  sp.textContent = isDegradedGenerate(r) ? "⚠ 已生成（降级）" : "已生成";
 }
 function drawDraft(r){
   draftLayer.clearLayers();
   const col = dealerColor(r.dealer);
   const accepted = r.interpretation === "accepted";
   const ring = r.ring.map(p=>[p[1],p[0]]);
-  L.polygon(ring, {color:"#e53935", weight:4, dashArray:"8 5",
+  const hasConfidence = Object.prototype.hasOwnProperty.call(r, "confidence");
+  const degraded = hasConfidence && isDegradedGenerate(r);
+  L.polygon(ring, degraded ? generationFenceStyle(r) : {
+    color:"#e53935", weight:4, dashArray:"8 5",
     fillColor:"#e53935", fillOpacity:.10})
     .on("click", ()=>showFenceAnalysis(r.dealer)).addTo(draftLayer);
   for (const [d, pts] of Object.entries(r.bounds_geometry||{})){
@@ -389,6 +422,7 @@ function drawDraft(r){
   generated.add(r.dealer);
   setFocusDealer(r.dealer);
   map.fitBounds(L.polygon(ring).getBounds().pad(0.15));
+  if (hasConfidence) renderGenerationAlert(degraded ? [r] : []);
 }
 
 // ---------- 新建区域 ----------
@@ -501,6 +535,8 @@ async function reloadAfterAdd(){
 document.getElementById("genAll").onclick = async ()=>{
   const stat = document.getElementById("genAllStat");
   draftLayer.clearLayers();
+  renderGenerationAlert([]);
+  const degradedResults = [];
   let done=0, conf=0;
   for (let i=0;i<BOOT.contracts.length;i++){
     const c = BOOT.contracts[i];
@@ -512,14 +548,18 @@ document.getElementById("genAll").onclick = async ()=>{
     if (r.error) continue;
     generated.add(c.dealer_id);
     const col = dealerColor(c.dealer_id);
-    L.polygon(r.ring.map(p=>[p[1],p[0]]), {color:"#e53935", weight:4,
-      dashArray:"8 5", fillColor:"#e53935", fillOpacity:.10})
+    const degraded = isDegradedGenerate(r);
+    if (degraded) degradedResults.push(r);
+    L.polygon(r.ring.map(p=>[p[1],p[0]]), generationFenceStyle(r))
       .on("click", ()=>showFenceAnalysis(c.dealer_id)).addTo(draftLayer);
     const cf = r.conflicts||{};
     if ((cf.oof_n||0)+(cf.multi_n||0)+(cf.gap_n||0)) conf++;
     const g = document.getElementById("gr-"+i);
-    if (g) g.innerHTML = `<span class="ok-c">✓ 已生成</span>`;
+    if (g) g.innerHTML = degraded
+      ? `<span class="warn">⚠ 已生成（降级）</span>`
+      : `<span class="ok-c">✓ 已生成</span>`;
   }
+  renderGenerationAlert(degradedResults);
   stat.textContent = `完成 ${done} 份，${conf} 份有冲突`;
   if (draftLayer.getLayers().length)
     map.fitBounds(L.featureGroup(draftLayer.getLayers()).getBounds().pad(0.05));

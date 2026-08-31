@@ -1,0 +1,48 @@
+T-005 消除静默降级（Phase 3）验收记录
+日期：2026-08-31
+
+一、卡片原始 HTTP E1
+---------------------
+状态：当前执行环境阻塞，未将 HTTP 请求结果记为通过。
+原因：在本地终端启动 demo_server.py 监听 127.0.0.1:8794 时，运行环境返回
+      PermissionError: [Errno 1] Operation not permitted（端口监听被沙箱禁止）。
+      本地浏览器访问该 URL 也被浏览器权限策略拒绝，未绕过该限制。
+      另外，当前 data/gz 缺少 unit_attributes.json 和 basic_units_wgs.json；
+      卡片临时包只软链 region/meta/contracts/source，实际台账加载会由既有
+      _require_ledger() 返回 503。未修改或伪造 data/gz 数据来规避该阻塞。
+
+二、后端等价内存请求断言（不监听端口）
+----------------------------------------
+使用卡片同样的最小 territory_compiled.json，真实导入 territory_compile；
+以仅替代台账数据加载的内存请求桩隔离 HTTP/环境限制。
+
+回放成功路径 PASS confidence=high
+E1 PASS 降级已显式标记 interpretation='territory-ir-degraded' confidence='low'
+         degraded_reason="FileNotFoundError: [Errno 2] No such file or directory: '/Users/cai/Desktop/达能-SRP-AI/sraf/data/gz/gz_osm_full.json'"
+日志 PASS [2026-08-31 16:12:59] [generate] area_id='694236818' S片回放失败(FileNotFoundError: [Errno 2] No such file or directory: '/Users/cai/Desktop/达能-SRP-AI/sraf/data/gz/gz_osm_full.json')，退回台账重演
+描述词台账路径 PASS confidence=low
+草稿路径 PASS draft_quality=ok confidence=medium
+E2 PASS 所有已执行的 /api/generate 成功响应均含 confidence
+内存功能覆盖 PASS high/degraded/ledger/draft 四路径
+
+三、E3 前端静态断言
+--------------------
+E3 PASS 前端含降级渲染逻辑
+前端脚本语法 PASS
+
+四、E4 既有测试
+----------------
+.......................                                                  [100%]
+23 passed in 0.04s
+
+五、补充检查
+------------
+git diff --check：PASS
+python3 -m py_compile tools/demo_server.py：PASS
+python3 tools/ref_check.py：FAIL: expected 9 specs, found 0（当前检出环境缺少该检查所需规范文档，非本卡改动）
+python3 tools/consistency_check.py：13/73 passed（当前检出环境规范文档不完整，非本卡改动）
+
+六、范围保护
+------------
+未修改 cc-fix/CONTRACTS.md、intelligence/adjust.py、tests/ 或 data/gz。
+未执行 git commit。
