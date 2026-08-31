@@ -223,3 +223,89 @@ codex 指出 A4 断言 `Polygon(f["rings"][0]).area` 与「无损转换」自相
 
 > **待办（后续 Phase）**：KM2 常数不一致需单独处置，已记录。
 
+## 2026-08-31 T-001 执行记录：数据包构建与验收
+
+### 已执行
+
+- 新增 `tools/build_region_pack.py`，支持 `--src` / `--out`，默认值为
+  `../客户数据` / `data/gz`；未写入任何用户目录硬编码。
+- 使用 `utf-8-sig` 和 `csv.field_size_limit(sys.maxsize)` 读取三份围栏 CSV；
+  未做坐标转换，`meta.crs` 写为 `GCJ-02`。
+- 经销商 CSV 中包含始兴等非广州市区县的源围栏；按卡片默认策略全量无损入库，
+  未擅自过滤。
+- 经销商围栏 71 行拆为 90 个组件；MultiPolygon 按组件面积降序拆分，
+  内环保存在 `holes`，`area_km2` 按组件面积占比分配并守恒。
+- 两份业代 CSV 共 93 行拆为 186 个组件；多出的
+  `layer_name`、`org_code`、`办事处名称` 原样保存在每条记录的 `extra`。
+- 生成 `region.json`、`meta.json`、`contracts.json`、`yeidai_fences.json`，
+  并将三个 GeoJSON 原样复制到 `data/gz/source/`。
+- Excel 只用 `officecli` 探查。两份表均缺少能无歧义映射到
+  `direct`、`dealers`、`kind` 的字段，故 `region.json.stores` 保持空数组，
+  未猜测或伪造门店语义。
+
+### 验收证据
+
+`cc-fix/verify/T-001-verify.txt` 已记录实际输出。A1、A2、A3、A4、A4b、A5、A6
+全部 `exit_code: 0`：90 个组件、71 个 `src_area_id` 及组件数匹配、90 个组件
+几何（含内环）逐条一致、71 条面积总和守恒、World 加载 90 个围栏、三个
+GeoJSON 字节一致。重复执行后预期输出文件 SHA-256 未变化。
+
+### 启动 smoke test 与归因
+
+实际执行 `python3 tools/demo_server.py --data-dir data/gz 8765` 仍以
+`exit_code: 1` 退出。围栏包已成功加载；失败发生在顶层初始化
+`tools/yeidai_ops.py:20` 的 `YeidaiState`，其既有常量路径指向
+`/Users/ghb/sales-resource-allocation-framework/data/gz/basic_units_wgs.json`，
+而该业代单元库不属于本卡输入或允许生成的产物。归因是后续路径/业代依赖问题，
+不是 `region.json` 几何或 A1-A6 验收失败；本次没有伪造该文件，也没有越界修改
+`tools/yeidai_ops.py`。
+
+本次执行没有修改 `cc-fix/CONTRACTS.md`，没有 Git commit。
+
+## 2026-08-31 T-001 验收通过（架构层独立复核）
+
+**独立执行全部断言**（未采信施工层自报）：
+
+```
+A1 PASS 三文件齐备
+A2 PASS 组件总数 90
+A3 PASS 71 条 src_area_id 及各自组件数全对
+A4 PASS 90 个组件几何逐条一致（含内环）
+A4b PASS 71 条面积总和守恒
+A5 PASS World 加载 90 个围栏 / 68 个经销商
+A6 PASS 三个 geojson 字节一致
+```
+
+**断言之外的独立检查**（防自写断言盲区）：
+
+| 检查项 | 结果 |
+|---|---|
+| `meta.json` crs 声明 | `GCJ-02` ✓ 符合契约 §1.1 |
+| `contracts.json` | `[]` ✓ 未伪造 four_bounds |
+| `yeidai_fences.json` | 186 组件，`extra` 含 layer_name/org_code/办事处名称 ✓ 裁决被正确执行 |
+| `build_region_pack.py` 硬编码 | 无 `/Users/` ✓ |
+| 是否误用 pandas/openpyxl | 未使用 ✓ 符合本机 officecli 约定 |
+| 幂等性 | 重跑 sha256 不变 ✓ |
+| stores | 保持 `[]` 并上报，未猜测 Excel 映射 ✓ |
+
+### ★ Phase 0 目标达成的判据
+
+服务启动崩溃点**前移**，证明数据包问题已解决：
+
+- 修复前：`demo_server.py:161` `_load_pack` → `FileNotFoundError: /tmp/region.json`
+- 修复后：`demo_server.py:163` `YeidaiState()` → `FileNotFoundError: /Users/ghb/.../basic_units_wgs.json`
+
+即 `region.json/meta.json/contracts.json` 已被成功加载，
+新崩溃点是 Phase 1 待修的硬编码路径。
+
+### 新发现的阻塞（转入 Phase 1/后续）
+
+`basic_units_wgs.json` 与 `unit_attributes.json` 是**基础单元库**，
+既不在 `客户数据/`，仓库内也无生成脚本（只被读、从不被写）。
+
+**处置判断**：`territory_compile.py` 已实现「从路网 geojson 构建单元面 U」的逻辑，
+且 `data/gz/source/` 现已备齐该 geojson，故单元库**可本地重建**，非阻塞。
+但需先完成 Phase 1 去硬编码——否则 `build_hybrid_*.py` 等生成脚本自身跑不起来。
+
+→ 顺序确认：**先 T-002 去硬编码，再用修好的脚本重建派生数据。**
+

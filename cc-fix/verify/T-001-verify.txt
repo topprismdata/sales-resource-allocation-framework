@@ -1,0 +1,42 @@
+T-001 verification run: 2026-08-31
+Working directory: /Users/cai/Desktop/达能-SRP-AI/sraf
+
+A1
+command: test -f data/gz/region.json && test -f data/gz/meta.json && test -f data/gz/contracts.json
+stdout/stderr: (empty)
+exit_code: 0
+
+A2
+A2 PASS 组件总数 90
+exit_code: 0
+
+A3
+A3 PASS 71 条 src_area_id 及各自组件数全对
+exit_code: 0
+
+A4
+A4 PASS 90 个组件几何逐条一致（含内环）
+exit_code: 0
+
+A4b
+A4b PASS 71 条面积总和守恒
+exit_code: 0
+
+A5
+A5 PASS World 加载 90 个围栏
+exit_code: 0
+
+A6
+A6 PASS 三个 geojson 字节一致
+exit_code: 0
+
+Additional repeatability check
+built region pack: 71 dealer rows -> 90 components; 93 yeidai rows -> 186 components; out=data/gz
+IDEMPOTENCE PASS 输出文件 SHA-256 未变化
+exit_code: 0
+
+Startup smoke test (requested command)
+command: python3 tools/demo_server.py --data-dir data/gz 8765
+exit_code: 1
+error: FileNotFoundError: [Errno 2] No such file or directory: '/Users/ghb/sales-resource-allocation-framework/data/gz/basic_units_wgs.json'
+location: tools/yeidai_ops.py:20 (pre-existing hard-coded YeidaiState data path)
