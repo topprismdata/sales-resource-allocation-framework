@@ -2,7 +2,7 @@
   "contract_version": "1.0",
   "branch": "CC_main",
   "base": "42cf065 (RC2.0, merged)",
-  "current_phase": 5,
+  "current_phase": 6,
   "phases": {
     "P0": {
       "name": "数据包重建",
@@ -46,14 +46,17 @@
     },
     "P5": {
       "name": "评测口径改造",
-      "status": "pending",
+      "status": "done",
       "gate": "dual_table",
-      "task": "T-010"
+      "task": "T-010",
+      "verified_by": "architect_independent",
+      "result": "双表报告: J_selfcover 1.0(35/35) vs J_recall中位0.3973, 覆盖率35/70, 界带表达占失败32/36"
     },
     "P6": {
       "name": "清理固化",
       "status": "pending",
-      "gate": "deterministic_100"
+      "gate": "deterministic_100",
+      "task": "T-011"
     }
   },
   "open_escalations": [
@@ -105,6 +108,10 @@
     },
     "T-009": {
       "name": "P4语义正确性",
+      "status": "done"
+    },
+    "T-010": {
+      "name": "P5评测双表",
       "status": "done"
     }
   }

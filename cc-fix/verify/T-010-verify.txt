@@ -1,0 +1,39 @@
+T-010 verification — 2026-08-31
+
+Implementation
+- Added `tools/eval_dual_table.py`.
+- Reads the existing `data/gz/territory_compiled.json` artifact, replays
+  `Ledger.resolve_units` for the 35 rows with S pieces, and writes the
+  deterministic `cc-fix/verify/P5_REPORT.md`.
+- `territory_compile.py`, `allocation_ledger.py`, `cc-fix/CONTRACTS.md`, and
+  all data-pack artifacts were not modified. No Git commit was made.
+
+Report measurements
+- Table A: 35/70 coverage; IoU median/min/max = 0.9960/0.7550/1.0000;
+  cover median/min/max = 99.84%/75.53%/100.00%; `engine_J` is explicitly
+  labeled as `J_selfcover` and self-evidence only.
+- Table B: 35 rows, every row tagged `[自动生成语料]`; Jaccard
+  median/mean/min/max = 0.3973/0.3983/0.0000/0.9288; parse-failure words = 36.
+- Failure modes: boundary-band expressions 32 words across 18 fences;
+  “一带” ambiguity 3 words across 3 fences; missing `沿珠江` index 1 word
+  across 1 fence. No non-boundary mode affects more than 30% of the 35
+  samples, so the escalation condition was not triggered.
+
+J1–J7
+```
+P5_REPORT.md: /Users/cai/Desktop/达能-SRP-AI/sraf/cc-fix/verify/P5_REPORT.md
+表A: 可编译 35/70；表B: 35 条自动生成语料
+J1 PASS 免责声明齐全
+J2 PASS 两表分列
+J3 PASS 自证指标已标注
+J4 PASS 覆盖率与失效分布已披露
+J5 PASS 语料标签齐备
+J6 PASS 无合并评分
+J7 PASS 幂等
+```
+
+J8
+```
+.......................                                                  [100%]
+23 passed in 0.04s
+```
