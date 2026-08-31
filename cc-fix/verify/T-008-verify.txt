@@ -1,0 +1,53 @@
+T-008 verification — 2026-08-31
+
+Implementation
+- Added the independent `_select_T_bruteforce` reference implementation.
+- Added `_select_T`: `Ut.query(zg)` bbox prefilter plus one intersection-area
+  calculation per candidate, and switched `compile_fence` to call it.
+- Lazily cached the unchanged administrative-boundary buffer. This was
+  required after timing showed its repeated construction, not the T selector,
+  was the remaining per-fence hotspot.
+- `CONTRACTS.md` and `tests/` were not modified. No Git commit was made.
+
+H1/H2 exact gate
+```
+数据: 地块2675 街道面174 地物72818条/9577名
+统一铺盖U: 6261片
+H1 PASS 12 条围栏 T 集合逐例完全相等
+   暴力 1.2s → 优化 0.10s   加速 11x
+H2 PASS 加速达标
+```
+
+H3 compile gate
+```
+timeout 1800 ... territory_compile.py ... 120.62s user 10.56s system 106% cpu 2:03.61 total
+编译退出码 0
+saved territory_compiled.json
+```
+
+The runtime/产物 sub-gate passed: `territory_compiled.json` exists, with 70
+rows and 35 rows containing `S` pieces. Reported medians were
+`engine_J=0.500` and `iou=0.378`.
+
+The card's row-count assertion did not pass:
+```
+H3 ROW GATE BLOCKED: 编译行数偏少: 70
+```
+This is an input/scope conflict, not a compile timeout: `region.json` has 90
+fences, 20 dealer names containing `佛山`, and the existing compiler scope is
+`"佛山" not in f["dealer"]`, yielding exactly 70 rows. The filter was not
+changed because the contract says this scope decision must be escalated rather
+than inferred.
+
+H4
+```
+.......................                                                  [100%]
+23 passed in 0.04s
+```
+
+Project-level gates (unrelated baseline/layout failures)
+- `python3 tools/ref_check.py`: failed before scanning, `expected 9 specs,
+  found 0`; the checker looks under `docs/`, while the current specs are under
+  `docs/sraf/`.
+- `python3 tools/consistency_check.py`: `13/73 passed`; the same `docs/` vs
+  `docs/sraf/` layout mismatch caused the missing-spec/content failures.

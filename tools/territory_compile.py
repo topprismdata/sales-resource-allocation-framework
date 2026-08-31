@@ -83,6 +83,7 @@ for rr in osm["adm6"]:
     try: adm6.append((rr.get("name",""), wkt.loads(rr["wkt"]).boundary))
     except Exception: pass
 adm6bt = ops.unary_union([b for _, b in adm6])
+_BOUNDARY_BAND = None
 print(f"数据: 地块{len(parents)} 街道面{len(spoly)} 地物{len(feat_geoms)}条/{len(feat_rank)}名")
 
 # ---------- 统一铺盖 U ----------
@@ -253,15 +254,37 @@ def band_clause(zg, pc):
     side = "西" if c.x < zg.centroid.x else "东" if c.x > zg.centroid.x else "南" if pc.centroid.y < zg.centroid.y else "北"
     return {"type": "band", "side": side, "ref": f"{sname[j]}—{cands[0][0] if cands else '?'}界"}
 
+def _boundary_band():
+    global _BOUNDARY_BAND
+    if _BOUNDARY_BAND is None:
+        _BOUNDARY_BAND = ops.unary_union([sbt, adm6bt]).buffer(BAND_BUF)
+    return _BOUNDARY_BAND
+
+# ---------- 真值片选择 ----------
+def _select_T_bruteforce(zg, fa):
+    """未优化的参考实现——仅供等价性验证，不参与正式流程。"""
+    return {k for k in range(len(U))
+            if U[k][0].intersection(zg).area/max(U[k][0].area,1e-12) >= 0.5
+            or U[k][0].intersection(zg).area/fa >= 0.3}
+
+def _select_T(zg, fa):
+    """优化实现：Ut 预筛 + 单次求交复用。"""
+    selected = set()
+    for k in Ut.query(zg):
+        k = int(k)
+        inter_area = U[k][0].intersection(zg).area
+        if (inter_area/max(U[k][0].area,1e-12) >= 0.5
+                or inter_area/fa >= 0.3):
+            selected.add(k)
+    return selected
+
 # ---------- 单围栏编译 ----------
 def compile_fence(fence):
     zg = Polygon(fence["rings"][0])
     if not zg.is_valid: zg = zg.buffer(0)
     if zg.geom_type == "MultiPolygon": zg = max(zg.geoms, key=lambda g: g.area)
     fa = zg.area
-    T = {k for k in range(len(U))
-         if U[k][0].intersection(zg).area/max(U[k][0].area,1e-12) >= 0.5
-         or U[k][0].intersection(zg).area/fa >= 0.3}
+    T = _select_T(zg, fa)
     psel = {i for i in pt.query(zg)
             if parents[i].intersection(zg).area/max(parents[i].area,1e-12) >= 0.5
             or parents[i].intersection(zg).area/fa >= 0.3}
@@ -273,7 +296,7 @@ def compile_fence(fence):
         S_syn = set()
         for _, c in chosen: S_syn |= clause_pieces(c)
         pu = ops.unary_union([U[k][0] for k in S_syn])
-        strip = zg.difference(pu).intersection(ops.unary_union([sbt, adm6bt]).buffer(BAND_BUF))
+        strip = zg.difference(pu).intersection(_boundary_band())
         if strip.area * KM2 > 0.01:
             pieces = strip.geoms if strip.geom_type == "MultiPolygon" else [strip]
             for pc in pieces:
