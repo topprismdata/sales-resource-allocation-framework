@@ -1,0 +1,46 @@
+T-009 verification — 2026-08-31
+
+Implementation
+- Removed the `core[:-1]` single-character street aliases from
+  `tools/allocation_ledger.py`.
+- Added `AmbiguousTermError(ValueError)`.
+- Fuzzy resolution now collects matching street/road/district keys and
+  rejects matches spanning different entities, while treating full-name and
+  core aliases of the same street as one entity.
+- `_one`, the `沿` branch, and centroid-based direction filtering were not
+  changed. `demo_server.py`, `tests/`, and `cc-fix/CONTRACTS.md` were not
+  modified. No Git commit was made.
+
+I1
+I1 PASS 无单字 key（街道索引 343 项）
+
+I2
+  「大」→ AmbiguousTermError: 术语『大』模糊命中 555 个索引键，涉及多个街道/区/路（大沙街道（街道）、大源街道（街道）、大岗镇（街道）、大龙街道（街道）、大石街道（街道）、大塘街道（街道）、大东街道（街道）、新沙大道北（路） 等 548 个）；请使用完整名称
+  「新」→ AmbiguousTermError: 术语『新』模糊命中 175 个索引键，涉及多个街道/区/路（新塘镇（街道）、新塘街道（街道）、中新镇（街道）、新市街道（街道）、新造镇（街道）、新港街道（街道）、新雅街道（街道）、新华街道（街道） 等 168 个）；请使用完整名称
+  「南」→ AmbiguousTermError: 术语『南』模糊命中 292 个索引键，涉及多个街道/区/路（南岗街道（街道）、南沙街道（街道）、天河南街道（街道）、桥南街道（街道）、南村镇（街道）、南石头街道（街道）、南洲街道（街道）、南华西街道（街道） 等 280 个）；请使用完整名称
+I2 PASS 歧义词一律抛错并携候选
+
+I3
+I3 PASS 精确匹配未回归（赤岗街道=21）；凤凰简称=34 单元
+
+I4
+TCP attempt: BLOCKED BY ENVIRONMENT
+`ThreadingHTTPServer.bind` failed with `PermissionError: [Errno 1] Operation not permitted`;
+curl consequently returned HTTP 000. This is the same local TCP restriction recorded
+in prior verification, not an application 500 or traceback response.
+
+I4 route-level handler verification via socketpair
+I4-HANDLER PASS 模糊歧义返回 HTTP 400：术语『新』模糊命中 175 个索引键，涉及多个街道/区/路（含候选名和“请使用完整名称”）
+I4b-HANDLER PASS 精确指令返回 HTTP 200：测试商 名下 21 单元
+
+Additional fuzzy-path checks
+FUZZY UNIQUE PASS: `元里街` matched one street entity (`三元里街道`), 55 units
+INDEX CHECK PASS street=343 road=2954 district=11
+
+I5
+`python3 -m pytest tests/ -q`
+23 passed in 0.03s
+
+Standard unittest
+`python3 -m unittest discover tests -q`
+Ran 23 tests in 0.017s — OK

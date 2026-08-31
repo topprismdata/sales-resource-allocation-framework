@@ -953,3 +953,52 @@ H4 PASS 23 passed
   - 表 B 端到端：需真实语料
   - **两表均须标注覆盖率 35/70，不得以 35 为分母掩盖失效样本**
 
+## 2026-08-31 T-009 实现与验收记录
+
+### 实现
+
+- 删除 `tools/allocation_ledger.py` 中由 `core[:-1]` 产生的单字街道索引；
+  真实 `data/gz` 的街道索引从 453 项口径降为 **343 项**，不再含单字 key。
+- 新增 `AmbiguousTermError(ValueError)`。模糊解析收集街道、路名、区名索引
+  的全部命中键，并按规范实体去重：同一街道的全名与 core 简称不构成歧义，
+  不同街道/区/路则抛错，消息包含原词、命中键数、候选名和「请使用完整名称」。
+- `_one` 精确路径、「沿」分支、质心二分方位过滤和 `demo_server.py` 错误通道
+  均未修改；未修改 `tests/`、`cc-fix/CONTRACTS.md`，未执行 Git commit。
+
+### 验收
+
+- I1：**PASS**，无单字 key。
+- I2：**PASS**，「大」「新」「南」均抛 `AmbiguousTermError`，且消息带候选与
+  完整名称提示；异常满足 `ValueError` 子类约束。
+- I3：**PASS**，精确 `赤岗街道=21`；`凤凰` 简称与 `凤凰街道` 均为 34 单元。
+- I4：真实 TCP 启动受当前执行沙箱限制：`bind` 抛
+  `PermissionError: [Errno 1] Operation not permitted`，curl 为 HTTP 000；
+  同一 handler 的 socketpair 路由验证 **PASS**：歧义指令 HTTP 400，精确指令
+  HTTP 200/21 单元。该限制不是应用返回 500。
+- I5：`pytest` **23 passed**；标准库 `unittest` **23 tests OK**。
+
+完整输出见 `cc-fix/verify/T-009-verify.txt`。
+
+## 2026-08-31 T-009 验收通过（Phase 4 完成：静默吞并已消除）
+
+**架构层独立执行断言**：
+
+```
+I1  PASS 无单字 key（街道索引 453 → 343 项）
+I2  PASS 「大」「新」「南」一律抛 AmbiguousTermError 并携候选
+I3  PASS 精确匹配未回归（赤岗街道 = 21 单元）
+I4  PASS API 返回 HTTP 400 可读错误（非 500、非栈）
+I4b PASS 精确指令仍正常（测试商 名下 21 单元）
+I5  PASS 23 passed
+```
+
+**效果对比**：
+
+| | 「新」的行为 |
+|---|---|
+| 修复前 | **静默划走 461 个单元**，无任何提示 |
+| 修复后 | HTTP 400：术语『新』模糊命中 175 个索引键，涉及多个街道/区/路（新塘镇（街道）、新塘街道（街道）、中新镇（街道）… 等 168 个）；请使用完整名称 |
+
+错误信息带候选类型标注（街道/区/路）并给出可操作建议。
+`AmbiguousTermError` 继承 `ValueError`，复用 demo_server 既有 400 通道，前端零改动。
+

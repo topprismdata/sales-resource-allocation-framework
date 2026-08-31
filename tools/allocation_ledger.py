@@ -18,6 +18,10 @@ from shapely.ops import unary_union
 from _paths import DATA
 
 
+class AmbiguousTermError(ValueError):
+    """术语命中多个不同街道/区/路，拒绝静默合并。"""
+
+
 class Ledger:
     def __init__(self, data_dir=None):
         self.data_dir = Path(data_dir) if data_dir is not None else Path(DATA)
@@ -32,18 +36,23 @@ class Ledger:
         self.by_street = {}
         self.by_road = {}
         self.by_district = {}
+        self._street_sources = {}
+        self._road_sources = {}
+        self._district_sources = {}
         for a in self.attrs:
             if a["street"]:
                 self.by_street.setdefault(a["street"], set()).add(a["id"])
+                self._street_sources.setdefault(a["street"], set()).add(a["street"])
             core = a["street"].replace("街道", "").replace("镇", "") if a["street"] else ""
             if core:
                 self.by_street.setdefault(core, set()).add(a["id"])
-                if len(core) >= 2:
-                    self.by_street.setdefault(core[:-1], set()).add(a["id"])
+                self._street_sources.setdefault(core, set()).add(a["street"])
             for rd in a["roads"]:
                 self.by_road.setdefault(rd, set()).add(a["id"])
+                self._road_sources.setdefault(rd, set()).add(rd)
             if a["district"]:
                 self.by_district.setdefault(a["district"], set()).add(a["id"])
+                self._district_sources.setdefault(a["district"], set()).add(a["district"])
 
     def _one(self, term):
         if term in self.by_street:
@@ -63,16 +72,39 @@ class Ledger:
         r = self._one(term)
         if r:
             return r
-        # 模糊：街道名包含
+        # 模糊：收集所有索引键；多个不同实体不得静默合并。
+        matches = []
+        for kind, index, sources in (
+            ("街道", self.by_street, self._street_sources),
+            ("路", self.by_road, self._road_sources),
+            ("区", self.by_district, self._district_sources),
+        ):
+            for k, v in index.items():
+                if term in k or k in term:
+                    matches.append((kind, k, v, sources.get(k, {k})))
+
+        source_ids = {
+            (kind, source)
+            for kind, _key, _units, source_names in matches
+            for source in source_names
+        }
+        if len(matches) > 1 and len(source_ids) > 1:
+            candidates = []
+            for kind, _key, _units, source_names in matches:
+                for source in sorted(source_names):
+                    label = f"{source}（{kind}）"
+                    if label not in candidates:
+                        candidates.append(label)
+            preview = "、".join(candidates[:8])
+            more = f" 等 {len(candidates)} 个" if len(candidates) > 8 else ""
+            raise AmbiguousTermError(
+                f"术语『{term}』模糊命中 {len(matches)} 个索引键，涉及多个街道/区/路"
+                f"（{preview}{more}）；请使用完整名称"
+            )
+
         hits = set()
-        for k, v in self.by_street.items():
-            if term in k or k in term:
-                hits |= v
-        if hits:
-            return hits
-        for k, v in self.by_road.items():
-            if term in k or k in term:
-                hits |= v
+        for _kind, _key, units, _source_names in matches:
+            hits |= units
         return hits
 
     def execute(self, text, owner_hint=None):

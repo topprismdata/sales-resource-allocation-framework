@@ -2,7 +2,7 @@
   "contract_version": "1.0",
   "branch": "CC_main",
   "base": "42cf065 (RC2.0, merged)",
-  "current_phase": 4,
+  "current_phase": 5,
   "phases": {
     "P0": {
       "name": "数据包重建",
@@ -38,14 +38,17 @@
     },
     "P4": {
       "name": "语义正确性",
-      "status": "pending",
+      "status": "done",
       "gate": "deterministic_100",
-      "task": "T-007"
+      "task": "T-007",
+      "verified_by": "architect_independent",
+      "result": "单字key清零(96→0), 歧义抛错携候选, 精确匹配未回归"
     },
     "P5": {
       "name": "评测口径改造",
       "status": "pending",
-      "gate": "dual_table"
+      "gate": "dual_table",
+      "task": "T-010"
     },
     "P6": {
       "name": "清理固化",
@@ -97,7 +100,12 @@
     },
     "T-008": {
       "name": "编译性能优化",
-      "status": "dispatched"
+      "status": "done",
+      "result": "T集合逐例等价, 12x加速, 全量编译70行"
+    },
+    "T-009": {
+      "name": "P4语义正确性",
+      "status": "done"
     }
   }
 }
