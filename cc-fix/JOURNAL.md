@@ -535,3 +535,71 @@ FileNotFoundError: [Errno 2] No such file or directory: '/tmp/region.json'
 - ★ 既有缺陷：`tools/fetch_region_osm.py` 对大 bbox 必然 504，
   README「三步切换新城市」在该规模下不可行 → 登记 E-004
 
+## 2026-08-31 T-004 修复 RC2.0 测试回归（验收通过）
+
+### 实施
+
+- `intelligence/adjust.py` 在有 `territory_compiled.json` 时继续走原有
+  TerritoryIR rows 与 `territory_compile.U` piece 路径；无编译产物但有
+  `World` 时，为每个 `Fence` 以 `area_id` 生成稳定伪片，并直接使用 fence
+  几何完成整体/半区调整。
+- 降级模式的 `Proposal.impact["area"]["granularity"]` 明确为 `fence`，
+  正常编译模式明确为 `piece`；缺少编译产物时不写回不存在的编译文件。
+- 未修改 `tests/`、`cc-fix/CONTRACTS.md`，未伪造编译产物，未执行 Git commit。
+
+### 验收
+
+- D1：`23 passed` 全绿。
+- D2：`tests/` 未被修改。
+- D3：降级标记为 `fence`。
+- D4：有编译产物时正常读取，未被回退抢占。
+- 详细实际输出：`cc-fix/verify/T-004-verify.txt`。
+
+## 2026-08-31 T-004 验收通过（RC2.0 测试回归已修复）
+
+**架构层独立执行断言**：
+
+```
+D1 PASS 23 passed 全绿        ← 恢复 b82e46e 基线，RC2.0 回归已消除
+D2 PASS tests/ 未被修改        ← 靠改实现达成，未动既有契约
+D3 PASS 降级被显式标记为 fence 粒度
+D4 PASS 有编译产物时正常读取，未被回退抢占
+```
+
+**实现评价（71+/20-，仅动 intelligence/adjust.py）**：
+
+设计上乘之处在于**所有新增参数均为可选**，默认 `None` 时行为与 RC2.0 逐字节一致，
+这正是 D4 得以通过的原因：
+
+| 新增 | 作用 |
+|---|---|
+| `_compiled_rows_available()` | 判断编译产物可用性；**特意保留「已加载缓存即便文件后被删仍算正常源」**的既有惰性语义 |
+| `_fence_piece_id(fence)` | 以 `area_id` 作稳定片 id（非数组索引，更稳健） |
+| `_fence_rows(world)` | 构造与 TerritoryIR 同形状的伪行 |
+| `_rows_for_world(world)` | 优先编译产物，否则 fence 粒度 |
+| `_piece_geom(k, world)` / `_pieces_union(pieces, world)` | 加可选 world 参数，默认行为不变 |
+
+**★ 超出要求的正确判断**：施工层在降级模式下对**无法正确支持的选择器主动报错**，
+而非给出错误答案：
+
+```python
+if _fence_granularity(world):
+    raise AdjustError("缺少 territory_compiled.json 时，fence 粒度仅支持整个区域或东南西北半区")
+```
+
+且 `_piece_impact` 的 `street` 字段在降级模式返回 `None`，不假装拥有街道信息。
+这与 CONTRACTS §2「禁止静默降级」完全一致——**宁可明确拒绝，不可静默给错**。
+
+**架构层修正一处**：新增 4 处 docstring 为英文，按全局规范（注释一律中文）已汉化；
+汉化后重跑 23 passed 不变。
+
+### 能力矩阵（修复后）
+
+| 场景 | 调整能力 | 标记 |
+|---|---|---|
+| 有 territory_compiled.json | piece 粒度，全部选择器 | `granularity: "piece"` |
+| 无编译产物、有 World | fence 粒度，仅「整个区域/东南西北半区」，其余明确报错 | `granularity: "fence"` |
+| 两者皆无 | 抛 AdjustError（原样） | — |
+
+修复前 RC2.0 的行为是：**无编译产物即完全不可用**。
+

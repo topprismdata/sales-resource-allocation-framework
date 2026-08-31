@@ -1,0 +1,42 @@
+T-004 verification run: 2026-08-31
+Working directory: /Users/cai/Desktop/达能-SRP-AI/sraf
+Scope: RC2.0 adjustment fallback; tests and cc-fix/CONTRACTS.md unchanged; no generated business data.
+
+D1a
+command: python3 -m pytest tests/ -q 2>&1 | tail -3
+stdout/stderr:
+.......................                                                  [100%]
+23 passed in 0.03s
+exit_code: 0
+
+D1b
+command: provided exact pytest assertion
+stdout/stderr:
+D1 PASS 23 passed 全绿
+exit_code: 0
+
+D2
+command: git diff --name-only tests/
+stdout/stderr:
+D2 PASS tests/ 未被修改
+exit_code: 0
+
+D3
+command: provided fallback granularity assertion
+stdout/stderr:
+D3 PASS 降级被显式标记为 fence 粒度
+exit_code: 0
+
+D4
+command: provided compiled-artifact path assertion
+stdout/stderr:
+D4 PASS 有编译产物时正常读取，未被回退抢占
+exit_code: 0
+
+Additional whitespace check:
+command: git diff --check
+stdout/stderr:
+(no output)
+exit_code: 0
+
+Overall: D1-D4 PASS

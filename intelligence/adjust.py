@@ -104,8 +104,38 @@ def _rows() -> list:
     return _ROWS
 
 
-def _row_of(dealer: str) -> dict:
-    hit = next((r for r in _rows() if r.get("dealer") == dealer), None)
+def _compiled_rows_available() -> bool:
+    """编译产物（正常行来源）是否可用。
+
+    已加载的缓存即便其背后文件随后被删除，仍视为正常来源——
+    以此保持既有的惰性加载语义不变。
+    """
+    if _ROWS is not None:
+        return True
+    return (_DATA_DIR is not None
+            and (_DATA_DIR / "territory_compiled.json").exists())
+
+
+def _fence_piece_id(fence: Fence) -> str:
+    """降级模式下的稳定片 id：取源围栏的 area_id。"""
+    return str(fence.area_id)
+
+
+def _fence_rows(world: World) -> list:
+    """编译产物缺失时，构造与 TerritoryIR 同形状的伪行（fence 粒度）。"""
+    return [{"dealer": dealer,
+             "S": [_fence_piece_id(fence) for fence in fences]}
+            for dealer, fences in world.fences_by_dealer.items()]
+
+
+def _rows_for_world(world: World) -> list:
+    """有编译产物时用之；否则回退到 fence 粒度伪行。"""
+    return _rows() if _compiled_rows_available() else _fence_rows(world)
+
+
+def _row_of(dealer: str, world: World | None = None) -> dict:
+    rows = _rows_for_world(world) if world is not None else _rows()
+    hit = next((r for r in rows if r.get("dealer") == dealer), None)
     if hit is None or not hit.get("S"):
         raise AdjustError(
             f"{dealer[:14]} 没有TerritoryIR编译结果（S片为空）——"
@@ -128,13 +158,24 @@ def _street_district_map() -> dict:
     return _STREET_DISTRICT
 
 
-def _piece_geom(k: int):
+def _fence_piece_geoms(world: World) -> dict[str, Polygon]:
+    return {_fence_piece_id(fence): _fence_poly(fence)
+            for fence in world.fences}
+
+
+def _fence_granularity(world: World | None) -> bool:
+    return world is not None and not _compiled_rows_available()
+
+
+def _piece_geom(k, world: World | None = None):
+    if _fence_granularity(world):
+        return _fence_piece_geoms(world)[k]
     return _tc().U[k][0]
 
 
-def _pieces_union(pieces: set):
+def _pieces_union(pieces: set, world: World | None = None):
     """S 片并集（保留 MultiPolygon——不连续领地绝不能截成最大块）。"""
-    geoms = [_piece_geom(k) for k in sorted(pieces)]
+    geoms = [_piece_geom(k, world) for k in sorted(pieces)]
     return unary_union(geoms)
 
 
@@ -192,7 +233,7 @@ _HALF_WORDS = {"东": "east", "南": "south", "西": "west", "北": "north",
 def select_area_pieces(world: World, dealer: str, selector: str
                        ) -> tuple[set, str]:
     """selector → (被选中的 S 片集合, 语义名)。全部落在 src 的 S 片内。"""
-    src = _row_of(dealer)
+    src = _row_of(dealer, world)
     allp = set(src["S"])
     sel = (selector or "全部").strip()
 
@@ -201,11 +242,11 @@ def select_area_pieces(world: World, dealer: str, selector: str
 
     half = _HALF_WORDS.get(sel)
     if half and sel[:1] in "东南西北":
-        fp = _pieces_union(allp)
+        fp = _pieces_union(allp, world)
         c = fp.centroid
         picked = set()
         for k in allp:
-            pc = _piece_geom(k).centroid
+            pc = _piece_geom(k, world).centroid
             if half == "east" and pc.x >= c.x: picked.add(k)
             elif half == "west" and pc.x < c.x: picked.add(k)
             elif half == "north" and pc.y >= c.y: picked.add(k)
@@ -213,6 +254,10 @@ def select_area_pieces(world: World, dealer: str, selector: str
         if not picked:
             raise AdjustError(f"「{sel}」没有命中任何单元片")
         return picked, f"{sel[:1]}部半区"
+
+    if _fence_granularity(world):
+        raise AdjustError(
+            "缺少 territory_compiled.json 时，fence 粒度仅支持整个区域或东南西北半区")
 
     # 街道名（片的主街道标签 或 所在街道面）
     tc = _tc()
@@ -247,7 +292,7 @@ def _dealer_piece_view(world: World, dealer: str, pieces: set) -> dict:
     fp = _fence_union(world, dealer)
     stores = [s for s in world.fence_stores(
         world.fence_by_dealer.get(dealer)) ] if dealer in world.fence_by_dealer else []
-    area = km2(_pieces_union(pieces)) if pieces else 0.0
+    area = km2(_pieces_union(pieces, world)) if pieces else 0.0
     return {"pieces": len(pieces),
             "km2": round(area, 2),
             "stores": len(stores),
@@ -258,16 +303,18 @@ def _dealer_piece_view(world: World, dealer: str, pieces: set) -> dict:
 def _piece_impact(world: World, src: Fence, dst: Fence,
                   moved_pieces: set, moved_stores: list,
                   kb: KnowledgeBase) -> dict:
-    src_row = _row_of(src.dealer)
-    dst_row = next((r for r in _rows() if r.get("dealer") == dst.dealer), {"S": []})
+    src_row = _row_of(src.dealer, world)
+    dst_row = next((r for r in _rows_for_world(world)
+                    if r.get("dealer") == dst.dealer), {"S": []})
     after_src = set(src_row["S"]) - moved_pieces
     after_dst = set(dst_row.get("S") or []) | moved_pieces
 
     moved_detail = []
     for k in sorted(moved_pieces)[:10]:
-        g = _piece_geom(k)
+        g = _piece_geom(k, world)
         moved_detail.append({"piece": k,
-                             "street": _tc().U[k][1],
+                             "street": (None if _fence_granularity(world)
+                                        else _tc().U[k][1]),
                              "km2": round(km2(g), 3)})
     for s in moved_stores[:6]:
         moved_detail.append({"store": s.name, "district": s.district,
@@ -275,7 +322,7 @@ def _piece_impact(world: World, src: Fence, dst: Fence,
 
     signals = [
         {"signal": f"IR 区域划转（决策对象=单元片）：{src.dealer[:14]} "
-                   f"{len(moved_pieces)} 片（{round(km2(_pieces_union(moved_pieces)), 2)} km²）"
+                   f"{len(moved_pieces)} 片（{round(km2(_pieces_union(moved_pieces, world)), 2)} km²）"
                    f"→ {dst.dealer[:14]}；围栏=片并集视图，店随区域走（派生层）",
          "spec_ref": "世界模型 F2 可干预 · F3 派生"},
         {"signal": "I-D 契约版本 +1（E6 围栏变更事件，走 GW 审批）",
@@ -314,7 +361,7 @@ def _piece_impact(world: World, src: Fence, dst: Fence,
                 moved_kind_delta.get(f"{s.kind} → {new_kind}", 0) + 1
     return {
         "action": f"将 {len(moved_pieces)} 个单元片（"
-                  f"{round(km2(_pieces_union(moved_pieces)), 2)} km²）"
+                  f"{round(km2(_pieces_union(moved_pieces, world)), 2)} km²）"
                   f"从「{src.dealer}」划入「{dst.dealer}」",
         "source_after": _dealer_piece_view(world, src.dealer, after_src),
         "target_after": _dealer_piece_view(world, dst.dealer, after_dst),
@@ -363,7 +410,7 @@ def build_proposal(world: World, kb: KnowledgeBase, text: str,
         if cand:
             sel = cand
     moved_pieces, area_desc = select_area_pieces(world, src.dealer, sel)
-    moved_union = _pieces_union(moved_pieces)
+    moved_union = _pieces_union(moved_pieces, world)
     sub_rings = _rings_of_geom(moved_union)
 
     # 派生效果层：片区内 src 门店（可为空，绝不报错）
@@ -373,11 +420,12 @@ def build_proposal(world: World, kb: KnowledgeBase, text: str,
     impact = _piece_impact(world, src, dst, moved_pieces, moved, kb)
     impact["area"] = {
         "area_desc": area_desc,
+        "granularity": "fence" if _fence_granularity(world) else "piece",
         "sub_km2": round(km2(moved_union), 2),
         "sub_pieces": len(moved_pieces),
-        "src_pieces": [len(_row_of(src.dealer)["S"]),
+        "src_pieces": [len(_row_of(src.dealer, world)["S"]),
                        len(impact["_after_sets"]["src"])],
-        "dst_pieces": [len(next((r for r in _rows()
+        "dst_pieces": [len(next((r for r in _rows_for_world(world)
                                  if r.get("dealer") == dst.dealer), {"S": []})["S"]),
                        len(impact["_after_sets"]["dst"])],
         "src_stores": [len(world.fence_stores(src)),
@@ -433,6 +481,8 @@ def _sync_compiled_sets(proposal: Proposal) -> None:
     if _DATA_DIR is None or not proposal.pieces:
         return
     path = _DATA_DIR / "territory_compiled.json"
+    if not path.exists():
+        return
     rows = json.loads(path.read_text(encoding="utf-8"))
     moved = set(proposal.pieces)
     for r in rows:
@@ -469,7 +519,8 @@ def apply_proposal(world: World, proposal: Proposal) -> World:
     # 决策层：围栏几何手术（不再用门店凸包重建）
     #   src: 原手绘几何 ∩ 剩余S片并集（片清空 → 围栏清空，杜绝边缘残渣）
     #   dst: 原几何 ∪ 划转几何
-    after_src = set(_row_of(proposal.src_dealer)["S"]) - set(proposal.pieces)
+    after_src = (set(_row_of(proposal.src_dealer, world)["S"])
+                 - set(proposal.pieces))
     new_fences = [f for f in w2.fences
                   if f.dealer not in (proposal.src_dealer, proposal.dst_dealer)]
     for dealer, op in ((proposal.src_dealer, "sub"),
@@ -479,7 +530,7 @@ def apply_proposal(world: World, proposal: Proposal) -> World:
             continue
         geom = unary_union([_fence_poly(f) for f in origs])
         if op == "sub":
-            geom = (geom.intersection(_pieces_union(after_src))
+            geom = (geom.intersection(_pieces_union(after_src, world))
                     if after_src else None)
         else:
             geom = unary_union([geom, sub])
