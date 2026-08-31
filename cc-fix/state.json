@@ -1,8 +1,8 @@
 {
   "contract_version": "1.0",
   "branch": "CC_main",
-  "base": "b82e46e",
-  "current_phase": 1,
+  "base": "42cf065 (RC2.0, merged)",
+  "current_phase": 2,
   "phases": {
     "P0": {
       "name": "数据包重建",
@@ -14,14 +14,17 @@
     },
     "P1": {
       "name": "路径去硬编码",
-      "status": "in_progress",
+      "status": "done",
       "gate": "deterministic_100",
-      "task": "T-002"
+      "task": "T-002",
+      "verified_by": "architect_independent",
+      "result": "26文件硬编码归零, B1-B6全PASS, 无逻辑改动(89+/62-)"
     },
     "P2": {
       "name": "启动可诊断",
       "status": "pending",
-      "gate": "deterministic_100"
+      "gate": "deterministic_100",
+      "task": "T-003"
     },
     "P3": {
       "name": "消除静默降级",
@@ -44,6 +47,19 @@
       "gate": "deterministic_100"
     }
   },
-  "open_escalations": [],
+  "open_escalations": [
+    {
+      "id": "E-001",
+      "topic": "gz_osm_full.json 需联网 Overpass 拉取",
+      "owner": "user",
+      "blocking": "Phase5 及 territory_compiled.json 生成"
+    },
+    {
+      "id": "E-002",
+      "topic": "RC2.0 自带 5 个测试回归(test_multicomponent)",
+      "owner": "user",
+      "note": "非CC_main引入，已归属验证；建议反馈原作者或纳入后续Phase"
+    }
+  ],
   "resolved_escalations": []
 }
