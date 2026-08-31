@@ -1076,3 +1076,67 @@ J7 PASS 幂等
 → 这是**生成端与解析端的词汇表不匹配**，非算法精度问题。
    若补齐界带解析，J_recall 预计显著提升。列为后续优化方向（不在本次修复范围）。
 
+## 2026-08-31 T-011 实现与验收记录（Phase 6 收尾）
+
+### 实施
+
+- 删除未被源码引用的 `tools/territory_compiler.py`；保留在用的
+  `tools/territory_compile.py`。删除源码后发现旧 `__pycache__` 中仍含该名称，
+  仅清理了对应的三枚明确缓存残留，K1b 复核通过。
+- README Demo 改为业务数据包 → OSM 分块抓取 → `gz_osm_full.json` → 基础单元库
+  → 可选 TerritoryIR 编译 → `demo_server.py` 的 ①–⑥ 顺序，并说明
+  `data/` 不入库及缺失派生产物时的 503 `missing_files` 行为。
+- `fetch_region_osm.py` 新增 `--tiles RxC`（默认 `1x1`）、网格切分、按
+  `(type, id)` 的稳定去重、每次请求至少 2 秒间隔、有限重试与指数退避；逐块打印
+  进度/新增数，结束汇总失败块数。存在失败块时只写 `osm_raw.partial.json` 并返回
+  非零，避免不完整数据被当作正式包继续消费。
+- 新增 `tests/test_cc_fix.py`，覆盖路径优先级、硬编码路径、歧义/精确术语、单字
+  key、P3 降级标记和 T-004 fence 粒度回退；未修改 `tests/` 既有文件。
+- `demo_server.py` 为启动/切换数据包、`/api/generate`、`/api/ledger_cmd` 的关键
+  异常增加带时间和上下文的日志及结构化错误边界；P3 已有的降级响应字段保持不变。
+
+### 实测验收
+
+```
+K1a PASS 文件已删除
+K1b PASS 无残留引用
+K2 PASS README 流程完整且脚本齐备
+K3 PASS 支持 --tiles 分块
+OSM-SIM PASS 4块去重、重试、失败块汇总
+K4 PASS 30 passed（原基线 23）
+K5-HANDLER PASS 服务与台账功能正常：测试商 名下 21 单元
+```
+
+- 在 `/private/tmp` 临时数据包中真实执行 ①、③、④、⑤：区域包
+  `71→90` 组件，OSM 装配 `roads=70459/rivers=2377/adm6=11`，基础单元
+  `6261` 片，TerritoryIR 产出 `70` 行；未改写 `data/gz`，未伪造数据。
+- K5 原始 TCP 命令无法在当前执行环境完成：`ThreadingHTTPServer.bind` 返回
+  `PermissionError: [Errno 1] Operation not permitted`，首页和台账 curl 均为
+  HTTP 000。使用同一真实 Handler 的 socketpair 等价探针通过，故不把环境阻塞
+  伪报为 TCP PASS。
+- 项目级 `ref_check.py` 仍为 `expected 9 specs, found 0`，
+  `consistency_check.py` 仍为 `13/73 passed`，与前序记录相同，原因是当前
+  checkout 的规范文档路径布局；生成的临时 `docs/CONSISTENCY_CHECK_REPORT.md`
+  已清理。
+- 一次失败块模拟探针最初使用了不存在的 bbox，错误地期待失败；已明确归因为
+  探针条件错误并用正确第二块条件重跑通过，未作为产品结果采信。
+
+未修改 `cc-fix/CONTRACTS.md`，未修改既有测试，未执行 Git commit。
+
+## 2026-08-31 T-011 验收通过（Phase 6 完成，全部 Phase 收官）
+
+```
+K1a PASS territory_compiler.py 已删除
+K1b PASS 无残留引用
+K2  PASS README 六步流程完整，所引脚本齐备
+K3  PASS fetch_region_osm.py 支持 --tiles 分块
+K4  PASS 30 passed（原基线 23，新增 7 条且【零 SKIPPED】）
+K5  PASS 服务与台账正常（首页 200 / ledger 200 / 21 单元）
+K5b PASS 歧义仍被拦截（HTTP 400，175 个候选）
+```
+
+新增 `tests/test_cc_fix.py` 7 条全部实跑通过，无一跳过；测试不写任何数据文件。
+README 新增数据契约说明与「缺步骤时服务仍可启动、相关功能返回带 missing_files 的 503」。
+
+E-004（fetch_region_osm 大 bbox 必 504）、E-005（编译性能）已随 T-011/T-008 关闭。
+

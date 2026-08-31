@@ -4,7 +4,7 @@
 
 > **Decision question:** A sales manager draws a territory polygon on a digital map. A field rep describes the same territory in natural language: "凤凰街道 + 龙洞街道沿华南快速，西至龙洞街道—长兴街道界". Are they talking about the same place? TerritoryIR bridges these two representations through bidirectional compilation.
 
-Part of **TopPrism Decision Intelligence**. 
+Part of **TopPrism Decision Intelligence**.
 
 ---
 
@@ -82,15 +82,28 @@ Five theorems establish the system's formal guarantees:
 ## Demo
 
 ```bash
-# Static file server (for compare page)
-python3 -m http.server 8801 --directory data/gz/
+# ① 业务数据包（来自 客户数据/ 的 CSV + geojson）
+python3 tools/build_region_pack.py
 
-# Full recompile
+# ② OSM 路网水系（需联网；广州规模必须分块）
+python3 tools/fetch_region_osm.py --bbox 22.45,112.90,24.00,114.15 --out data/gz --tiles 4x4
+
+# ③ 由 OSM 原始数据装配编译器输入
+python3 tools/build_osm_full.py
+
+# ④ 基础单元库（台账功能的前提；耗时数分钟）
+python3 tools/build_unit_library.py
+
+# ⑤ TerritoryIR 编译（可选，仅在需要 S 片回放时）
 python3 tools/territory_compile.py
 
-# Compare page
-open http://127.0.0.1:8801/j_compare.html
+# ⑥ 启动
+python3 tools/demo_server.py --data-dir data/gz 8765
 ```
+
+`data/` 按数据契约不入库，clone 后必须先完成 ①–④；第 ⑤ 步只在需要
+TerritoryIR 的 S 片回放时执行。缺少某一步的派生产物时，服务仍可启动，
+相关功能会返回带 `missing_files` 的 HTTP 503，提示需要补跑的步骤。
 
 ## Paper
 

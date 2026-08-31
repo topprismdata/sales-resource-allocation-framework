@@ -10,6 +10,7 @@ LLM·M3 兜底自由句式，失败原因透传）③分析（Q1 健康 / Q2 缺
 from __future__ import annotations
 
 import json
+import logging
 import math
 import os
 import random
@@ -39,6 +40,28 @@ sys.path.insert(0, str(ROOT / "tools"))
 from yeidai_ops import YeidaiState, llm_parse_op  # noqa: E402
 from allocation_ledger import Ledger, ring_of  # noqa: E402
 from intelligence.world import World, point_in_ring  # noqa: E402
+
+
+LOG = logging.getLogger("sraf.demo")
+if not LOG.handlers:
+    _handler = logging.StreamHandler()
+    _handler.setFormatter(logging.Formatter(
+        "%(asctime)s [%(levelname)s] %(name)s %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    ))
+    LOG.addHandler(_handler)
+    LOG.setLevel(logging.INFO)
+    LOG.propagate = False
+
+
+def _log_exception(context: str, exc: BaseException) -> None:
+    """记录带时间和上下文的异常，供关键链路诊断。"""
+    LOG.error("%s: %s: %s", context, type(exc).__name__, exc, exc_info=True)
+
+
+def _log_expected_failure(context: str, exc: BaseException) -> None:
+    """记录可返回给调用方的输入/能力错误。"""
+    LOG.warning("%s: %s: %s", context, type(exc).__name__, exc)
 
 
 def _parse_argv(argv: list[str]) -> tuple[int, str | None]:
@@ -230,6 +253,7 @@ def _get_ledger() -> Ledger:
     try:
         cached = Ledger(data_dir=data_dir)
     except Exception as exc:  # noqa: BLE001 — 可选能力加载失败转为诊断错误
+        _log_exception(f"ledger data-pack load data_dir={data_dir}", exc)
         missing = _missing_files(data_dir, required)
         raise OptionalDataError("台账", data_dir, missing or required,
                                 str(exc)) from exc
@@ -249,6 +273,7 @@ def _get_yeidai(force_reload: bool = False) -> YeidaiState:
     try:
         cached = YeidaiState(data_dir=data_dir)
     except Exception as exc:  # noqa: BLE001 — 可选能力加载失败转为诊断错误
+        _log_exception(f"yeidai data-pack load data_dir={data_dir}", exc)
         missing = _missing_files(data_dir, required)
         raise OptionalDataError("业代围栏", data_dir, missing or required,
                                 str(exc)) from exc
@@ -264,9 +289,21 @@ def _yeidai_snapshot(st: YeidaiState) -> list[dict]:
 
 
 try:
-    INITIAL_PACK = _load_pack(_resolve_data_dir(DATA_DIR_ARG))
+    _initial_data_dir = _resolve_data_dir(DATA_DIR_ARG)
+    INITIAL_PACK = _load_pack(_initial_data_dir)
 except DataPackError as exc:
+    _log_expected_failure(f"startup data-pack load data_dir={_initial_data_dir!r}", exc)
     print(str(exc), file=sys.stderr)
+    raise SystemExit(1)
+except Exception as exc:
+    _log_exception(f"startup data-pack load data_dir={_initial_data_dir!r}", exc)
+    print(json.dumps({
+        "error": f"数据包加载失败: {type(exc).__name__}: {exc}",
+        "feature": "数据包加载",
+        "error_type": type(exc).__name__,
+        "data_dir": str(_initial_data_dir),
+        "hint": "请检查数据包文件或运行 tools/validate_region_pack.py",
+    }, ensure_ascii=False), file=sys.stderr)
     raise SystemExit(1)
 
 
@@ -420,6 +457,8 @@ class Handler(BaseHTTPRequestHandler):
         try:
             return _get_ledger()
         except OptionalDataError as exc:
+            _log_expected_failure(f"/api/ledger data-pack unavailable "
+                                  f"data_dir={exc.data_dir}", exc)
             self._send(503, exc.payload())
             return None
 
@@ -427,6 +466,8 @@ class Handler(BaseHTTPRequestHandler):
         try:
             return _get_yeidai()
         except OptionalDataError as exc:
+            _log_expected_failure(f"/api/yeidai data-pack unavailable "
+                                  f"data_dir={exc.data_dir}", exc)
             self._send(503, exc.payload())
             return None
 
@@ -595,7 +636,42 @@ class Handler(BaseHTTPRequestHandler):
         self._send(404, {"error": "not found"})
 
     def do_POST(self):
+        """为 POST 关键链路提供统一的日志与结构化异常边界。"""
+        try:
+            self._do_POST()
+        except Exception as exc:  # noqa: BLE001 — 最外层路由保护
+            path = getattr(self, "path", "<unknown>")
+            body = getattr(self, "_last_body", {})
+            if not isinstance(body, dict):
+                body = {}
+            feature = {
+                "/api/generate": "区域生成",
+                "/api/ledger_cmd": "台账",
+                "/api/switch": "数据包加载",
+            }.get(path, "POST 请求")
+            context = (f"{path} area_id={body.get('area_id')!r} "
+                       f"dealer={body.get('dealer')!r}")
+            _log_exception(context, exc)
+            try:
+                data_dir = str(_current()["data_dir"])
+            except Exception:  # noqa: BLE001 — 启动阶段可能尚未有 STATE
+                data_dir = None
+            payload = {
+                "error": f"{feature}处理失败: {type(exc).__name__}: {exc}",
+                "feature": feature,
+                "error_type": type(exc).__name__,
+                "context": context,
+            }
+            if data_dir is not None:
+                payload["data_dir"] = data_dir
+            try:
+                self._send(500, payload)
+            except Exception as send_exc:  # noqa: BLE001 — 客户端可能已断开
+                _log_exception(f"{context} 发送结构化错误失败", send_exc)
+
+    def _do_POST(self):
         body = self._body()
+        self._last_body = body
         if self.path == "/api/create_region":
             name = str(body.get("name", "")).strip()
             bbox = body.get("bbox")  # [south, west, north, east]
@@ -779,8 +855,15 @@ class Handler(BaseHTTPRequestHandler):
                     STATE.clear()
                     STATE.update(new_state)
             except Exception as e:  # noqa: BLE001
-                self._send(400, {"error": f"数据包加载失败: {e}；"
-                                          f"先跑 tools/validate_region_pack.py {target}"})
+                _log_exception(f"switch data-pack load region={rid!r} target={target}", e)
+                self._send(400, {
+                    "error": f"数据包加载失败: {e}；"
+                             f"先跑 tools/validate_region_pack.py {target}",
+                    "feature": "数据包加载",
+                    "error_type": type(e).__name__,
+                    "region": rid,
+                    "data_dir": str(target),
+                })
                 return
             self._send(200, {"ok": True,
                              "region": STATE["pack"]["region_name"],
@@ -966,7 +1049,9 @@ class Handler(BaseHTTPRequestHandler):
                             "missing": umiss, "bounds_geometry": {},
                             "dealer": dealer})
                         return
-                except Exception:
+                except Exception as e:
+                    _log_exception(f"/api/generate area_id={area_id!r} "
+                                   "unit-v2 preflight", e)
                     pass  # V2 失败 → V1c 兜底
                 rr = (area_est / math.pi) ** 0.5
                 spec, missing, detail, bounds_geo = {}, [], {}, {}
@@ -1016,12 +1101,16 @@ class Handler(BaseHTTPRequestHandler):
                         rb = {"ring": list(ugeom.exterior.coords),
                               "area_km2": ugeom.area * 11320 * 1.0084}
                         detail["allocator"] = "unit-v2"
-                except Exception:
+                except Exception as e:
+                    _log_exception(f"/api/generate area_id={area_id!r} "
+                                   "unit-v2 fallback", e)
                     rb = None
                 if rb is None:
                     try:
                         rb = build_from_landmark_ratios(dealer, spec, tuple(center), osm)
                     except Exception as e:  # noqa: BLE001
+                        _log_exception(f"/api/generate area_id={area_id!r} "
+                                       "landmark reconstruction", e)
                         self._send(400, {"error": f"重建失败: {e}; missing={missing}"})
                         return
                     if "error" in rb:
@@ -1055,7 +1144,23 @@ class Handler(BaseHTTPRequestHandler):
                 try:
                     owner, n = led.execute(q)
                 except ValueError as e:
-                    self._send(400, {"error": str(e)})
+                    context = f"/api/ledger_cmd text_len={len(q)}"
+                    _log_expected_failure(context, e)
+                    self._send(400, {"error": str(e),
+                                     "feature": "台账",
+                                     "error_type": type(e).__name__,
+                                     "context": context})
+                    return
+                except Exception as e:  # noqa: BLE001 — 关键链路结构化保护
+                    context = f"/api/ledger_cmd text_len={len(q)}"
+                    _log_exception(context, e)
+                    self._send(500, {
+                        "error": f"台账处理失败: {type(e).__name__}: {e}",
+                        "feature": "台账",
+                        "error_type": type(e).__name__,
+                        "context": context,
+                        "data_dir": str(pack["data_dir"]),
+                    })
                     return
                 self._send(200, {"message": f"{owner} 名下 {n} 单元",
                                  "summary": led.summary()})
