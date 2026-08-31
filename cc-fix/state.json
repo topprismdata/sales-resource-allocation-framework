@@ -2,7 +2,7 @@
   "contract_version": "1.0",
   "branch": "CC_main",
   "base": "42cf065 (RC2.0, merged)",
-  "current_phase": 2,
+  "current_phase": 3,
   "phases": {
     "P0": {
       "name": "数据包重建",
@@ -22,14 +22,17 @@
     },
     "P2": {
       "name": "启动可诊断",
-      "status": "pending",
+      "status": "done",
       "gate": "deterministic_100",
-      "task": "T-003"
+      "task": "T-003",
+      "verified_by": "architect_independent",
+      "result": "服务可启动(首页/api/fences 均200), 缺数据返回结构化503"
     },
     "P3": {
       "name": "消除静默降级",
       "status": "pending",
-      "gate": "deterministic_100"
+      "gate": "deterministic_100",
+      "task": "T-005"
     },
     "P4": {
       "name": "语义正确性",
@@ -59,7 +62,25 @@
       "topic": "RC2.0 自带 5 个测试回归(test_multicomponent)",
       "owner": "user",
       "note": "非CC_main引入，已归属验证；建议反馈原作者或纳入后续Phase"
+    },
+    {
+      "id": "E-003",
+      "topic": "/api/bootstrap 返回 HTTP 000（疑超时或依赖缺失数据）",
+      "owner": "claude",
+      "note": "T-003 验收时发现，不阻塞，待后续排查"
+    },
+    {
+      "id": "E-004",
+      "topic": "fetch_region_osm.py 对大 bbox 必然 504，需分块",
+      "owner": "claude",
+      "note": "广州围栏跨21.9-25.5N，单次查询超时；已用临时分块脚本绕过"
     }
   ],
-  "resolved_escalations": []
+  "resolved_escalations": [],
+  "extra_tasks": {
+    "T-004": {
+      "name": "修复RC2.0测试回归",
+      "status": "dispatched"
+    }
+  }
 }

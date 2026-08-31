@@ -10,6 +10,7 @@
 几何（围栏）= 该经销商名下单元的并集，仅作渲染。
 """
 import json, re, math
+from pathlib import Path
 import shapely
 from shapely.geometry import Polygon, Point, LineString
 from shapely.strtree import STRtree
@@ -18,11 +19,12 @@ from _paths import DATA
 
 
 class Ledger:
-    def __init__(self):
-        d = json.load(open(f"{DATA}/unit_attributes.json", encoding="utf-8"))
+    def __init__(self, data_dir=None):
+        self.data_dir = Path(data_dir) if data_dir is not None else Path(DATA)
+        d = json.load(open(self.data_dir / "unit_attributes.json", encoding="utf-8"))
         self.attrs = d["units"]                       # id → district/street/roads
         self.geoms = [shapely.from_wkt(u["geom"]) for u in
-                      json.load(open(f"{DATA}/basic_units_wgs.json",
+                      json.load(open(self.data_dir / "basic_units_wgs.json",
                                      encoding="utf-8"))["units"]]
         self.owner = {}                               # unit_id → owner
         self.log = []

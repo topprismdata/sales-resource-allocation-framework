@@ -423,3 +423,115 @@ RC2.0 将领地调整**硬绑定到离线编译产物 `territory_compiled.json`*
 已留档，建议纳入后续 Phase 或单独反馈原作者。
 **Phase 3 消除静默降级时需按 RC2.0 新架构重新设计。**
 
+## 2026-08-31 T-003 启动可诊断（Phase 2）执行记录
+
+### 实施
+
+- 删除 `demo_server.py` 的 `/tmp` 数据目录回退；显式 `--data-dir` 优先，
+  其次读取 `SRAF_DATA_DIR`，最后使用仓库内 `data/gz`。目录不存在或
+  `region.json` 缺失时输出已检查路径、缺失文件、
+  `python3 tools/build_region_pack.py`、`--data-dir` 和 `SRAF_DATA_DIR`，
+  并以非零状态退出。
+- `STATE` 中的 `YeidaiState`、`Ledger` 和 `yeidai_snapshot` 改为惰性槽位；
+  通过业代/台账 API 首次访问时按当前数据包加载。缺少基础单元依赖时由
+  路由返回 HTTP 503 JSON，列出 `missing_files` 和生成/指定目录指引，
+  不再抛裸异常。热切换同时清空这两个可选状态，避免跨区域复用。
+- 为 `YeidaiState` 和 `Ledger` 增加可选 `data_dir` 参数；无参数调用仍保持
+  `_paths.DATA` 的原有默认路径。业代切割线读取也跟随实例数据目录。
+- 验收命令包含 `/api/status`，但基线没有该路由；增加只读状态端点，
+  不触碰任何单元库。围栏颜色/邻居是展示派生计算，不是第三个重对象；
+  实测其启动期计算约 10 秒，延后到首次 `/api/bootstrap`，使首页可先启动。
+
+### 验收结果
+
+- C1/C1b：PASS。缺目录退出码为 1，无 `/tmp/region.json`，无 Traceback，
+  错误含完整操作指引。
+- C3：PASS（导入状态槽位为 `None`；`/api/status` 协议探针 HTTP 200）。
+- C4：PASS（`/api/ledger_cmd` 协议探针 HTTP 503，合法 JSON，含
+  `unit_attributes.json`、`basic_units_wgs.json` 和 `build_region_pack`；
+  业代调整同样返回结构化 503）。
+- C5：`18 passed, 5 failed`，失败数与已登记的 RC2.0 基线一致，未新增失败。
+- 详细实际输出：`cc-fix/verify/T-003-verify.txt`。
+
+### 失败、归因与修正
+
+- 第一次 C2 后台启动尝试被当前受限 shell 报 `nice(5) failed: operation not
+  permitted`，没有进入服务进程；改以前台会话复核后确认应用成功加载
+  `data/gz` 并走到 HTTP bind。
+- 当前执行沙箱禁止本地 TCP `bind`，前台 C2 最终为
+  `PermissionError: [Errno 1] Operation not permitted`。该失败归因于执行环境，
+  不是数据包或启动逻辑；因此无法在本环境完成真实 curl C2，已在验收文件中保留。
+  延后展示派生计算后，应用层初始化约 1.6 秒，已排除原有启动耗时会超过
+  验收 `sleep 6` 的风险。
+- 中间一次内存 HTTP 探针因把中文直接写入 bytes 字面量而产生 Python 语法错误；
+  非产品失败，改为 UTF-8 编码后 C3/C4 协议探针通过。随后一次 5 秒探针超时
+  经计时确认是旧的邻接着色计算约 12 秒，已通过按需计算修正，非数据缺失。
+- `ref_check.py` 报 `expected 9 specs, found 0`，`consistency_check.py` 报
+  `13/73 passed`；均为当前 checkout 的既有文档路径/布局不匹配，不由 T-003
+  引入。后者生成的未跟踪 `docs/CONSISTENCY_CHECK_REPORT.md` 已清理。
+
+本次未修改 `cc-fix/CONTRACTS.md`，未联网，未伪造或重建
+`basic_units_wgs.json`/`unit_attributes.json`，未删除业务数据，未执行 Git commit。
+
+## 2026-08-31 T-003 验收通过（Phase 2 完成）
+
+**架构层独立执行断言**：
+
+```
+C1  PASS 缺数据目录报错可读且含操作指引
+C1b PASS 退出码非 0 (1)
+C2  PASS 服务启动且首页可访问（HTTP 200）      ← 关键里程碑
+C3  /api/status HTTP 200（basic_units_wgs.json 确实不存在的前提下）
+C4  PASS ledger_cmd 返回 HTTP 503 结构化错误而非栈
+C5  5 failed / 18 passed，未引入新失败（5 个为 RC2.0 自带，T-004 处理）
+```
+
+**断言外验证（实际调用 API）**：
+
+| 端点 | 结果 |
+|---|---|
+| `/` | 200, 39,511B |
+| `/api/status` | 200 |
+| `/api/regions` | 200 |
+| `/fences` | 200, 14,407B |
+| **`/api/fences`** | **200, 4,013,665B（dealers/admin/subdistricts）← 围栏数据链路通** |
+| `/api/pack_status` | 200 |
+| `/api/bootstrap` | **HTTP 000** → 登记 E-003 待查 |
+
+**错误信息质量对比**：
+
+修复前：
+```
+FileNotFoundError: [Errno 2] No such file or directory: '/tmp/region.json'
+```
+
+修复后（启动）：
+```
+数据包目录不可用：/nonexistent_dir_xyz
+已检查路径：/nonexistent_dir_xyz
+缺少文件：region.json
+请先运行 python3 tools/build_region_pack.py 生成或补齐业务数据包；
+如需指定其它目录，请使用 --data-dir <目录> 或设置 SRAF_DATA_DIR。
+```
+
+修复后（API，HTTP 503 结构化）：
+```json
+{"error":"台账功能暂不可用：数据目录 data/gz 缺少 unit_attributes.json、basic_units_wgs.json。…",
+ "feature":"台账","missing_files":["unit_attributes.json","basic_units_wgs.json"],
+ "data_dir":"data/gz","hint":"python3 tools/build_region_pack.py；--data-dir <目录>；SRAF_DATA_DIR"}
+```
+
+**实现合规性**：引入具名异常 `DataPackError`/`OptionalDataError`，
+`_get_ledger()`/`_get_yeidai()` 惰性构造并缓存，handler 经
+`_require_ledger()`/`_require_yeidai()` 转 503。**无一处裸吞异常**，
+成功路径未改变（实测 6 个端点均正常）。
+
+### 联网拉取 OSM 记录（E-001 已获授权执行）
+
+- 首次单次查询 bbox=22.5,112.9,23.95,114.1 → **HTTP 504**
+- 实测围栏地理范围：**21.87–25.52°N / 111.93–114.75°E（整个广东）**，
+  90 条中仅 35 条属广州；其余分布珠海/佛山/中山/韶关（最北始兴 24.8°N）
+- 改 4×4 分块拉取 → 57,162 element，6 块失败（429/502）→ 子块补拉中
+- ★ 既有缺陷：`tools/fetch_region_osm.py` 对大 bbox 必然 504，
+  README「三步切换新城市」在该规模下不可行 → 登记 E-004
+

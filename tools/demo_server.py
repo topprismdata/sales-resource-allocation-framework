@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import random
 import sys
 import threading
@@ -110,10 +111,28 @@ PAGE = ROOT / "tools" / "demo_page.html"
 
 def _resolve_data_dir(data_dir_arg: str | None) -> Path:
     if data_dir_arg:
-        return Path(data_dir_arg)
-    if (ROOT / "data" / "gz").is_dir():
-        return ROOT / "data" / "gz"
-    return Path("/tmp")
+        data_dir = Path(data_dir_arg).expanduser()
+    else:
+        env_data_dir = os.environ.get("SRAF_DATA_DIR")
+        data_dir = (Path(env_data_dir).expanduser() if env_data_dir
+                    else ROOT / "data" / "gz")
+    if not data_dir.is_dir():
+        print(_data_pack_error(data_dir, ["region.json"]), file=sys.stderr)
+        raise SystemExit(1)
+    return data_dir
+
+
+class DataPackError(RuntimeError):
+    """启动数据包不可用，但允许运行时切换路由转成 JSON 错误。"""
+
+
+def _data_pack_error(data_dir: Path, missing: list[str]) -> str:
+    names = "、".join(missing)
+    return (f"数据包目录不可用：{data_dir}\n"
+            f"已检查路径：{data_dir}\n"
+            f"缺少文件：{names}\n"
+            "请先运行 python3 tools/build_region_pack.py 生成或补齐业务数据包；"
+            "如需指定其它目录，请使用 --data-dir <目录> 或设置 SRAF_DATA_DIR。")
 
 
 def _load_pack(data_dir: Path) -> dict:
@@ -121,9 +140,15 @@ def _load_pack(data_dir: Path) -> dict:
 
     坐标系契约：数据包默认 crs=GCJ-02（高德系），在此一次性转成
     WGS-84 供内部使用；OSM 本就是 WGS-84。meta.crs 可显式声明。"""
+    data_dir = Path(data_dir)
+    region_path = data_dir / "region.json"
+    if not data_dir.is_dir():
+        raise DataPackError(_data_pack_error(data_dir, ["region.json"]))
+    if not region_path.is_file():
+        raise DataPackError(_data_pack_error(data_dir, ["region.json"]))
     meta_path = data_dir / "meta.json"
     meta = json.loads(meta_path.read_text(encoding="utf-8")) if meta_path.exists() else {}
-    reg = json.loads((data_dir / "region.json").read_text(encoding="utf-8"))
+    reg = json.loads(region_path.read_text(encoding="utf-8"))
     contracts_path = data_dir / "contracts.json"
     contracts = (json.loads(contracts_path.read_text(encoding="utf-8"))
                  if contracts_path.exists() else [])
@@ -131,12 +156,22 @@ def _load_pack(data_dir: Path) -> dict:
     w = World(reg)
     osm_path = data_dir / "osm_parsed.json"
     osm = json.loads(osm_path.read_text(encoding="utf-8")) if osm_path.exists() else None
-    colors, neighbors = _assign_dealer_colors(w.fences)
     return {"data_dir": data_dir, "world": w, "contracts": contracts, "osm": osm,
-            "meta": meta, "colors": colors, "neighbors": neighbors,
+            "meta": meta, "colors": {}, "neighbors": {},
+            "styles_ready": False,
             "region_name": meta.get("region_name", data_dir.name),
             "map_center": tuple(meta.get("center", [113.35, 23.05])),
             "map_zoom": int(meta.get("zoom", 10))}
+
+
+def _ensure_pack_styles(pack: dict) -> None:
+    """按需生成仅供 bootstrap 展示的颜色/邻居派生数据。"""
+    if pack.get("styles_ready"):
+        return
+    colors, neighbors = _assign_dealer_colors(pack["world"].fences)
+    pack["colors"] = colors
+    pack["neighbors"] = neighbors
+    pack["styles_ready"] = True
 
 
 def _list_regions() -> list[dict]:
@@ -157,11 +192,87 @@ def _list_regions() -> list[dict]:
     return out
 
 
+class OptionalDataError(RuntimeError):
+    """某项可选能力的派生数据缺失，必须由 API 返回结构化错误。"""
+
+    def __init__(self, feature: str, data_dir: Path, missing: list[str],
+                 detail: str | None = None):
+        self.feature = feature
+        self.data_dir = Path(data_dir)
+        self.missing = list(missing)
+        self.detail = detail
+        suffix = f"；读取失败：{detail}" if detail else ""
+        super().__init__(
+            f"{feature}功能暂不可用：数据目录 {self.data_dir} 缺少"
+            f" {'、'.join(self.missing)}{suffix}。"
+            "请先运行 python3 tools/build_region_pack.py 生成或补齐业务数据包；"
+            "如需指定其它目录，请使用 --data-dir <目录> 或设置 SRAF_DATA_DIR。")
+
+    def payload(self) -> dict:
+        return {"error": str(self), "feature": self.feature,
+                "missing_files": self.missing, "data_dir": str(self.data_dir),
+                "hint": "python3 tools/build_region_pack.py；--data-dir <目录>；SRAF_DATA_DIR"}
+
+
+def _missing_files(data_dir: Path, names: list[str]) -> list[str]:
+    return [name for name in names if not (data_dir / name).is_file()]
+
+
+def _get_ledger() -> Ledger:
+    cached = STATE.get("ledger")
+    if cached is not None:
+        return cached
+    data_dir = Path(_current()["data_dir"])
+    required = ["unit_attributes.json", "basic_units_wgs.json"]
+    missing = _missing_files(data_dir, required)
+    if missing:
+        raise OptionalDataError("台账", data_dir, missing)
+    try:
+        cached = Ledger(data_dir=data_dir)
+    except Exception as exc:  # noqa: BLE001 — 可选能力加载失败转为诊断错误
+        missing = _missing_files(data_dir, required)
+        raise OptionalDataError("台账", data_dir, missing or required,
+                                str(exc)) from exc
+    STATE["ledger"] = cached
+    return cached
+
+
+def _get_yeidai(force_reload: bool = False) -> YeidaiState:
+    cached = STATE.get("yeidai")
+    if cached is not None and not force_reload:
+        return cached
+    data_dir = Path(_current()["data_dir"])
+    required = ["basic_units_wgs.json", "haizhu_liwan_zones_original.json"]
+    missing = _missing_files(data_dir, required)
+    if missing:
+        raise OptionalDataError("业代围栏", data_dir, missing)
+    try:
+        cached = YeidaiState(data_dir=data_dir)
+    except Exception as exc:  # noqa: BLE001 — 可选能力加载失败转为诊断错误
+        missing = _missing_files(data_dir, required)
+        raise OptionalDataError("业代围栏", data_dir, missing or required,
+                                str(exc)) from exc
+    STATE["yeidai"] = cached
+    STATE["yeidai_snapshot"] = None
+    return cached
+
+
+def _yeidai_snapshot(st: YeidaiState) -> list[dict]:
+    snapshot = st.snapshot()
+    STATE["yeidai_snapshot"] = snapshot
+    return snapshot
+
+
+try:
+    INITIAL_PACK = _load_pack(_resolve_data_dir(DATA_DIR_ARG))
+except DataPackError as exc:
+    print(str(exc), file=sys.stderr)
+    raise SystemExit(1)
+
+
 STATE_LOCK = threading.Lock()
-STATE = {"pack": _load_pack(_resolve_data_dir(DATA_DIR_ARG)),
-         "world": None, "proposal": None,
-         "yeidai": YeidaiState(), "yeidai_snapshot": YeidaiState().snapshot(),
-         "ledger": Ledger()}
+STATE = {"pack": INITIAL_PACK, "world": None, "proposal": None,
+         "yeidai": None, "yeidai_snapshot": None, "ledger": None}
 STATE["world"] = STATE["pack"]["world"]
 
 
@@ -170,6 +281,7 @@ def _current() -> dict:
 
 
 def _world_snapshot(w: World, pack: dict) -> dict:
+    _ensure_pack_styles(pack)
     return {
         "fences": [{"area_id": f.area_id, "dealer": f.dealer,
                     "area_km2": f.area_km2,
@@ -297,6 +409,20 @@ class Handler(BaseHTTPRequestHandler):
         n = int(self.headers.get("Content-Length") or 0)
         return json.loads(self.rfile.read(n) or b"{}")
 
+    def _require_ledger(self):
+        try:
+            return _get_ledger()
+        except OptionalDataError as exc:
+            self._send(503, exc.payload())
+            return None
+
+    def _require_yeidai(self):
+        try:
+            return _get_yeidai()
+        except OptionalDataError as exc:
+            self._send(503, exc.payload())
+            return None
+
     def do_GET(self):
         path = self.path.split("?")[0]
         if path in ("/", "/index.html"):
@@ -342,6 +468,10 @@ class Handler(BaseHTTPRequestHandler):
         with STATE_LOCK:
             pack = _current()
             w = STATE["world"]
+            if path == "/api/status":
+                self._send(200, {"ok": True, "region": pack["region_name"],
+                                 "data_dir": str(pack["data_dir"])})
+                return
             if path == "/api/regions":
                 self._send(200, {"regions": _list_regions(),
                                  "current": pack["data_dir"].name})
@@ -409,7 +539,9 @@ class Handler(BaseHTTPRequestHandler):
                            if df.exists() else [])
                 return
             if path == "/api/ledger":
-                led: Ledger = STATE["ledger"]
+                led = self._require_ledger()
+                if led is None:
+                    return
                 summ = led.summary()
                 for s in summ:
                     g = led.fence_geom(s["owner"])
@@ -607,6 +739,7 @@ class Handler(BaseHTTPRequestHandler):
                 Fence(area_id, dealer, real_area, tuple(map(tuple, ring)))])
             cols, nbs = _assign_dealer_colors(w2.fences)
             pack["world"] = w2; pack["colors"] = cols; pack["neighbors"] = nbs
+            pack["styles_ready"] = True
             STATE["world"] = w2; STATE["proposal"] = None
             pack["contracts"].append({
                 "dealer_id": dealer, "district": (areas[0] if areas else "—"),
@@ -633,7 +766,8 @@ class Handler(BaseHTTPRequestHandler):
             try:
                 with STATE_LOCK:
                     new_state = {"pack": _load_pack(target), "world": None,
-                                 "proposal": None}
+                                 "proposal": None, "yeidai": None,
+                                 "yeidai_snapshot": None, "ledger": None}
                     new_state["world"] = new_state["pack"]["world"]
                     STATE.clear()
                     STATE.update(new_state)
@@ -694,7 +828,9 @@ class Handler(BaseHTTPRequestHandler):
                     terms = hit.get("engine_terms") or hit.get("desc_compact")
                     area_id = area_id or hit.get("area_id")
                     if terms:
-                        led: Ledger = STATE["ledger"]
+                        led = self._require_ledger()
+                        if led is None:
+                            return
                         owner_key = f"{dealer or (area_id or '')}#{area_id or 'manual'}"
                         errt = []
                         for tm in terms:
@@ -735,7 +871,9 @@ class Handler(BaseHTTPRequestHandler):
                         terms = hit.get("desc_compact") or hit.get("desc")
                         area_id = area_id or hit.get("area_id")
                 if terms:
-                    led: Ledger = STATE["ledger"]
+                    led = self._require_ledger()
+                    if led is None:
+                        return
                     owner_key = f"{dealer or (area_id or '')}#{area_id or 'manual'}"
                     errt = []
                     for tm in terms:
@@ -887,7 +1025,9 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if self.path == "/api/ledger_cmd":
                 q = str(body.get("text", ""))
-                led: Ledger = STATE["ledger"]
+                led = self._require_ledger()
+                if led is None:
+                    return
                 try:
                     owner, n = led.execute(q)
                 except ValueError as e:
@@ -934,7 +1074,9 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if self.path == "/api/yeidai_adjust":
                 text = str(body.get("text", ""))
-                st: YeidaiState = STATE["yeidai"]
+                st = self._require_yeidai()
+                if st is None:
+                    return
                 parser = "rules"
                 op = None
                 err1 = None
@@ -951,20 +1093,27 @@ class Handler(BaseHTTPRequestHandler):
                         return
                 msg = st.apply(op)
                 self._send(200, {"message": f"[{parser}] {msg}",
-                                 "zones": st.snapshot()})
+                                 "zones": _yeidai_snapshot(st)})
                 return
             if self.path == "/api/yeidai_apply":
-                st: YeidaiState = STATE["yeidai"]
-                snap = st.snapshot()
+                st = self._require_yeidai()
+                if st is None:
+                    return
+                snap = _yeidai_snapshot(st)
                 json.dump({"crs": "WGS84", "zones": snap},
                           open(str(ROOT / "data" / "gz" / "haizhu_liwan_zones.json"),
                                "w", encoding="utf-8"), ensure_ascii=False)
                 self._send(200, {"message": "已落盘", "zones": snap})
                 return
             if self.path == "/api/yeidai_reset":
-                STATE["yeidai"] = YeidaiState()
+                try:
+                    st = _get_yeidai(force_reload=True)
+                except OptionalDataError as exc:
+                    self._send(503, exc.payload())
+                    return
+                snap = _yeidai_snapshot(st)
                 self._send(200, {"message": "已还原",
-                                 "zones": STATE["yeidai"].snapshot()})
+                                 "zones": snap})
                 return
             if self.path == "/api/adjust":
                 import intelligence.adjust as _adj
@@ -1019,6 +1168,7 @@ class Handler(BaseHTTPRequestHandler):
                 cols, nbs = _assign_dealer_colors(w2.fences)
                 pack["colors"] = cols
                 pack["neighbors"] = nbs
+                pack["styles_ready"] = True
                 pack["fence_areas"] = {
                     d: round(sum(g.area_km2 for g in fs), 2)
                     for d, fs in w2.fences_by_dealer.items()}

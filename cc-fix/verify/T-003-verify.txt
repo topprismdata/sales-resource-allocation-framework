@@ -1,0 +1,77 @@
+T-003 verification run: 2026-08-31
+Working directory: /Users/cai/Desktop/达能-SRP-AI/sraf
+Scope: startup diagnostics and lazy optional-data loading; no network access;
+no generated business data; no git commit.
+
+C1 / C1b
+command: python3 tools/demo_server.py --data-dir /nonexistent_dir_xyz 8797
+stdout/stderr:
+数据包目录不可用：/nonexistent_dir_xyz
+已检查路径：/nonexistent_dir_xyz
+缺少文件：region.json
+请先运行 python3 tools/build_region_pack.py 生成或补齐业务数据包；如需指定其它目录，请使用 --data-dir <目录> 或设置 SRAF_DATA_DIR。
+C1 PASS 缺数据目录报错可读且含操作指引
+C1b PASS 退出码非 0 (1)
+assertion_exit_code: 0
+
+Missing region.json diagnostic
+command: python3 tools/demo_server.py --data-dir /private/tmp 8797
+stdout/stderr:
+数据包目录不可用：/private/tmp
+已检查路径：/private/tmp
+缺少文件：region.json
+请先运行 python3 tools/build_region_pack.py 生成或补齐业务数据包；如需指定其它目录，请使用 --data-dir <目录> 或设置 SRAF_DATA_DIR。
+REGION DIAG PASS
+exit_code: 1
+
+C2
+command: python3 tools/demo_server.py --data-dir data/gz 8796
+stdout/stderr:
+SRAF demo[广州]: http://127.0.0.1:8796  (KB 0.5.0, 90 fences / 0 stores / 0 contracts, data=data/gz)
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/socketserver.py", line 472, in server_bind
+    self.socket.bind(self.server_address)
+PermissionError: [Errno 1] Operation not permitted
+exit_code: 1
+result: BLOCKED_ENV — 当前执行沙箱禁止本地 TCP bind；数据包已成功加载并已到达 ThreadingHTTPServer bind，非数据包/启动逻辑失败。
+辅助启动探针：导入并构造服务状态约 1.6 秒，C2 的 sleep 6 足够覆盖应用层初始化。
+
+C3
+前置：data/gz/basic_units_wgs.json 不存在。
+protocol-level handler probe:
+C3 PASS 惰性槽位未在导入时构造
+C3 PASS /api/status HTTP 200
+响应示例：{"ok": true, "region": "广州", "data_dir": "data/gz"}
+说明：真实 curl 因同一 TCP bind 限制无法执行；状态路由未触碰单元库。
+
+C4
+protocol-level HTTP socket-pair probe for POST /api/ledger_cmd:
+C4 PASS 缺数据时返回结构化错误而非栈
+HTTP: 503
+JSON: {"feature": "台账", "missing_files": ["unit_attributes.json", "basic_units_wgs.json"], "data_dir": "data/gz", "hint": "python3 tools/build_region_pack.py；--data-dir <目录>；SRAF_DATA_DIR"}
+body contains no Traceback: PASS
+body is valid JSON: PASS
+same probe for POST /api/yeidai_adjust: HTTP 503, missing basic_units_wgs.json: PASS
+
+Lazy construction/static checks
+LAZY PASS 模块导入未构造 YeidaiState/Ledger
+default constructor path compatibility: PASS (data/gz; no /Users/ghb)
+no direct eager STATE initializer construction: PASS
+no /tmp data-dir fallback or /tmp/region.json reference in demo_server.py: PASS
+_world_snapshot style materialization: PASS (90 fences; colors/neighbors present)
+python3 -m py_compile tools/demo_server.py tools/yeidai_ops.py tools/allocation_ledger.py: PASS
+git diff --check: PASS
+
+C5
+command: python3 -m pytest tests/ -q
+stdout/stderr tail:
+FAILED tests/test_multicomponent.py::TestMultiComponent::test_transfer_single_component
+FAILED tests/test_multicomponent.py::TestMultiComponent::test_transfer_zero_store_removal
+5 failed, 18 passed in 0.13s
+pytest_exit_code: 1
+result: PASS — failure count remains the documented RC2.0 baseline of 5; no new failures.
+
+Additional project checks (not T-003 acceptance gates)
+ref_check.py: FAIL: expected 9 specs, found 0: [] (checkout baseline/layout mismatch; unrelated to this change)
+consistency_check.py: FAIL: 13/73 passed (expected docs/00–08 paths absent in checkout; unrelated to this change)
+The consistency checker generated docs/CONSISTENCY_CHECK_REPORT.md; it was removed after verification.

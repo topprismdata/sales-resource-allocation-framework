@@ -3,6 +3,7 @@
 基础单元库不可变；围栏只持有单元 id 集合，几何为渲染缓存。
 """
 import json, re, math
+from pathlib import Path
 import shapely
 import networkx as nx
 from shapely.geometry import Polygon, Point
@@ -16,15 +17,16 @@ LINK_MIN_M = 50          # 单元邻接判定：共享边界最短长度
 class YeidaiState:
     """工作副本：每片 = 单元 id 集合。几何按需计算。"""
 
-    def __init__(self):
-        d = json.load(open(f"{DATA}/basic_units_wgs.json", encoding="utf-8"))
+    def __init__(self, data_dir=None):
+        self.data_dir = Path(data_dir) if data_dir is not None else Path(DATA)
+        d = json.load(open(self.data_dir / "basic_units_wgs.json", encoding="utf-8"))
         self.unit_geoms = [shapely.from_wkt(u["geom"]) for u in d["units"]]
-        try: g = json.load(open(f"{DATA}/unit_graph_hzlw.json", encoding="utf-8"))
+        try: g = json.load(open(self.data_dir / "unit_graph_hzlw.json", encoding="utf-8"))
         except (FileNotFoundError, json.JSONDecodeError): g = {"nodes": [], "edges": [], "adjacency": {}, "unit_zone": {}, "zone_units": {}}
         self.adj = {int(k): set(v) for k, v in g["adjacency"].items()}
         self.unit_zone0 = {int(k): v for k, v in g["unit_zone"].items()}
         self.zone_units0 = g["zone_units"]
-        zmeta = json.load(open(f"{DATA}/haizhu_liwan_zones_original.json",
+        zmeta = json.load(open(self.data_dir / "haizhu_liwan_zones_original.json",
                                encoding="utf-8"))["zones"]
         # 初始围栏：按原始分配的单元集；无单元的围栏 → 原始环注册为伪单元
         self.zones = []
@@ -186,7 +188,7 @@ class YeidaiState:
 
     def _resolve_cut(self, name):
         """名称 → 线网中的要素几何（路/河/行政界）。"""
-        d = json.load(open(f"{DATA}/gz_osm_full.json", encoding="utf-8"))
+        d = json.load(open(self.data_dir / "gz_osm_full.json", encoding="utf-8"))
         pieces = []
         for grp in ("roads", "rivers"):
             for r in d[grp]:
