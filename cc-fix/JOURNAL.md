@@ -684,3 +684,62 @@ units: 2  area_km2: 2.28                    ← 仍返回可用结果，只是�
 页面截图确认：顶部告警框正常渲染，且左上角显示 **「90 围栏 / 0 门店」**——
 即 P0 重建的数据包被完整加载。**端到端链路贯通**。
 
+## 2026-08-31 T-006 验收通过（生成 gz_osm_full.json，解除编译阻塞）
+
+### 实现
+
+- 新增 `tools/build_osm_full.py`，支持 `--data-dir`，默认沿用 `_paths.data_dir()`。
+- 从 `osm_raw.json` 按原始顺序逐条生成 roads/rivers WKT；way 顶点不足 2 个或缺少 name 时跳过，其他符合条件的 way 不去重、不丢弃。
+- `roads/rivers` 仅将 Overpass 的 `lat/lon` 改写为 WKT 的 `lon lat`，保持 WGS-84；`adm6` 直接由区县 GeoJSON 生成 WKT，保持 GCJ-02，并保留 Polygon 内环及 MultiPolygon 组件。
+- 对未覆盖的 `highway` 类别显式失败；本次原始数据的 highway 类别全部在既有 `CLASS_RANK` 覆盖范围内。
+- 采用临时文件替换，重复运行输出稳定；未修改 `territory_compile.py`、`cc-fix/CONTRACTS.md` 或任何原始输入，未执行 Git commit。
+
+### 验收
+
+- F1：`roads=70459`、`rivers=2377`、`adm6=11`，字段完整且集合非空。
+- F2：与 `osm_raw.json` 动态计算的期望条数完全一致，无数据丢失。
+- F3：11 个区县齐备，包含天河区、海珠区、白云区，WKT 全部可解析。
+- F4：天河区输出与源 GeoJSON 质心偏移 `0.0000m`，未发生坐标转换。
+- F5：`territory_compile` 完整 import 通过，`U=6261`、地物 `72818` 条/`9577` 名、`adm6=11`。
+- 幂等性：连续两次生成的 SHA-256 均为
+  `b79d80c598889d6510cb1a1a4a80333be529c42c0ba61fc1f7559e1ef3544b2b`。
+- 完整断言输出保存于 `cc-fix/verify/T-006-verify.txt`。
+
+### 附加门禁
+
+- `python3 -m unittest discover tests -q`：23 tests，全部通过。
+- `tools/ref_check.py`：当前仓库基线报 `expected 9 specs, found 0`。
+- `tools/consistency_check.py`：当前仓库基线为 `13/73 passed`，缺少既有 00–08/spec 文档；该检查产生的无关报告已移除。
+- 上述两个附加门禁失败与本卡新增数据生成器无关，未据此修改规格或放宽 T-006 的 F1–F5 断言。
+
+## 2026-08-31 T-006 验收通过（编译链路解除阻塞）
+
+**架构层独立执行断言**：
+
+```
+F1 PASS roads=70459 rivers=2377 adm6=11
+F2 PASS 无数据丢失（逐条与 osm_raw 核对）
+F3 PASS adm6 11 区县齐备
+F4 PASS adm6 与源 geojson 零偏移（0.0000m），未被误转换   ← 坐标系陷阱已规避
+F5 PASS territory_compile 完整 import 成功（6s）
+```
+
+F5 输出：
+```
+数据: 地块2675 街道面174 地物72818条/9577名
+统一铺盖U: 6261片   adm6: 11
+```
+
+### ★ 坐标系混用的处理（本卡最高风险项）
+
+`gz_osm_full.json` **内部混用两种坐标系，这是代码逻辑的硬要求**：
+
+| 字段 | 坐标系 | 依据 |
+|---|---|---|
+| roads / rivers | WGS-84 | `territory_compile.py:116` 先将 U(GCJ) 转 WGS 再与地物比对 |
+| adm6 | GCJ-02 | `adm6bt` 在 compile_fence 中与 zg/pu/sbt(全GCJ)直接做几何运算 |
+
+两者恰好都无需转换（OSM 原生 WGS，本地区县 geojson 原生 GCJ）。
+F4 专门断言 adm6 与源文件**零偏移**，一旦有人"顺手统一坐标系"立即拦截——
+该误操作会引入约 623m 系统偏移，且症状隐蔽（编译照常跑完，仅地物贴附全错）。
+

@@ -2,7 +2,7 @@
   "contract_version": "1.0",
   "branch": "CC_main",
   "base": "42cf065 (RC2.0, merged)",
-  "current_phase": 3,
+  "current_phase": 4,
   "phases": {
     "P0": {
       "name": "数据包重建",
@@ -30,14 +30,17 @@
     },
     "P3": {
       "name": "消除静默降级",
-      "status": "pending",
+      "status": "done",
       "gate": "deterministic_100",
-      "task": "T-005"
+      "task": "T-005",
+      "verified_by": "architect_independent + browser",
+      "result": "四路径诚实标识, 前端告警实测通过, 截图确认90围栏加载"
     },
     "P4": {
       "name": "语义正确性",
       "status": "pending",
-      "gate": "deterministic_100"
+      "gate": "deterministic_100",
+      "task": "T-007"
     },
     "P5": {
       "name": "评测口径改造",
@@ -51,12 +54,6 @@
     }
   },
   "open_escalations": [
-    {
-      "id": "E-001",
-      "topic": "gz_osm_full.json 需联网 Overpass 拉取",
-      "owner": "user",
-      "blocking": "Phase5 及 territory_compiled.json 生成"
-    },
     {
       "id": "E-002",
       "topic": "RC2.0 自带 5 个测试回归(test_multicomponent)",
@@ -80,7 +77,12 @@
   "extra_tasks": {
     "T-004": {
       "name": "修复RC2.0测试回归",
-      "status": "dispatched"
+      "status": "done"
+    },
+    "T-006": {
+      "name": "生成gz_osm_full",
+      "status": "done",
+      "result": "roads70459/rivers2377/adm6=11, U=6261片, 编译链路解除阻塞"
     }
   }
 }
