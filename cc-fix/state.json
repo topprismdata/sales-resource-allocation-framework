@@ -1,0 +1,17 @@
+{
+  "contract_version": "1.0",
+  "branch": "CC_main",
+  "base": "b82e46e",
+  "current_phase": 0,
+  "phases": {
+    "P0": {"name": "数据包重建", "status": "in_progress", "gate": "deterministic_100", "task": "T-001"},
+    "P1": {"name": "路径去硬编码", "status": "pending", "gate": "deterministic_100"},
+    "P2": {"name": "启动可诊断", "status": "pending", "gate": "deterministic_100"},
+    "P3": {"name": "消除静默降级", "status": "pending", "gate": "deterministic_100"},
+    "P4": {"name": "语义正确性", "status": "pending", "gate": "deterministic_100"},
+    "P5": {"name": "评测口径改造", "status": "pending", "gate": "dual_table"},
+    "P6": {"name": "清理固化", "status": "pending", "gate": "deterministic_100"}
+  },
+  "open_escalations": [],
+  "resolved_escalations": []
+}
