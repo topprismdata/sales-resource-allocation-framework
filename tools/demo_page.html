@@ -229,8 +229,8 @@ const KIND_NAME = {OK:"围栏内一致", OOF:"非围栏供货", DIRECT_IN:"直�
 
 const canvasR = L.canvas({padding: 0.3});
 const map = L.map("map", {zoomSnap: 0.25}).setView([23.05, 113.35], 10);
-L.tileLayer("https://webrd01.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}",
-            {attribution:"© OpenStreetMap"}).addTo(map);
+L.tileLayer("https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}",
+            {attribution:"© 高德地图", subdomains:["1","2","3","4"], maxZoom:18}).addTo(map);
 const storeLayer = L.layerGroup().addTo(map);
 const fenceLayer = L.layerGroup().addTo(map);
 const draftLayer = L.layerGroup().addTo(map);
@@ -262,7 +262,7 @@ function drawFences(fences, dimExcept){
     const focused = dimExcept && f.dealer === dimExcept;
     const poly = L.polygon(f.ring.map(p=>[p[1],p[0]]), {
       color: "#ffffff", weight: focused ? 2.5 : 1.2,
-      fillColor: f.color, fillOpacity: focused ? .55 : (dimExcept? .12 : .42)});
+      fillColor: "#a5d6a7", fillOpacity: focused ? .6 : (dimExcept? .15 : .45)});
     poly.bindTooltip(`<i style="display:inline-block;width:9px;height:9px;background:${f.color};border-radius:2px;margin-right:4px"></i>${esc(f.dealer)}<br>${f.area_km2} km² · 点击聚焦`);
     poly.on("click", ()=> focusDealer===f.dealer ? clearFocus() : showFenceAnalysis(f.dealer));
     fenceLayer.addLayer(poly);
@@ -379,10 +379,9 @@ function drawDraft(r){
   const col = dealerColor(r.dealer);
   const accepted = r.interpretation === "accepted";
   const ring = r.ring.map(p=>[p[1],p[0]]);
-  L.polygon(ring, accepted
-    ? {color:"#fff", weight:2.5, fillColor:col, fillOpacity:.45}
-    : {color: r.draft_quality==="low" ? "#c62828" : col,
-       weight:2.5, dashArray:"6 4", fillColor:col, fillOpacity:.28}).addTo(draftLayer);
+  L.polygon(ring, {color:"#e53935", weight:4, dashArray:"8 5",
+    fillColor:"#e53935", fillOpacity:.10})
+    .on("click", ()=>showFenceAnalysis(r.dealer)).addTo(draftLayer);
   for (const [d, pts] of Object.entries(r.bounds_geometry||{})){
     L.polyline(pts.map(p=>[p[1],p[0]]), {color:"#f9a825", weight:4, opacity:.95})
       .bindTooltip("界线·"+d).addTo(draftLayer);
@@ -513,8 +512,9 @@ document.getElementById("genAll").onclick = async ()=>{
     if (r.error) continue;
     generated.add(c.dealer_id);
     const col = dealerColor(c.dealer_id);
-    L.polygon(r.ring.map(p=>[p[1],p[0]]), {color:"#fff", weight:1.5,
-      fillColor:col, fillOpacity:.38}).addTo(draftLayer);
+    L.polygon(r.ring.map(p=>[p[1],p[0]]), {color:"#e53935", weight:4,
+      dashArray:"8 5", fillColor:"#e53935", fillOpacity:.10})
+      .on("click", ()=>showFenceAnalysis(c.dealer_id)).addTo(draftLayer);
     const cf = r.conflicts||{};
     if ((cf.oof_n||0)+(cf.multi_n||0)+(cf.gap_n||0)) conf++;
     const g = document.getElementById("gr-"+i);

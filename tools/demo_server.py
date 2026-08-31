@@ -661,8 +661,36 @@ class Handler(BaseHTTPRequestHandler):
                     hit = next((x for x in trows if x.get("area_id") == area_id), None)
                 if hit is None and dealer:
                     hit = next((x for x in trows if x["dealer"] == dealer), None)
+                if hit and hit.get("S"):
+                    # 首选：直接回放编译器验证过的 S 片（与批量 J=1.0 一致）
+                    terms = hit.get("engine_terms") or []
+                    area_id = area_id or hit.get("area_id")
+                    try:
+                        from shapely.ops import unary_union as _uu
+                        if "_TC_MOD" not in globals():
+                            sys.path.insert(0, str(Path(__file__).parent))
+                            globals()["_TC_MOD"] = __import__("territory_compile")
+                        _tc = globals()["_TC_MOD"]
+                        pieces = [_tc.U[k][0] for k in hit["S"]]
+                        u = _uu(pieces)
+                        rings = ([list(u.exterior.coords)] if u.geom_type == "Polygon"
+                                 else [list(pp.exterior.coords) for pp in u.geoms])
+                        self._send(200, {
+                            "ring": [list(pp) for pp in rings[0]],
+                            "rings": [[list(map(list, pp))] for pp in rings],
+                            "area_km2": hit.get("km2"),
+                            "units": len(pieces),
+                            "interpretation": "territory-ir", "draft_quality": "ok",
+                            "conflicts": _conflicts([]),
+                            "lines_used": {"allocator": "territory-ir-replay",
+                                           "terms": terms, "unresolved": []},
+                            "missing": [], "bounds_geometry": {},
+                            "dealer": dealer or hit.get("dealer")})
+                        return
+                    except Exception as e:  # noqa: BLE001
+                        print(f"[generate] S片回放失败({e})，退回台账重演")
                 if hit:
-                    # 从 territory_compiled.json 获取引擎词
+                    # 回退：从 territory_compiled.json 获取引擎词走台账
                     terms = hit.get("engine_terms") or hit.get("desc_compact")
                     area_id = area_id or hit.get("area_id")
                     if terms:
