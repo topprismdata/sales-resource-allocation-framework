@@ -70,4 +70,32 @@ ls -la <产出文件>; sleep 60; ls -la <产出文件>              # mtime/size
 - 每 Phase 一提交，前缀 `fix:` / `refactor:` / `test:` / `feat:`
 - 正文中文，写清「改了什么、为什么、怎么验证的」
 - **推送 origin/CC_main 已获所有者授权**
+
+## 推送方法（本机特有，两层阻碍，缺一不可）
+
+本机推送 GitHub 会连撞两个**互相独立**的问题，只解决一个仍然失败：
+
+| 层 | 症状 | 根因 | 解法 |
+|---|---|---|---|
+| 网络 | `SSL_ERROR_SYSCALL` | Clash fake-ip 把 github.com 解析为 `198.18.0.90` 假地址，且该域走 DIRECT 规则 | 本地 CONNECT 转发代理 |
+| 凭据 | `403 denied to YY-C8` | `/Library/Developer/CommandLineTools/.../gitconfig` 配了 `osxkeychain`，抢先提供旧账号凭据 | `-c credential.helper=` 先清空链 |
+
+**诊断要点**：错误信息能区分卡在哪层——`SSL_ERROR_SYSCALL` 是网络层没连上，
+`403` 说明已连上、卡在认证。带 token 后若仍报 403，是 helper 被 keychain 抢了。
+
+```bash
+# ① 起本地绕过代理（不改 Clash、不需 sudo；TLS/SNI 仍端到端，不降级安全）
+python3 <scratchpad>/fakeip_bypass.py > /tmp/bypass.log 2>&1 &
+
+# ② 推送：http.proxy 指向它 + 清空 helper 链后注入 token
+git -c http.proxy=http://127.0.0.1:18443 \
+    -c credential.helper= \
+    -c credential.helper='!f() { echo username=x-access-token; \
+        echo "password=$(cat /Users/cai/Desktop/ghkey.txt | tr -d "\r\n ")"; }; f' \
+    push -u origin CC_main
+```
+
+**安全纪律**：token 只经 credential helper 的 stdout 传给 git——
+不进命令行参数（`ps` 不可见）、不写入任何 git config、不落盘。
+输出一律过 `sed -E 's/(ghp_|github_pat_)[A-Za-z0-9_]+/[REDACTED]/g'`。
 - 不碰 `main`，不合并，不动 `feat/cc-unit-selection-pilot`

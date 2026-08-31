@@ -309,3 +309,28 @@ A6 PASS 三个 geojson 字节一致
 
 → 顺序确认：**先 T-002 去硬编码，再用修好的脚本重建派生数据。**
 
+
+## 2026-08-31 推送阻塞解除（原归因不完整，已修正）
+
+**旧归因（已于 2026-08-31 被推翻/修正）**：
+> "403 = 账号 YY-C8 对 topprismdata 无写权限，需加权限或 fork。"
+
+**实际是两层独立问题叠加**，只解一层仍失败，故先前误判为单纯的权限问题：
+
+1. **网络层**：Clash fake-ip 将 `github.com` 解析为 `198.18.0.90`（假地址），
+   且该域在 Clash 规则中走 DIRECT → `SSL_ERROR_SYSCALL`。
+   实证：真实 IP `20.205.243.166` 直连返回 200；经 Clash 代理反而失败；
+   同代理访问 google 正常 → 排除代理本身故障。
+2. **凭据层**：`/Library/Developer/CommandLineTools/usr/share/git-core/gitconfig`
+   配置了 `osxkeychain` helper，抢先提供旧账号 `YY-C8` 凭据，
+   导致注入的 token **根本没被使用** → `403`。
+
+**解法**：① 本地 CONNECT 转发代理（固定映射 github.com→真实 IP，
+不做 DNS 解析；TLS 与 SNI 仍由 git 端到端完成，安全性不降级）；
+② `-c credential.helper=` 先清空 helper 链，再注入 token helper。
+
+**结果**：`origin/CC_main` = 5c0e65f 推送成功。方法已固化至 ROUTING.md。
+
+**诊断价值**：错误信息可区分层次——`SSL_ERROR_SYSCALL` 为网络层未连通，
+`403` 表示已连通但认证失败。带 token 仍 403 即为 helper 被 keychain 抢占。
+
