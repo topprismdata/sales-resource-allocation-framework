@@ -44,3 +44,22 @@
 - 结论：**双方均无真实客户合同文本**。把分表纪律捡回来即可，非新增要求。
 
 ---
+
+## 2026-08-31 推送阻塞（待所有者处理）
+
+`git push -u origin CC_main` 失败：
+
+```
+remote: Permission to topprismdata/sales-resource-allocation-framework.git denied to YY-C8.
+fatal: ... The requested URL returned error: 403
+```
+
+当前 git 凭据账号 `YY-C8` 对 `topprismdata` 仓库**无写权限**。
+分支已在本地提交（97b81cc），推送待所有者解决权限后重试。
+**不阻塞后续 Phase 施工。**
+
+可选处置（需所有者决定）：
+- (a) 请仓库管理员给 `YY-C8` 加 write 权限
+- (b) fork 到个人账号后推 fork
+- (c) 换用有权限的凭据
+
