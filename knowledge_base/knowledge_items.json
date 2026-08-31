@@ -1,335 +1,335 @@
 {
-  "_meta": {
-    "name": "dealer_territory_knowledge_base",
-    "version": "0.4.2",
-    "date": "2026-08-29",
-    "description": "Distributor regional management knowledge base v0 seed version — Knowledge items crystallized from this round of work (books/papers/real data/business dialogues), for the 04 allocation intelligence layer to retrieve when generating human recommendations.",
-    "schema": {
-      "id": "K-<category abbreviation>-<sequence number>",
-      "type": "principle|rule|fact|case|constraint|benchmark",
-      "statement": "Knowledge content (can be directly entered into the recommendation's reasoning chain)",
-      "conditions": "Applicable conditions / boundaries",
-      "source": "Knowledge source (book chapter/paper/data file/dialogue)",
-      "confidence": "HIGH|MEDIUM|LOW",
-      "maps_to": "Corresponding world model level/entity/event"
-    }
+ "_meta": {
+  "name": "dealer_territory_knowledge_base",
+  "version": "0.5.0",
+  "date": "2026-08-29",
+  "description": "Distributor regional management knowledge base v0 seed version — Knowledge items crystallized from this round of work (books/papers/real data/business dialogues), for the 04 allocation intelligence layer to retrieve when generating human recommendations.",
+  "schema": {
+   "id": "K-<category abbreviation>-<sequence number>",
+   "type": "principle|rule|fact|case|constraint|benchmark",
+   "statement": "Knowledge content (can be directly entered into the recommendation's reasoning chain)",
+   "conditions": "Applicable conditions / boundaries",
+   "source": "Knowledge source (book chapter/paper/data file/dialogue)",
+   "confidence": "HIGH|MEDIUM|LOW",
+   "maps_to": "Corresponding world model level/entity/event"
+  }
+ },
+ "items": [
+  {
+   "id": "K-PRIN-001",
+   "type": "principle",
+   "statement": "Regional exclusivity is a system arrangement that protects dealer investment, not a solution to an optimization problem. Dealers dare to invest (salespeople, vehicles, customer relationships) only if the investment will not be harvested by a neighboring dealer.",
+   "conditions": "This is especially true under a buy‑out sales model.",
+   "source": "Zoltners《Sales Territory Design》+ CN_MARKET_distributor_territory_reality.md",
+   "confidence": "HIGH",
+   "maps_to": "L2:Contract – exclusivity obligation."
   },
-  "items": [
-    {
-      "id": "K-PRIN-001",
-      "type": "principle",
-      "statement": "Regional exclusivity is a system arrangement that protects dealer investment, not a solution to an optimization problem. Dealers dare to invest (salespeople, vehicles, customer relationships) only if the investment will not be harvested by a neighboring dealer.",
-      "conditions": "This is especially true under a buy‑out sales model.",
-      "source": "Zoltners《Sales Territory Design》+ CN_MARKET_distributor_territory_reality.md",
-      "confidence": "HIGH",
-      "maps_to": "L2:Contract – exclusivity obligation."
-    },
-    {
-      "id": "K-PRIN-002",
-      "type": "principle",
-      "statement": "Carryover: last year's visit effort yields results this year. When evaluating territory changes, impact_horizon must be declared; otherwise, a short‑term sales dip after adjustment will be misread as adjustment failure.",
-      "conditions": "Fast‑moving consumer goods (FMCG) categories driven by customer relationships.",
-      "source": "Zoltners book + SRAF 06 Carryover Gate.",
-      "confidence": "HIGH",
-      "maps_to": "L3:E9 – seasonal/time effect."
-    },
-    {
-      "id": "K-PRIN-003",
-      "type": "principle",
-      "statement": "Adjustment disruption hurts mid‑size stores most: small stores rely on relationships, large stores rely on systems, mid‑size stores rely on both but are less stable.",
-      "conditions": "Dealer replacement scenario.",
-      "source": "Zoltners book Table 8.3.",
-      "confidence": "HIGH",
-      "maps_to": "L1:ServiceLocation"
-    },
-    {
-      "id": "K-PRIN-004",
-      "type": "principle",
-      "statement": "Classic three‑step design method: (1) account‑level design (which stores belong to me) → (2) geographic consolidation (bundle adjacent stores) → (3) alignment adjustment (balance workload/potential). The fence is an output of step two, not a starting point.",
-      "conditions": "General methodology.",
-      "source": "Zoltners book + FENCE_TOWNSHIP_DESCRIPTIONS analysis.",
-      "confidence": "HIGH",
-      "maps_to": "L2:TerritoryDesign"
-    },
-    {
-      "id": "K-RULE-001",
-      "type": "rule",
-      "statement": "Fence boundaries should follow main roads or rivers, recognizable by both sales teams, avoiding disputes. Cutting lines should always use visually obvious geographic features.",
-      "conditions": "Urban area division.",
-      "source": "FENCE_CHARACTERISTICS_understanding.md (38 fence geometry verification: boundary long straight segments coincide with OSM main roads).",
-      "confidence": "HIGH",
-      "maps_to": "L1:MarketFeature; L3:E6 FenceChangeEvent"
-    },
-    {
-      "id": "K-RULE-002",
-      "type": "rule",
-      "statement": "Administrative boundaries are the base framework: outer suburbs are fully contracted (district/county purity ≈100%), older urban districts are split into 3–6 blocks.",
-      "conditions": "Validated in Guangzhou market; other cities need re‑validation.",
-      "source": "FENCE_CHARACTERISTICS_understanding.md (72% of fences have district/county purity ≥95%).",
-      "confidence": "HIGH",
-      "maps_to": "L1:MarketFeature – administrative boundary."
-    },
-    {
-      "id": "K-RULE-003",
-      "type": "rule",
-      "statement": "Chain direct‑supply stores are not coverage gaps: supply to DIRECT_IN/DIRECT stores does not pass through the fenced dealer; it is a brand structural arrangement.",
-      "conditions": "Stores with the direct flag.",
-      "source": "gz_data.json (Meiyijia chain 2,127 stores, 97% of direct‑supply stores).",
-      "confidence": "HIGH",
-      "maps_to": "L4:kind=DIRECT_IN/DIRECT; event E7."
-    },
-    {
-      "id": "K-RULE-004",
-      "type": "rule",
-      "statement": "Upstream consistency of 85% is normal: within the fence, about 12% of stores have cross‑boundary supply (OOF) and 6% are direct supply; 100% consistency is unattainable and should not be pursued.",
-      "conditions": "Guangzhou current baseline.",
-      "source": "gz_data.json kind distribution (OK 79% + OOF 12% + direct 6%).",
-      "confidence": "HIGH",
-      "maps_to": "L4:AlignmentMeasure"
-    },
-    {
-      "id": "K-RULE-005",
-      "type": "rule",
-      "statement": "Identity first: before any allocation or diagnostic action, store identity must be resolved by rule 08. Gaps generated by stores with low identity_confidence may be false gaps.",
-      "conditions": "Unconditional.",
-      "source": "SRAF 08 identity specification.",
-      "confidence": "HIGH",
-      "maps_to": "L3:IdentityEvent; event E8."
-    },
-    {
-      "id": "K-RULE-006",
-      "type": "rule",
-      "statement": "Dealer change must assess relationship reliance: long‑term personal ties formed by reps are implicit glue for store renewal. Industry consensus transition: joint visit endorsement (old rep leads new 1–3 months) + three‑party chat group + VIP customer executive support. Reliance can be proxied by “same dealer continuous service years + visit stability” (sales metric to be confirmed).",
-      "conditions": "Dealer replacement / large‑scale adjustment.",
-      "source": "This round of dialogue (Dashi case 40% reliance) + industry handover practice search 2026‑08‑28 (joint visit is consensus best practice).",
-      "confidence": "HIGH",
-      "maps_to": "L1:ServiceLocation; L2:DealerRole"
-    },
-    {
-      "id": "K-RULE-007",
-      "type": "rule",
-      "statement": "Low‑density market gaps are structural: industry practice is “wholesale/secondary distributor model (ultra‑low density) + central warehouse routed direct delivery (township) + separate visit‑sales delivery + online order supplement”, not adding staff. Service frequency by store tier (A: 1–2 visits/week, B‑C: bi‑weekly + online supplement).",
-      "conditions": "Low store density and large travel radius",
-      "source": "gz_conghua_gap analysis + industry low-density coverage practice search 2026-08-28",
-      "confidence": "HIGH",
-      "maps_to": "Four-category diagnosis: resource shortage vs structural"
-    },
-    {
-      "id": "K-FACT-001",
-      "type": "fact",
-      "statement": "Contract is fill‑in text: authorized area is a textual description ('east of X road'), not a geometric polygon. Geometricizing the fence is essentially a manual interpretation of the contract.",
-      "conditions": "China market status",
-      "source": "CN_MARKET_distributor_territory_reality.md + contract package analysis",
-      "confidence": "HIGH",
-      "maps_to": "L2:Contract; F1 contract fence"
-    },
-    {
-      "id": "K-FACT-002",
-      "type": "fact",
-      "statement": "Buy‑out sales + no‑reason no‑return: inventory and unsold risk borne by distributor. This is the economic root of territorial exclusivity.",
-      "conditions": "This brand",
-      "source": "Contract terms + CN_MARKET analysis",
-      "confidence": "HIGH",
-      "maps_to": "L2:Contract commitment"
-    },
-    {
-      "id": "K-FACT-003",
-      "type": "fact",
-      "statement": "Guangzhou status: 38 fences / 33,109 stores / OK 79% / OOF 12% / direct 6% / GAP 1% / MULTI 7 entities",
-      "conditions": "2026-08 snapshot",
-      "source": "/tmp/gz_data.json",
-      "confidence": "HIGH",
-      "maps_to": "L4 all"
-    },
-    {
-      "id": "K-CASE-001",
-      "type": "case",
-      "statement": "Conghua whole‑area contract: fence nearly coincides with district boundary, single distributor covers whole area. Reflects 'suburban contracting' approach.",
-      "conditions": "Reference case",
-      "source": "FENCE_CHARACTERISTICS + gz_dealer_fences_map.html",
-      "confidence": "HIGH",
-      "maps_to": "L2:TerritoryDesign"
-    },
-    {
-      "id": "K-CASE-002",
-      "type": "case",
-      "statement": "Panyu riverside cut: using the Chen Village waterway as boundary, each side belongs to different distributors, no dispute. Reflects 'natural boundary priority' approach.",
-      "conditions": "Reference case",
-      "source": "This round of dialogue + map verification",
-      "confidence": "HIGH",
-      "maps_to": "L1:MarketFeature river"
-    },
-    {
-      "id": "K-CASE-003",
-      "type": "case",
-      "statement": "Dashi street adjustment assessment: when overall distributor is changed, 40% of stores have customer‑relationship dependency, requiring a transition plan (old rep visits 1‑2 months).",
-      "conditions": "Distributor replacement",
-      "source": "This round of dialogue (user business knowledge)",
-      "confidence": "MEDIUM",
-      "maps_to": "L3:E4 distributor exit"
-    },
-    {
-      "id": "K-CONST-001",
-      "type": "constraint",
-      "statement": "Visit scheduling engine is read‑only (maintained by others): SRAF calls its public API via adapter, does not modify its code. Upstream upgrades need sentinel‑compatible detection.",
-      "conditions": "Integration architecture constraints",
-      "source": "This round of dialogue (user decision)",
-      "confidence": "HIGH",
-      "maps_to": "SRAF↔visit integration layer"
-    },
-    {
-      "id": "K-CONST-002",
-      "type": "constraint",
-      "statement": "Adjustment requires stability budget: number of stores/visits per round of changes is constrained by budget, confirmed visits are frozen. Large‑scale adjustments require approval chain.",
-      "conditions": "Rolling rescheduling scenario",
-      "source": "visit phase3 design + SRAF 02 approval flow",
-      "confidence": "HIGH",
-      "maps_to": "L3:E6; event E6 triggers approval"
-    },
-    {
-      "id": "K-BENCH-001",
-      "type": "benchmark",
-      "statement": "Regional health benchmark (Guangzhou v0): alignment ≥79% healthy; OOF rate >20% requires investigation; GAP needs four‑category diagnosis; MULTI must register conflict log.",
-      "conditions": "v0 temporary benchmark, will be revised with ValidationPlan",
-      "source": "gz_data.json distribution + this design",
-      "confidence": "MEDIUM",
-      "maps_to": "L4:AlignmentMeasure; SRAF 06"
-    },
-    {
-      "id": "K-BENCH-002",
-      "type": "benchmark",
-      "statement": "Graph partitioning (METIS/Spectral) + H3 hierarchical indexing is the modern solution: H3 lookup O(1) replaces point‑by‑point PIP; graph partitioning solves cross‑administrative alignment.",
-      "conditions": "Technology selection knowledge",
-      "source": "THREE_ROUND_REVIEW.md Paper comparison (TPD 2024-2025 survey)",
-      "confidence": "HIGH",
-      "maps_to": "Tool layer"
-    },
-    {
-      "id": "K-BENCH-003",
-      "type": "benchmark",
-      "statement": "Sales rep capacity (China FMCG standard): normal 20‑30 stores/day; high‑density urban 30‑40; low‑density county/rural 15‑20. Store classification frequency: A class weekly 1‑2 visits, B class biweekly 1 visit, C class monthly 1 visit. Effective visit = order + standard actions (display/inventory/relationship), only check‑in without actions invalid.",
-      "conditions": "FMCG deep distribution model",
-      "source": "Industry visit practice search 2026‑08‑28",
-      "confidence": "HIGH",
-      "maps_to": "L3:Capacity; Diagnosis four categories: resource shortage benchmark"
-    },
-    {
-      "id": "K-BENCH-004",
-      "type": "benchmark",
-      "statement": "International standard cross‑validation: General Trade 40‑45 visits/day, Strike Rate 60‑75% (MT 80%+), travel time <30‑40% of workday. Travel time overrun = poor route planning, not insufficient manpower.",
-      "conditions": "In case of conflict with K‑BENCH‑003, use our company’s measured data (standard difference: effective visit definition differs).",
-      "source": "Industry benchmark search 2026‑08‑28",
-      "confidence": "MEDIUM",
-      "maps_to": "Diagnosis four categories: resource shortage benchmark"
-    },
-    {
-      "id": "K-RULE-008",
-      "type": "rule",
-      "statement": "Rebate structure determines dealer reaction to adjustments: tiered volume rebate → push/stockpiling impulse (pseudo growth); process rebate (display/exclusive‑sale/price credibility) → compliance execution. Industry practice: ~20% rebate tied to compliance. Predict dealer reaction by analyzing rebate structure first.",
-      "conditions": "Prediction/recommendation scenarios",
-      "source": "Industry rebate practice search 2026‑08‑28",
-      "confidence": "HIGH",
-      "maps_to": "L2:Contract; Prediction engine input"
-    },
-    {
-      "id": "K-RULE-009",
-      "type": "rule",
-      "statement": "Dealer replacement standard SOP: approval chain Region Manager → Zone Director → Sales GM → Finance (account verification) → Legal (contract compliance); transition triple set: inventory clearance / payment settlement / customer handover list; transition period 1‑3 months joint visits. Strictly prohibit abrupt replacement.",
-      "conditions": "Dealer replacement scenario",
-      "source": "Industry handover SOP search 2026‑08‑28",
-      "confidence": "HIGH",
-      "maps_to": "L3:E4 Dealer exit; recommendation routing"
-    },
-    {
-      "id": "K-RULE-010",
-      "type": "rule",
-      "statement": "Low‑density area service model selection: ultra‑low density → wholesale/secondary distribution (digitally equipped as delivery service provider); township level → central warehouse + route‑based direct delivery; combine physical visits with online ordering (cloud store/mini program), prioritize coverage depth over breadth, avoid large staffing.",
-      "conditions": "Low‑density market resource allocation",
-      "source": "Industry rural coverage practice search 2026‑08‑28",
-      "confidence": "HIGH",
-      "maps_to": "Diagnosis four categories: lack of willingness / structural; recommendation engine options"
-    },
-    {
-      "id": "K-PRIN-005",
-      "type": "principle",
-      "statement": "Layer mirroring organization principle: decision level = organization level. Three‑level allocation independent (Layer‑D dealer region / Layer‑B rep route / Layer‑V visit schedule), upstream output = downstream given value, cross‑layer intervention prohibited; each layer independently evaluated and approved; overlap prevention + white‑zone prevention apply at each layer.",
-      "conditions": "Distribution management system design general principles",
-      "source": "Industry organization structure search 2026‑08‑28 + user decision “Each layer independent, do not interfere”",
-      "confidence": "HIGH",
-      "maps_to": "World model §2A three levels; diagnosis first identifies level then attributes cause"
-    },
-    {
-      "id": "K-RULE-011",
-      "type": "rule",
-      "statement": "Route design five‑step method (Layer‑B): fix points (store inventory classification) → define area (geographic zoning) → assign rep (area to rep) → define frequency (per ABC) → define route (path ordering).",
-      "conditions": "Rep route design",
-      "source": "Industry route design search 2026‑08‑28",
-      "confidence": "HIGH",
-      "maps_to": "L2:Beat; Layer‑B methodology"
-    },
-    {
-      "id": "K-RULE-012",
-      "type": "rule",
-      "statement": "Route four principles: ① area‑based (geographic proximity to avoid backtracking, start dense then sparse) ② classification‑based frequency (ABC: A weekly / B biweekly / C monthly) ③ load balancing (Σ stores × frequency equal across routes) ④ fixed routes to cultivate relationships. Route = commitment to store visits (PJP), GPS verification of fulfillment.",
-      "conditions": "Layer‑B evaluation criteria",
-      "source": "Industry beat design search 2026‑08‑28",
-      "confidence": "HIGH",
-      "maps_to": "L2:Beat; L2:CoveragePolicy; Layer‑B evaluation"
-    },
-    {
-      "id": "K-BENCH-005",
-      "type": "benchmark",
-      "statement": "Layer‑B/V process baseline: visit achievement redline 90% (below → performance deduction; above 95% → reward); supervisor co‑visit 50‑70% of work hours; sales rep evaluation weight reference: process 40% + result 40% + enablement 20%.",
-      "conditions": "Dealer team management.",
-      "source": "Industry assessment practice retrieval 2026‑08‑28.",
-      "confidence": "HIGH",
-      "maps_to": "Layer‑B/V assessment; recommended KPI basis."
-    },
-    {
-      "id": "K-PRIN-006",
-      "type": "principle",
-      "statement": "Decision object for territory adjustment is [region/zone] (territory); store attribution is a derived effect (F3 footprint follows F2 fence). Treating “store” as the decision object is a misalignment from the CRM data‑sync perspective—region is the primary actionable entity.",
-      "conditions": "FMCG sell‑out model; stores within region automatically follow region assignment.",
-      "source": "Business‑side correction 2026‑08‑28 (“Should not be phrased as store; if it were a store you could directly modify it in CRM; in reality it is a region, store is an added effect”).",
-      "confidence": "HIGH",
-      "maps_to": "World model F2 fence = decision object / F3 store = derived effect; adjust.py region‑priority engine."
-    },
-    {
-      "id": "K-PRIN-007",
-      "type": "principle",
-      "statement": "A dealer's territory may comprise multiple spatially disconnected components (enclaves, exclaves). Continuity is a business preference, NOT an ontological constraint; each component is independently describable by contract bounds and independently transferable.",
-      "conditions": "any commercial territory model where fence geometry is a derived view (D11)",
-      "source": "Business owner confirmation 2026-08-29; oracle-ladder audit: 9/37 Guangzhou dealers multi-block, 国之林 3 blocks IoU 0.81 (multi≠hard)",
-      "confidence": "HIGH",
-      "maps_to": "World Model F2 artifact; D14; world.fences_of/territory_area_km2"
-    },
-    {
-      "id": "K-PRIN-008",
-      "type": "principle",
-      "statement": "Low agreement between a hand-drawn fence and its nominal four-bounds landmarks is largely DRAWING NOISE: tracing a winding river/road in a CRM UI takes hundreds of clicks, so humans straighten, shortcut, and draw by impression. The contract defines coarse-grained intent; the hand-drawn polygon is a noisy fine-grained realization. Reconstruction must be evaluated against human re-draw agreement (core/plus tolerance band), never against exact hand-drawn IoU.",
-      "conditions": "any benchmark of text→geometry reconstruction against human-drawn ground truth",
-      "source": "Business owner 2026-08-29 (『人工边界不严格一般是手工绘制难度导致的』) + fidelity decomposition audit: 88% of vertices >500m from named landmark; of those ~47% lie on other real OSM features (secondary references), ~53% on nothing (drawing noise); convex-hull ratio 1.34",
-      "confidence": "HIGH",
-      "maps_to": "docs/FOUR_BOUNDS_RECONSTRUCTION_SPEC.md §7.2; P0 human ceiling experiment; Q3 core/plus output posture"
-    },
-    {
-      "id": "K-FACT-004",
-      "type": "fact",
-      "statement": "In real territory data, contract-named boundary landmarks can CROSS THE INTERIOR of the territory they bound (e.g., Pearl River channels cutting ~3km into 穗穗盛's blocks, which is also WHY the territory has 2 disconnected components). Barrier-only semantics severs the owner's own land; a river as boundary must be modeled as a SIDE constraint, not a connectivity cut. A territory's disconnection often shares its cause with a landmark clause.",
-      "conditions": "territories bounded by linear features that continue through the interior",
-      "source": "P1 oracle-arc audit 2026-08-29 (bench_p1.py + /p1 visual page): 穗穗盛 V1c 0.12→P1 0.32; interior-crossing measurement 珠江西航道 3.2km, 珠江后航道 3.0km",
-      "confidence": "HIGH",
-      "maps_to": "docs/FOUR_BOUNDS_RECONSTRUCTION_SPEC.md §10 P1; pipeline steps 5-8 (side field + cycle)"
-    }
-  ],
-  "knowledge_gaps_needing_business_input": [
-    "Customer‑relationship dependency quantification: industry has no standard metric; propose using “continuous service years with same dealer + visit stability” as proxy; business must confirm calculation method (impacts K‑CASE‑003 40% reproducibility).",
-    "Approval chain localization: K‑RULE‑009 is industry default five‑level; must verify against our company’s actual org structure."
-  ],
-  "knowledge_resolved_from_research": [
-    "Capacity metric ✓ K‑BENCH‑003/004.",
-    "Rebate/assessment structure ✓ K‑RULE‑008.",
-    "Approval chain and transition SOP ✓ K‑RULE‑009.",
-    "Low‑density service model ✓ K‑RULE‑010 (K‑RULE‑007 upgraded to HIGH)."
-  ]
+  {
+   "id": "K-PRIN-002",
+   "type": "principle",
+   "statement": "Carryover: last year's visit effort yields results this year. When evaluating territory changes, impact_horizon must be declared; otherwise, a short‑term sales dip after adjustment will be misread as adjustment failure.",
+   "conditions": "Fast‑moving consumer goods (FMCG) categories driven by customer relationships.",
+   "source": "Zoltners book + SRAF 06 Carryover Gate.",
+   "confidence": "HIGH",
+   "maps_to": "L3:E9 – seasonal/time effect."
+  },
+  {
+   "id": "K-PRIN-003",
+   "type": "principle",
+   "statement": "Adjustment disruption hurts mid‑size stores most: small stores rely on relationships, large stores rely on systems, mid‑size stores rely on both but are less stable.",
+   "conditions": "Dealer replacement scenario.",
+   "source": "Zoltners book Table 8.3.",
+   "confidence": "HIGH",
+   "maps_to": "L1:ServiceLocation"
+  },
+  {
+   "id": "K-PRIN-004",
+   "type": "principle",
+   "statement": "Classic three‑step design method: (1) account‑level design (which stores belong to me) → (2) geographic consolidation (bundle adjacent stores) → (3) alignment adjustment (balance workload/potential). The fence is an output of step two, not a starting point.",
+   "conditions": "General methodology.",
+   "source": "Zoltners book + FENCE_TOWNSHIP_DESCRIPTIONS analysis.",
+   "confidence": "HIGH",
+   "maps_to": "L2:TerritoryDesign"
+  },
+  {
+   "id": "K-RULE-001",
+   "type": "rule",
+   "statement": "Fence boundaries should follow main roads or rivers, recognizable by both sales teams, avoiding disputes. Cutting lines should always use visually obvious geographic features.",
+   "conditions": "Urban area division.",
+   "source": "FENCE_CHARACTERISTICS_understanding.md (38 fence geometry verification: boundary long straight segments coincide with OSM main roads).",
+   "confidence": "HIGH",
+   "maps_to": "L1:MarketFeature; L3:E6 FenceChangeEvent"
+  },
+  {
+   "id": "K-RULE-002",
+   "type": "rule",
+   "statement": "Administrative boundaries are the base framework: outer suburbs are fully contracted (district/county purity ≈100%), older urban districts are split into 3–6 blocks.",
+   "conditions": "Validated in Guangzhou market; other cities need re‑validation.",
+   "source": "FENCE_CHARACTERISTICS_understanding.md (72% of fences have district/county purity ≥95%).",
+   "confidence": "HIGH",
+   "maps_to": "L1:MarketFeature – administrative boundary."
+  },
+  {
+   "id": "K-RULE-003",
+   "type": "rule",
+   "statement": "Chain direct‑supply stores are not coverage gaps: supply to DIRECT_IN/DIRECT stores does not pass through the fenced dealer; it is a brand structural arrangement.",
+   "conditions": "Stores with the direct flag.",
+   "source": "gz_data.json (Meiyijia chain 2,127 stores, 97% of direct‑supply stores).",
+   "confidence": "HIGH",
+   "maps_to": "L4:kind=DIRECT_IN/DIRECT; event E7."
+  },
+  {
+   "id": "K-RULE-004",
+   "type": "rule",
+   "statement": "Upstream consistency of 85% is normal: within the fence, about 12% of stores have cross‑boundary supply (OOF) and 6% are direct supply; 100% consistency is unattainable and should not be pursued.",
+   "conditions": "Guangzhou current baseline.",
+   "source": "gz_data.json kind distribution (OK 79% + OOF 12% + direct 6%).",
+   "confidence": "HIGH",
+   "maps_to": "L4:AlignmentMeasure"
+  },
+  {
+   "id": "K-RULE-005",
+   "type": "rule",
+   "statement": "Identity first: before any allocation or diagnostic action, store identity must be resolved by rule 08. Gaps generated by stores with low identity_confidence may be false gaps.",
+   "conditions": "Unconditional.",
+   "source": "SRAF 08 identity specification.",
+   "confidence": "HIGH",
+   "maps_to": "L3:IdentityEvent; event E8."
+  },
+  {
+   "id": "K-RULE-006",
+   "type": "rule",
+   "statement": "Dealer change must assess relationship reliance: long‑term personal ties formed by reps are implicit glue for store renewal. Industry consensus transition: joint visit endorsement (old rep leads new 1–3 months) + three‑party chat group + VIP customer executive support. Reliance can be proxied by “same dealer continuous service years + visit stability” (sales metric to be confirmed).",
+   "conditions": "Dealer replacement / large‑scale adjustment.",
+   "source": "This round of dialogue (Dashi case 40% reliance) + industry handover practice search 2026‑08‑28 (joint visit is consensus best practice).",
+   "confidence": "HIGH",
+   "maps_to": "L1:ServiceLocation; L2:DealerRole"
+  },
+  {
+   "id": "K-RULE-007",
+   "type": "rule",
+   "statement": "Low‑density market gaps are structural: industry practice is “wholesale/secondary distributor model (ultra‑low density) + central warehouse routed direct delivery (township) + separate visit‑sales delivery + online order supplement”, not adding staff. Service frequency by store tier (A: 1–2 visits/week, B‑C: bi‑weekly + online supplement).",
+   "conditions": "Low store density and large travel radius",
+   "source": "gz_conghua_gap analysis + industry low-density coverage practice search 2026-08-28",
+   "confidence": "HIGH",
+   "maps_to": "Four-category diagnosis: resource shortage vs structural"
+  },
+  {
+   "id": "K-FACT-001",
+   "type": "fact",
+   "statement": "Contract is fill‑in text: authorized area is a textual description ('east of X road'), not a geometric polygon. Geometricizing the fence is essentially a manual interpretation of the contract.",
+   "conditions": "China market status",
+   "source": "CN_MARKET_distributor_territory_reality.md + contract package analysis",
+   "confidence": "HIGH",
+   "maps_to": "L2:Contract; F1 contract fence"
+  },
+  {
+   "id": "K-FACT-002",
+   "type": "fact",
+   "statement": "Buy‑out sales + no‑reason no‑return: inventory and unsold risk borne by distributor. This is the economic root of territorial exclusivity.",
+   "conditions": "This brand",
+   "source": "Contract terms + CN_MARKET analysis",
+   "confidence": "HIGH",
+   "maps_to": "L2:Contract commitment"
+  },
+  {
+   "id": "K-FACT-003",
+   "type": "fact",
+   "statement": "Guangzhou status: 38 fences / 33,109 stores / OK 79% / OOF 12% / direct 6% / GAP 1% / MULTI 7 entities",
+   "conditions": "2026-08 snapshot",
+   "source": "/tmp/gz_data.json",
+   "confidence": "HIGH",
+   "maps_to": "L4 all"
+  },
+  {
+   "id": "K-CASE-001",
+   "type": "case",
+   "statement": "Conghua whole‑area contract: fence nearly coincides with district boundary, single distributor covers whole area. Reflects 'suburban contracting' approach.",
+   "conditions": "Reference case",
+   "source": "FENCE_CHARACTERISTICS + gz_dealer_fences_map.html",
+   "confidence": "HIGH",
+   "maps_to": "L2:TerritoryDesign"
+  },
+  {
+   "id": "K-CASE-002",
+   "type": "case",
+   "statement": "Panyu riverside cut: using the Chen Village waterway as boundary, each side belongs to different distributors, no dispute. Reflects 'natural boundary priority' approach.",
+   "conditions": "Reference case",
+   "source": "This round of dialogue + map verification",
+   "confidence": "HIGH",
+   "maps_to": "L1:MarketFeature river"
+  },
+  {
+   "id": "K-CASE-003",
+   "type": "case",
+   "statement": "Dashi street adjustment assessment: when overall distributor is changed, 40% of stores have customer‑relationship dependency, requiring a transition plan (old rep visits 1‑2 months).",
+   "conditions": "Distributor replacement",
+   "source": "This round of dialogue (user business knowledge)",
+   "confidence": "MEDIUM",
+   "maps_to": "L3:E4 distributor exit"
+  },
+  {
+   "id": "K-CONST-001",
+   "type": "constraint",
+   "statement": "Visit scheduling engine is read‑only (maintained by others): SRAF calls its public API via adapter, does not modify its code. Upstream upgrades need sentinel‑compatible detection.",
+   "conditions": "Integration architecture constraints",
+   "source": "This round of dialogue (user decision)",
+   "confidence": "HIGH",
+   "maps_to": "SRAF↔visit integration layer"
+  },
+  {
+   "id": "K-CONST-002",
+   "type": "constraint",
+   "statement": "Adjustment requires stability budget: number of stores/visits per round of changes is constrained by budget, confirmed visits are frozen. Large‑scale adjustments require approval chain.",
+   "conditions": "Rolling rescheduling scenario",
+   "source": "visit phase3 design + SRAF 02 approval flow",
+   "confidence": "HIGH",
+   "maps_to": "L3:E6; event E6 triggers approval"
+  },
+  {
+   "id": "K-BENCH-001",
+   "type": "benchmark",
+   "statement": "Regional health benchmark (Guangzhou v0): alignment ≥79% healthy; OOF rate >20% requires investigation; GAP needs four‑category diagnosis; MULTI must register conflict log.",
+   "conditions": "v0 temporary benchmark, will be revised with ValidationPlan",
+   "source": "gz_data.json distribution + this design",
+   "confidence": "MEDIUM",
+   "maps_to": "L4:AlignmentMeasure; SRAF 06"
+  },
+  {
+   "id": "K-BENCH-002",
+   "type": "benchmark",
+   "statement": "Graph partitioning (METIS/Spectral) + H3 hierarchical indexing is the modern solution: H3 lookup O(1) replaces point‑by‑point PIP; graph partitioning solves cross‑administrative alignment.",
+   "conditions": "Technology selection knowledge",
+   "source": "THREE_ROUND_REVIEW.md Paper comparison (TPD 2024-2025 survey)",
+   "confidence": "HIGH",
+   "maps_to": "Tool layer"
+  },
+  {
+   "id": "K-BENCH-003",
+   "type": "benchmark",
+   "statement": "Sales rep capacity (China FMCG standard): normal 20‑30 stores/day; high‑density urban 30‑40; low‑density county/rural 15‑20. Store classification frequency: A class weekly 1‑2 visits, B class biweekly 1 visit, C class monthly 1 visit. Effective visit = order + standard actions (display/inventory/relationship), only check‑in without actions invalid.",
+   "conditions": "FMCG deep distribution model",
+   "source": "Industry visit practice search 2026‑08‑28",
+   "confidence": "HIGH",
+   "maps_to": "L3:Capacity; Diagnosis four categories: resource shortage benchmark"
+  },
+  {
+   "id": "K-BENCH-004",
+   "type": "benchmark",
+   "statement": "International standard cross‑validation: General Trade 40‑45 visits/day, Strike Rate 60‑75% (MT 80%+), travel time <30‑40% of workday. Travel time overrun = poor route planning, not insufficient manpower.",
+   "conditions": "In case of conflict with K‑BENCH‑003, use our company’s measured data (standard difference: effective visit definition differs).",
+   "source": "Industry benchmark search 2026‑08‑28",
+   "confidence": "MEDIUM",
+   "maps_to": "Diagnosis four categories: resource shortage benchmark"
+  },
+  {
+   "id": "K-RULE-008",
+   "type": "rule",
+   "statement": "Rebate structure determines dealer reaction to adjustments: tiered volume rebate → push/stockpiling impulse (pseudo growth); process rebate (display/exclusive‑sale/price credibility) → compliance execution. Industry practice: ~20% rebate tied to compliance. Predict dealer reaction by analyzing rebate structure first.",
+   "conditions": "Prediction/recommendation scenarios",
+   "source": "Industry rebate practice search 2026‑08‑28",
+   "confidence": "HIGH",
+   "maps_to": "L2:Contract; Prediction engine input"
+  },
+  {
+   "id": "K-RULE-009",
+   "type": "rule",
+   "statement": "Dealer replacement standard SOP: approval chain Region Manager → Zone Director → Sales GM → Finance (account verification) → Legal (contract compliance); transition triple set: inventory clearance / payment settlement / customer handover list; transition period 1‑3 months joint visits. Strictly prohibit abrupt replacement.",
+   "conditions": "Dealer replacement scenario",
+   "source": "Industry handover SOP search 2026‑08‑28",
+   "confidence": "HIGH",
+   "maps_to": "L3:E4 Dealer exit; recommendation routing"
+  },
+  {
+   "id": "K-RULE-010",
+   "type": "rule",
+   "statement": "Low‑density area service model selection: ultra‑low density → wholesale/secondary distribution (digitally equipped as delivery service provider); township level → central warehouse + route‑based direct delivery; combine physical visits with online ordering (cloud store/mini program), prioritize coverage depth over breadth, avoid large staffing.",
+   "conditions": "Low‑density market resource allocation",
+   "source": "Industry rural coverage practice search 2026‑08‑28",
+   "confidence": "HIGH",
+   "maps_to": "Diagnosis four categories: lack of willingness / structural; recommendation engine options"
+  },
+  {
+   "id": "K-PRIN-005",
+   "type": "principle",
+   "statement": "Layer mirroring organization principle: decision level = organization level. Three‑level allocation independent (Layer‑D dealer region / Layer‑B rep route / Layer‑V visit schedule), upstream output = downstream given value, cross‑layer intervention prohibited; each layer independently evaluated and approved; overlap prevention + white‑zone prevention apply at each layer.",
+   "conditions": "Distribution management system design general principles",
+   "source": "Industry organization structure search 2026‑08‑28 + user decision “Each layer independent, do not interfere”",
+   "confidence": "HIGH",
+   "maps_to": "World model §2A three levels; diagnosis first identifies level then attributes cause"
+  },
+  {
+   "id": "K-RULE-011",
+   "type": "rule",
+   "statement": "Route design five‑step method (Layer‑B): fix points (store inventory classification) → define area (geographic zoning) → assign rep (area to rep) → define frequency (per ABC) → define route (path ordering).",
+   "conditions": "Rep route design",
+   "source": "Industry route design search 2026‑08‑28",
+   "confidence": "HIGH",
+   "maps_to": "L2:Beat; Layer‑B methodology"
+  },
+  {
+   "id": "K-RULE-012",
+   "type": "rule",
+   "statement": "Route four principles: ① area‑based (geographic proximity to avoid backtracking, start dense then sparse) ② classification‑based frequency (ABC: A weekly / B biweekly / C monthly) ③ load balancing (Σ stores × frequency equal across routes) ④ fixed routes to cultivate relationships. Route = commitment to store visits (PJP), GPS verification of fulfillment.",
+   "conditions": "Layer‑B evaluation criteria",
+   "source": "Industry beat design search 2026‑08‑28",
+   "confidence": "HIGH",
+   "maps_to": "L2:Beat; L2:CoveragePolicy; Layer‑B evaluation"
+  },
+  {
+   "id": "K-BENCH-005",
+   "type": "benchmark",
+   "statement": "Layer‑B/V process baseline: visit achievement redline 90% (below → performance deduction; above 95% → reward); supervisor co‑visit 50‑70% of work hours; sales rep evaluation weight reference: process 40% + result 40% + enablement 20%.",
+   "conditions": "Dealer team management.",
+   "source": "Industry assessment practice retrieval 2026‑08‑28.",
+   "confidence": "HIGH",
+   "maps_to": "Layer‑B/V assessment; recommended KPI basis."
+  },
+  {
+   "id": "K-PRIN-006",
+   "type": "principle",
+   "statement": "Decision object for territory adjustment is [region/zone] (territory); store attribution is a derived effect (F3 footprint follows F2 fence). Treating “store” as the decision object is a misalignment from the CRM data‑sync perspective—region is the primary actionable entity.",
+   "conditions": "FMCG sell‑out model; stores within region automatically follow region assignment.",
+   "source": "Business‑side correction 2026‑08‑28 (“Should not be phrased as store; if it were a store you could directly modify it in CRM; in reality it is a region, store is an added effect”).",
+   "confidence": "HIGH",
+   "maps_to": "World model F2 fence = decision object / F3 store = derived effect; adjust.py region‑priority engine."
+  },
+  {
+   "id": "K-PRIN-007",
+   "type": "principle",
+   "statement": "A dealer's territory may comprise multiple spatially disconnected components (enclaves, exclaves). Continuity is a business preference, NOT an ontological constraint; each component is independently describable by contract bounds and independently transferable.",
+   "conditions": "any commercial territory model where fence geometry is a derived view (D11)",
+   "source": "Business owner confirmation 2026-08-29; oracle-ladder audit: 9/37 Guangzhou dealers multi-block, 国之林 3 blocks IoU 0.81 (multi≠hard)",
+   "confidence": "HIGH",
+   "maps_to": "World Model F2 artifact; D14; world.fences_of/territory_area_km2"
+  },
+  {
+   "id": "K-PRIN-008",
+   "type": "principle",
+   "statement": "Low agreement between a hand-drawn fence and its nominal four-bounds landmarks is largely DRAWING NOISE: tracing a winding river/road in a CRM UI takes hundreds of clicks, so humans straighten, shortcut, and draw by impression. The contract defines coarse-grained intent; the hand-drawn polygon is a noisy fine-grained realization. Reconstruction must be evaluated against human re-draw agreement (core/plus tolerance band), never against exact hand-drawn IoU.",
+   "conditions": "any benchmark of text→geometry reconstruction against human-drawn ground truth",
+   "source": "Business owner 2026-08-29 (『人工边界不严格一般是手工绘制难度导致的』) + fidelity decomposition audit: 88% of vertices >500m from named landmark; of those ~47% lie on other real OSM features (secondary references), ~53% on nothing (drawing noise); convex-hull ratio 1.34",
+   "confidence": "HIGH",
+   "maps_to": "docs/FOUR_BOUNDS_RECONSTRUCTION_SPEC.md §7.2; P0 human ceiling experiment; Q3 core/plus output posture"
+  },
+  {
+   "id": "K-FACT-004",
+   "type": "fact",
+   "statement": "In real territory data, contract-named boundary landmarks can CROSS THE INTERIOR of the territory they bound (e.g., Pearl River channels cutting ~3km into 穗穗盛's blocks, which is also WHY the territory has 2 disconnected components). Barrier-only semantics severs the owner's own land; a river as boundary must be modeled as a SIDE constraint, not a connectivity cut. A territory's disconnection often shares its cause with a landmark clause.",
+   "conditions": "territories bounded by linear features that continue through the interior",
+   "source": "P1 oracle-arc audit 2026-08-29 (bench_p1.py + /p1 visual page): 穗穗盛 V1c 0.12→P1 0.32; interior-crossing measurement 珠江西航道 3.2km, 珠江后航道 3.0km",
+   "confidence": "HIGH",
+   "maps_to": "docs/FOUR_BOUNDS_RECONSTRUCTION_SPEC.md §10 P1; pipeline steps 5-8 (side field + cycle)"
+  }
+ ],
+ "knowledge_gaps_needing_business_input": [
+  "Customer‑relationship dependency quantification: industry has no standard metric; propose using “continuous service years with same dealer + visit stability” as proxy; business must confirm calculation method (impacts K‑CASE‑003 40% reproducibility).",
+  "Approval chain localization: K‑RULE‑009 is industry default five‑level; must verify against our company’s actual org structure."
+ ],
+ "knowledge_resolved_from_research": [
+  "Capacity metric ✓ K‑BENCH‑003/004.",
+  "Rebate/assessment structure ✓ K‑RULE‑008.",
+  "Approval chain and transition SOP ✓ K‑RULE‑009.",
+  "Low‑density service model ✓ K‑RULE‑010 (K‑RULE‑007 upgraded to HIGH)."
+ ]
 }

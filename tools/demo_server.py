@@ -967,6 +967,8 @@ class Handler(BaseHTTPRequestHandler):
                                  "zones": STATE["yeidai"].snapshot()})
                 return
             if self.path == "/api/adjust":
+                import intelligence.adjust as _adj
+                _adj.set_data_dir(pack["data_dir"])
                 text = body.get("text", "")
                 p = None
                 parser = "rules"
@@ -993,7 +995,9 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, {
                     "parser": parser,
                     "proposal": {"src": p.src_dealer, "dst": p.dst_dealer,
-                                 "area": p.area_desc, "moved": len(p.stores)},
+                                 "area": p.area_desc,
+                                 "moved_pieces": len(p.pieces),
+                                 "moved": len(p.stores)},
                     "area": imp.get("area", {}),
                     "sub_rings": p.sub_rings,
                     "source_after": imp["source_after"],
