@@ -79,7 +79,7 @@ def set_data_dir(data_dir) -> None:
 
 
 def _tc():
-    """惰性导入 territory_compile：提供 U 统一铺盖与街道面。首次 ~8s。"""
+    """惰性导入 territory_compile（薄适配层）→ territory_ir 数据集。首次 ~8s。"""
     global _TC
     if _TC is None:
         import sys
@@ -90,6 +90,12 @@ def _tc():
             if _TC is None:
                 _TC = __import__("territory_compile")
     return _TC
+
+
+def _sem():
+    """territory_ir.semantics（核心包）。"""
+    import territory_ir.semantics as _s
+    return _s
 
 
 def _rows() -> list:
@@ -114,17 +120,10 @@ def _row_of(dealer: str) -> dict:
 
 
 def _street_district_map() -> dict:
-    """street → district（官方2675单元属性众数）。"""
+    """street → district（委托 territory_ir.semantics）。"""
     global _STREET_DISTRICT
     if _STREET_DISTRICT is None:
-        path = (_DATA_DIR or Path("data/gz")) / "unit_attributes.json"
-        m: dict[str, Counter] = {}
-        if path.exists():
-            attrs = json.loads(path.read_text(encoding="utf-8"))
-            for a in attrs:
-                if a.get("street") and a.get("district"):
-                    m.setdefault(a["street"], Counter())[a["district"]] += 1
-        _STREET_DISTRICT = {k: v.most_common(1)[0][0] for k, v in m.items()}
+        _STREET_DISTRICT = _sem().street_district_map(_tc().ds)
     return _STREET_DISTRICT
 
 
@@ -133,9 +132,8 @@ def _piece_geom(k: int):
 
 
 def _pieces_union(pieces: set):
-    """S 片并集（保留 MultiPolygon——不连续领地绝不能截成最大块）。"""
-    geoms = [_piece_geom(k) for k in sorted(pieces)]
-    return unary_union(geoms)
+    """S 片并集（委托 territory_ir.semantics）。"""
+    return _sem().pieces_union(_tc().ds, pieces)
 
 
 # ---------- 几何工具（沿用 v1） ----------
@@ -328,6 +326,114 @@ def _piece_impact(world: World, src: Fence, dst: Fence,
     }
 
 
+# ---------- 沿路重新分配（LLM 解析 → IR 确定性执行） ----------
+# 注意：不切割任何几何。路只是「片集合分堆」的判据——每个片是原子，
+# 按片质心在路的哪一侧归堆，然后重新分配归属。
+
+_SIDE_MAP = {"west": "西", "east": "东", "south": "南", "north": "北"}
+
+
+def _road_line_gcj(name: str):
+    """OSM 地物(WGS) → GCJ 折线并集。仅作分堆判据，不改几何。"""
+    from intelligence.coords import wgs2gcj
+    from shapely import ops as _ops
+    tc = _tc()
+    geoms = [g for g, n in zip(tc.feat_geoms, tc.feat_names) if name and name in n]
+    if not geoms:
+        raise AdjustError(f"路网中找不到「{name}」")
+    line = unary_union(geoms)
+    return _ops.transform(lambda x, y: tuple(wgs2gcj(x, y)), line)
+
+
+def _split_pieces_by_road(pieces: set, line, side: str) -> tuple[set, set]:
+    """按路方位分堆（委托 territory_ir.semantics，片原子不切割）。"""
+    return _sem().split_pieces_by_road(_tc().ds, pieces, line, side)
+
+
+def ir_fence_from_semantics(areas: list, bounds: dict, center: list) -> set:
+    """自然语言语义结构 → IR 片集合（委托 territory_ir.semantics）。"""
+    return _sem().ir_fence_from_semantics(_tc().ds, areas, bounds, center)
+
+
+def osm_catalog() -> dict:
+    """地物/街道面目录（委托 territory_ir.semantics）。"""
+    return _sem().osm_catalog(_tc().ds)
+
+
+def build_split_proposal(world: World, kb: KnowledgeBase, text: str,
+                         src: Fence, road: str, side: str,
+                         dst: "Fence | None", parser: str = "llm") -> Proposal:
+    """沿路把 src 的 S 片分两堆：side 侧重新分配给 dst（None = 无主待分配）。"""
+    src_row = _row_of(src.dealer)
+    allp = set(src_row["S"])
+    line = _road_line_gcj(road)
+    chosen, other = _split_pieces_by_road(allp, line, side)
+    side_cn = _SIDE_MAP.get(side, side)
+    if not chosen:
+        raise AdjustError(f"「{src.dealer[:12]}」在「{road}」{side_cn}侧没有单元片")
+    if not other:
+        raise AdjustError(f"整块区域都在{side_cn}侧，无需沿路重新分配")
+    if dst is not None and dst.dealer == src.dealer:
+        raise AdjustError("source 与 target 是同一经销商")
+    moved_union = _pieces_union(chosen)
+    sub_rings = _rings_of_geom(moved_union)
+    moved_stores = [s for s in world.fence_stores(src)
+                    if moved_union.contains(Point(s.lon, s.lat))]
+    sub_km2 = round(km2(moved_union), 2)
+    dst_view = (_dealer_piece_view(world, dst.dealer,
+                                   set(_row_of(dst.dealer)["S"]) | chosen)
+                if dst is not None else
+                {"pieces": len(chosen), "km2": sub_km2, "stores": 0,
+                 "kinds": {}, "density_per_km2": 0, "note": "无主（待分配）"})
+    impact = {
+        "action": (f"沿「{road}」重新分配 {src.dealer[:12]}：{side_cn}侧 "
+                   f"{len(chosen)} 片（{sub_km2} km²）→ "
+                   f"{dst.dealer[:12] if dst is not None else '【无主·待分配】'}"),
+        "source_after": _dealer_piece_view(world, src.dealer, other),
+        "target_after": dst_view,
+        "moved_sample": [{"piece": k, "street": _tc().U[k][1],
+                          "km2": round(km2(_piece_geom(k)), 3)}
+                         for k in sorted(chosen)[:10]],
+        "moved_kind_delta": {},
+        "signals": [
+            {"signal": f"IR 沿路重新分配（不切割几何，仅片归属变更）："
+                       f"{src.dealer[:14]} 沿「{road}」{side_cn}侧 "
+                       f"{len(chosen)} 片"
+                       f"{' → ' + dst.dealer[:12] if dst is not None else '（置为无主）'}",
+             "spec_ref": "世界模型 F2 可干预"},
+            {"signal": "划出部分暂无承接方：片集保留为无主，新经销商合同生效后建立围栏",
+             "spec_ref": "F2 预留区（unassigned）"},
+        ],
+        "risks": [kb.cite("K-PRIN-002"), kb.cite("K-RULE-006")],
+        "evidence": [{"data_ref": f"split {src.dealer}: {len(chosen)}片/"
+                                  f"{sub_km2}km² vs {len(other)}片/"
+                                  f"{round(km2(_pieces_union(other)),2)}km²"}],
+        "materiality": "Review",
+        "_after_sets": {"src": sorted(other),
+                        "dst": (sorted(set(_row_of(dst.dealer)["S"]) | chosen)
+                                if dst is not None else [])},
+    }
+    impact["area"] = {
+        "area_desc": f"沿{road}{side_cn}侧",
+        "sub_km2": sub_km2,
+        "sub_pieces": len(chosen),
+        "src_pieces": [len(allp), len(other)],
+        "dst_pieces": ([len(_row_of(dst.dealer)["S"]),
+                        len(_row_of(dst.dealer)["S"]) + len(chosen)]
+                       if dst is not None else [0, len(chosen)]),
+        "src_stores": [len(world.fence_stores(src)),
+                       len(world.fence_stores(src)) - len(moved_stores)],
+        "dst_stores": ([len(world.fence_stores(dst)),
+                        len(world.fence_stores(dst)) + len(moved_stores)]
+                       if dst is not None else [0, len(moved_stores)]),
+    }
+    return Proposal(text=text, src_dealer=src.dealer,
+                    dst_dealer=(dst.dealer if dst is not None else ""),
+                    area_desc=impact["area"]["area_desc"],
+                    sub_rings=sub_rings, stores=moved_stores,
+                    pieces=sorted(chosen), impact=impact, parser=parser)
+
+
 # ---------- 指令解析（文本层与 v1 完全一致） ----------
 
 def _match_dealer(world: World, name: str):
@@ -429,16 +535,21 @@ def parse_and_propose(world: World, kb: KnowledgeBase, text: str) -> Proposal:
 # ---------- 应用（几何手术 + 派生层同步） ----------
 
 def _sync_compiled_sets(proposal: Proposal) -> None:
-    """territory_compiled.json 的 S 集合同步增删（调整后描述需重编译）。"""
+    """territory_compiled.json 的 S 集合同步增删（调整后描述需重编译）。
+    每次写前留备份 territory_compiled.backup.json（可用 /api/reset 之外的
+    人工回滚手段）。"""
     if _DATA_DIR is None or not proposal.pieces:
         return
     path = _DATA_DIR / "territory_compiled.json"
+    if path.exists():
+        (path.parent / "territory_compiled.backup.json").write_bytes(
+            path.read_bytes())
     rows = json.loads(path.read_text(encoding="utf-8"))
     moved = set(proposal.pieces)
     for r in rows:
         if r.get("dealer") == proposal.src_dealer:
             r["S"] = sorted(set(r["S"]) - moved)
-        elif r.get("dealer") == proposal.dst_dealer:
+        elif proposal.dst_dealer and r.get("dealer") == proposal.dst_dealer:
             r["S"] = sorted(set(r.get("S") or []) | moved)
     path.write_text(json.dumps(rows, ensure_ascii=False, indent=1),
                     encoding="utf-8")
@@ -470,10 +581,12 @@ def apply_proposal(world: World, proposal: Proposal) -> World:
     #   src: 原手绘几何 ∩ 剩余S片并集（片清空 → 围栏清空，杜绝边缘残渣）
     #   dst: 原几何 ∪ 划转几何
     after_src = set(_row_of(proposal.src_dealer)["S"]) - set(proposal.pieces)
-    new_fences = [f for f in w2.fences
-                  if f.dealer not in (proposal.src_dealer, proposal.dst_dealer)]
-    for dealer, op in ((proposal.src_dealer, "sub"),
-                       (proposal.dst_dealer, "union")):
+    targets = [proposal.src_dealer] + ([proposal.dst_dealer]
+                                       if proposal.dst_dealer else [])
+    new_fences = [f for f in w2.fences if f.dealer not in targets]
+    ops_list = [(proposal.src_dealer, "sub")] + (
+        [(proposal.dst_dealer, "union")] if proposal.dst_dealer else [])
+    for dealer, op in ops_list:
         origs = [f for f in world.fences if f.dealer == dealer]
         if not origs:
             continue

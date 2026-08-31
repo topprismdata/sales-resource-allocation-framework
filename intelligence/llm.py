@@ -53,16 +53,21 @@ def llm_parse_command(world, kb, text: str):
     districts = sorted({s.district for s in world.stores if s.district})
     prompt = (
         "你是经销商区域调整助手。把用户的中文指令解析为 JSON，只输出 JSON，不要解释。\n"
-        '格式: {"action": "move", "area": str, "src": str, "dst": str}\n'
-        '- action 固定为 "move"（本系统只支持【区域】划转）\n'
-        '- area: 被划转的片区描述——可选值：整个区域 / 东部片区 / 南部片区 / '
-        '西部片区 / 北部片区 / 某个区名（如 增城区）/ OOF（跨界供货片区）；'
-        '未指明则填"整个区域"\n'
-        "- src/dst: 必须取下方经销商清单中能唯一定位的子串（至少 4 个字），"
-        "禁止照抄口语简称\n"
+        '动作一（划转）格式: {"action": "move", "area": str, "src": str, "dst": str}\n'
+        "- area: 被划转的片区描述——可选值：整个区域 / 东部片区 / 南部片区 / "
+        "西部片区 / 北部片区 / 某个区名（如 增城区）；未指明则填\"整个区域\"\n"
+        '动作二（沿路重新分配）格式: {"action": "split", "src": str, "road": str, '
+        '"side": "east|west|south|north", "dst": str}\n'
+        '- 触发词：沿着/沿 某路 分开/分割/一分为二。road=路名（如 花莞高速），'
+        'side=用户要划出的那一侧（西半边→west）。\n'
+        '- split 的 dst：承接方经销商全称；若用户说"给新的经销商/先空着/还没定/无承接方"，'
+        'dst 填空字符串 ""（表示置为无主待分配）。注意：dst 未在清单中不是错误，'
+        '只要用户表达了"新经销商/空着"的意图就填 ""。\n'
+        "- src（及 move 的 dst）: 必须取下方经销商清单中能唯一定位的子串"
+        "（至少 4 个字），禁止照抄口语简称\n"
         "注意：语义是区域为主，门店是附带效果（「甲商贸不做了」→ "
         'src=甲商贸全称, area=整个区域, dst=承接方）\n'
-        '若无法确定 src/dst，输出 {"action": "unknown", "reason": "一句话原因"}\n\n'
+        '若无法确定 src，输出 {"action": "unknown", "reason": "一句话原因"}\n\n'
         "经销商清单:\n" + "\n".join(dealers) +
         f"\n\n区名清单: {districts}\n\n用户指令: {text}"
     )
@@ -75,7 +80,7 @@ def llm_parse_command(world, kb, text: str):
             last_err = e
     if intent is None:
         raise AdjustError(f"LLM 解析失败: {last_err}")
-    if intent.get("action") != "move":
+    if intent.get("action") not in ("move", "split"):
         raise AdjustError(f"无法理解该指令（LLM: {intent.get('reason', '不支持的动作')}）")
 
     def _clean(s: str) -> str:
@@ -86,6 +91,17 @@ def llm_parse_command(world, kb, text: str):
         return s
 
     src = _match_dealer(world, _clean(intent.get("src", "")))
+    if intent.get("action") == "split":
+        from .adjust import build_split_proposal
+        road = str(intent.get("road", "")).strip()
+        if not road:
+            raise AdjustError("沿路重新分配缺少路名")
+        side = str(intent.get("side", "west")).strip().lower()
+        if side not in ("east", "west", "south", "north"):
+            side = {"东": "east", "西": "west", "南": "south", "北": "north"}.get(side[:1], "west")
+        dst_name = _clean(intent.get("dst", ""))
+        dst = _match_dealer(world, dst_name) if dst_name else None
+        return build_split_proposal(world, kb, text, src, road, side, dst, "llm")
     dst = _match_dealer(world, _clean(intent.get("dst", "")))
     if src.dealer == dst.dealer:
         raise AdjustError("source 与 target 是同一经销商")

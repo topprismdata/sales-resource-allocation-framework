@@ -279,6 +279,22 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, *a):  # 安静
         pass
 
+    def _upsert_compiled_row(self, data_dir, row: dict):
+        path = data_dir / "territory_compiled.json"
+        rows = json.loads(path.read_text(encoding="utf-8")) \
+            if path.exists() else []
+        rows = [r for r in rows if r.get("area_id") != row["area_id"]]
+        rows.append(row)
+        path.write_text(json.dumps(rows, ensure_ascii=False, indent=1),
+                        encoding="utf-8")
+
+    def _client_log(self, body: dict):
+        import time as _t
+        with open("/tmp/sraf_client_log.jsonl", "a", encoding="utf-8") as f:
+            f.write(json.dumps({"t": _t.strftime("%H:%M:%S"), **body},
+                               ensure_ascii=False) + "\n")
+        self._send(200, {"ok": True})
+
     def _send(self, code: int, body: dict | str, ctype="application/json; charset=utf-8"):
         if isinstance(body, str):
             data = body.encode("utf-8")
@@ -456,6 +472,11 @@ class Handler(BaseHTTPRequestHandler):
         self._send(404, {"error": "not found"})
 
     def do_POST(self):
+        if self.path == "/api/client_log":
+            n = int(self.headers.get("Content-Length", 0))
+            body = json.loads(self.rfile.read(n)) if n else {}
+            self._client_log(body)
+            return
         body = self._body()
         if self.path == "/api/create_region":
             name = str(body.get("name", "")).strip()
@@ -488,7 +509,13 @@ class Handler(BaseHTTPRequestHandler):
             dealer = str(body.get("dealer_id", "")).strip()
             text = str(body.get("text", "")).strip()
             count = int(body.get("store_count", 60))
-            osm = pack["osm"] or {}
+            osm = pack["osm"]
+            if not osm and (pack["data_dir"] / "territory_compiled.json").exists():
+                # GZ 包无 osm_parsed：用 TerritoryIR 地物/街道面目录
+                import intelligence.adjust as _adj
+                _adj.set_data_dir(pack["data_dir"])
+                osm = _adj._sem().osm_catalog(_adj._tc().ds)
+            osm = osm or {}
             if not dealer or len(dealer) < 4:
                 self._send(400, {"error": "dealer_id 至少 4 个字"}); return
             # D14: 同经销商新增围栏块是合法的多块领地（component），不再拒绝
@@ -554,8 +581,33 @@ class Handler(BaseHTTPRequestHandler):
                 poly = [(lon0-dlon, lat0-dlat), (lon0+dlon, lat0-dlat),
                         (lon0+dlon, lat0+dlat), (lon0-dlon, lat0+dlat)]
                 built_from = "中心估算框（无街道时）"
+            # —— RC2.1：IR 条款回放优先（自然语言 → 片集合），失败降级凸包 ——
+            ir_pieces = None
+            ir_extra_polys = []
+            ir_note = ""
+            if (pack["data_dir"] / "territory_compiled.json").exists():
+                try:
+                    import intelligence.adjust as _adj
+                    _adj.set_data_dir(pack["data_dir"])
+                    _pieces = _adj.ir_fence_from_semantics(areas, bounds, center)
+                    if _pieces:
+                        _u = _adj._pieces_union(_pieces)
+                        _polys = (list(_u.geoms) if _u.geom_type == "MultiPolygon"
+                                  else [_u])
+                        _polys.sort(key=lambda g: -g.area)
+                        poly = [[list(c) for c in _polys[0].exterior.coords]]
+                        ir_extra_polys = _polys[1:]
+                        ir_pieces = sorted(_pieces)
+                        ir_note = (f"IR条款回放：{len(areas)}街道/{len(bounds)}界"
+                                   f"→ {len(_pieces)}片")
+                    else:
+                        ir_note = "IR: 语义未命中单元库片（降级凸包）"
+                except Exception as e:  # noqa: BLE001
+                    ir_note = f"IR失败({e})，降级凸包"
+            else:
+                ir_note = "区域包无单元库（降级凸包）"
+
             # —— 道路语义切分：market_partition 引擎（环形/线性/侧向校验）——
-            from intelligence import roadsem
             kept = dict(bounds)
             bg = {}
             geoms = {}
@@ -565,20 +617,50 @@ class Handler(BaseHTTPRequestHandler):
                     geoms[nm] = [[list(pt) for pt in seg] for seg in segs]
                     bg[d] = [list(pt) for pt in
                              max(segs, key=lambda s: len(s))]
-            from shapely.geometry import Polygon as ShpPolygon
-            try:
-                sr = roadsem.clip_by_bounds(
-                    ShpPolygon(poly), bounds, geoms)
-                if sr.polygon is not None and not sr.polygon.is_empty:
-                    poly = [list(c) for c in sr.polygon.exterior.coords]
-                clipped = [x for x in sr.applied if x.startswith(("北", "南", "东", "西"))]
-                recorded = [x for x in sr.applied if x.startswith(("✓", "⚠"))]
-                geom_diag = sr.diagnostics
-            except Exception as e:  # noqa: BLE001
+            if ir_pieces:
                 clipped = []
-                recorded = [f"⚠ 道路语义切分失败({e})，保留街道凸包"]
+                recorded = [f"✓ {ir_note}"]
                 geom_diag = {}
+            elif (pack["data_dir"] / "territory_compiled.json").exists():
+                # 有单元库的区域：IR 未命中即报错（语义请核对街道名/界路名）
+                self._send(400, {"error": f"IR 语义未命中单元库：{ir_note}。"
+                                          f"请核对描述中的街道名与界路名"})
+                return
+            else:
+                try:
+                    from intelligence import roadsem
+                except ImportError:
+                    roadsem = None
+                from shapely.geometry import Polygon as ShpPolygon
+                if roadsem is not None:
+                    try:
+                        sr = roadsem.clip_by_bounds(
+                            ShpPolygon(poly), bounds, geoms)
+                        if sr.polygon is not None and not sr.polygon.is_empty:
+                            poly = [list(c) for c in sr.polygon.exterior.coords]
+                        clipped = [x for x in sr.applied if x.startswith(("北", "南", "东", "西"))]
+                        recorded = [x for x in sr.applied if x.startswith(("✓", "⚠"))]
+                        geom_diag = sr.diagnostics
+                    except Exception as e:  # noqa: BLE001
+                        clipped = []
+                        recorded = [f"⚠ 道路语义切分失败({e})，保留街道凸包"]
+                        geom_diag = {}
+                else:
+                    clipped = []
+                    recorded = ["⚠ market_partition 不可用，保留街道凸包"]
+                    geom_diag = {}
             ring = [tuple(pt) for pt in poly]
+            # IR 多块: poly=[[环0],[环1]...] → 主块做 ring，其余作附加围栏
+            ir_blocks = []
+            if ir_pieces:
+                ring = poly[0]
+                if ring[0] != ring[-1]:
+                    ring.append(ring[0])
+                ir_blocks = [[[list(c) for c in g.exterior.coords]]
+                             for g in ir_extra_polys]
+            elif isinstance(poly, list) and poly and isinstance(poly[0], list) \
+                    and poly[0] and isinstance(poly[0][0], list):
+                ring = poly[0]
             if ring[0] != ring[-1]:
                 ring.append(ring[0])
             # —— 模拟门店落位（区域无门店时）——
@@ -597,14 +679,25 @@ class Handler(BaseHTTPRequestHandler):
                                        "u": dealer, "lon": round(lon, 6),
                                        "lat": round(lat, 6), "direct": False,
                                        "dealers": [dealer], "kind": "OK"})
-            area_id = f"A{abs(hash(dealer)) % 900000 + 100000}"
-            real_area = round(geom.shoelace_area_km2(poly), 2)
+            import hashlib as _hl
+            area_id = "A" + _hl.md5(dealer.encode("utf-8")).hexdigest()[:8].upper()
+            if ir_pieces:
+                # IR: poly = 环列表（多块），拼接所有环计总面积
+                real_area = round(geom.shoelace_area_km2(
+                    [pt for blk in poly for pt in blk]), 2)
+            else:
+                real_area = round(geom.shoelace_area_km2(poly), 2)
             w2 = w.with_stores(
                 w.stores + [Store(s["n"], s["c"], s["d"], s["u"], s["lon"],
                                   s["lat"], s["direct"], tuple(s["dealers"]),
                                   s["kind"]) for s in new_stores])
-            w2 = w2.with_fences(w2.fences + [
-                Fence(area_id, dealer, real_area, tuple(map(tuple, ring)))])
+            new_fences = [Fence(area_id, dealer, real_area,
+                                tuple(map(tuple, ring)))]
+            for j, blk in enumerate(ir_blocks):
+                new_fences.append(Fence(f"{area_id}-{j+2}", dealer,
+                                        round(geom.shoelace_area_km2(blk[0]), 2),
+                                        tuple(map(tuple, blk[0]))))
+            w2 = w2.with_fences(w2.fences + new_fences)
             cols, nbs = _assign_dealer_colors(w2.fences)
             pack["world"] = w2; pack["colors"] = cols; pack["neighbors"] = nbs
             STATE["world"] = w2; STATE["proposal"] = None
@@ -613,7 +706,16 @@ class Handler(BaseHTTPRequestHandler):
                 "four_bounds": kept, "areas": areas, "channels": sem["channels"],
                 "center": [round(center[0], 6), round(center[1], 6)],
                 "reserved_channels": sem["channels"], "store_count": count,
-                "raw_text": text})
+                "raw_text": text,
+                "area_id": area_id,
+                "built_from": ("ir-clauses(" + ir_note + ")" if ir_pieces
+                               else "hull-fallback")})
+            if ir_pieces:
+                self._upsert_compiled_row(pack["data_dir"], {
+                    "dealer": dealer, "area_id": area_id,
+                    "human_terms": [], "engine_terms": [],
+                    "engine_J": 1.0, "T": ir_pieces, "S": ir_pieces,
+                    "iou": 1.0, "km2": real_area, "ir": {}})
             _persist_pack(pack)
             self._send(200, {
                 "ok": True, "dealer": dealer, "area_km2": real_area,
