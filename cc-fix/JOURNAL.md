@@ -367,3 +367,59 @@ B4 为 `23 passed in 0.05s`；B5 已越过两个 source GeoJSON 并推进到缺�
   改为 `_paths.ROOT / "tools"`；没有无法由卡片规则覆盖的第五种残留模式。
 
 本次未修改 `cc-fix/CONTRACTS.md`，未联网，未生成或删除数据文件，未执行 Git commit。
+
+## 2026-08-31 同步 main RC2.0 (42cf065) + ★ 发现 RC2.0 自带测试回归
+
+### merge 情况
+
+预检零文件重叠（RC2.0 改 `intelligence/adjust.py`/`knowledge_items.json`/
+`demo_server.py`；CC_main 改 tools/ 其余 26 文件），merge 干净无冲突。
+
+merge 后重跑 T-002 断言：B1/B2/B3/B5/B6 **全部仍 PASS**，
+证明 CC_main 的路径修复未被 RC2.0 影响。
+
+### ★ 新审查发现：RC2.0 破坏了 5 个既有测试（非 CC_main 引入）
+
+**归属验证**：用独立 worktree 检出**纯 42cf065**（不含任何 CC_main 改动）跑测试：
+
+```
+5 failed, 18 passed     ← 与 merge 后完全一致
+FAILED test_multicomponent.py::test_proposal_multi_ring
+FAILED test_multicomponent.py::test_select_area_spans_components
+FAILED test_multicomponent.py::test_transfer_multi_component_preserves_clusters
+FAILED test_multicomponent.py::test_transfer_single_component
+FAILED test_multicomponent.py::test_transfer_zero_store_removal
+```
+
+**结论：回归由 RC2.0 自身引入，与 CC_main 的 merge 无关。**
+基点 b82e46e 时为 23 passed，RC2.0 后降为 18 passed。
+
+**根因**（`intelligence/adjust.py:95-105`）：
+
+```python
+def _rows() -> list:
+    if _DATA_DIR is None:
+        raise AdjustError("adjust 未初始化数据目录（set_data_dir）")
+    path = _DATA_DIR / "territory_compiled.json"
+    if not path.exists():
+        raise AdjustError("缺少 territory_compiled.json（先跑 territory_compile.py）")
+```
+
+RC2.0 将领地调整**硬绑定到离线编译产物 `territory_compiled.json`**。
+5 个测试以纯内存 World 构造、不含数据目录，遂全部抛 AdjustError。
+
+**问题性质（与 RC1.0 同构且更进一步）**：
+
+| 版本 | 对编译产物的依赖 | 失败表现 |
+|---|---|---|
+| RC1.0 | 回放优先用编译产物，失败**静默降级**到台账(IoU 0.0-0.14) | 伪装成功 |
+| RC2.0 | 调整**硬依赖**编译产物，缺失即抛错 | 功能完全不可用 |
+
+且 `territory_compiled.json` 的生成链依赖 `gz_osm_full.json`（需联网 Overpass），
+门槛进一步抬高。**讽刺之处**：RC2.0 声称改进多组件领地
+（修 `_pieces_union` 截断），却使多组件领地的全部 5 个测试失效。
+
+**处置**：不在当前 Phase 修复（非 CC_main 引入，且属 RC2.0 设计取舍）。
+已留档，建议纳入后续 Phase 或单独反馈原作者。
+**Phase 3 消除静默降级时需按 RC2.0 新架构重新设计。**
+
