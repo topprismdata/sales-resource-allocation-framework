@@ -71,6 +71,12 @@
       "topic": "fetch_region_osm.py 对大 bbox 必然 504，需分块",
       "owner": "claude",
       "note": "广州围栏跨21.9-25.5N，单次查询超时；已用临时分块脚本绕过"
+    },
+    {
+      "id": "E-005",
+      "topic": "territory_compile 性能：Ut 空间索引建而不用，全量遍历6261片+重复求交，全量编译>30min 超时",
+      "owner": "claude",
+      "note": "优化为 Ut.query 预筛，结果等价；已实证 J=1.0 自证、IoU 为真实天花板"
     }
   ],
   "resolved_escalations": [],
