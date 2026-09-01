@@ -9,3 +9,4 @@ __pycache__/
 *.pem
 sraf_secrets*
 analysis/
+.DS_Store
