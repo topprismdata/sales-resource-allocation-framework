@@ -12,6 +12,7 @@ import os
 import re
 import urllib.request
 from pathlib import Path
+from territory_ir.roadsem import match_in_text
 
 _CONF = Path.home() / ".claude" / "settings.json"
 _MAX_TOKENS = 4000
@@ -123,13 +124,8 @@ def llm_contract_semantics(text: str, landmark_names: dict) -> dict:
     返回 {"bounds": {方向: 地标名}, "areas": [...], "channels": [...], "raw": {...}}
     landmark_names: {"rivers","roads","districts","refs"}"""
     def _in_text(k: str) -> bool:
-        if len(k) >= 2 and k in text:
-            return True
-        # 后缀裁剪核心匹配：上塘高架路 → 上塘高架
-        for cut in (1, 2, 3, 4):
-            if len(k) - cut >= 2 and k[:-cut] in text:
-                return True
-        return False
+        # WP11 收敛：后缀裁剪核心匹配单源于 territory_ir.roadsem
+        return match_in_text(k, text)
 
     def _pick(cat, cap):
         hits = [k for k in landmark_names.get(cat, []) if _in_text(k)]

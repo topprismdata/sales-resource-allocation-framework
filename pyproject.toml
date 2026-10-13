@@ -8,6 +8,7 @@ dependencies = [
     "numpy>=1.24",
     "coords-core @ git+https://github.com/topprismdata/coords-core.git@v0.1.0",
     "market-partition @ git+https://github.com/topprismdata/market-partition.git@v0.1.1",
+    "territory-ir @ git+https://github.com/topprismdata/Territory-IR.git@v0.3.1",
 ]
 
 [project.optional-dependencies]

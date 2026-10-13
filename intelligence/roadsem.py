@@ -20,15 +20,18 @@ from shapely.ops import unary_union
 
 from market_partition.geometry.split import Barrier, partition
 
-# 环/高速类关键词 → kind=closed
-RING_WORDS = ("绕城", "环城", "高速", "快速路", "G2504", "G2501", "G1501")
-# 方向 → 保留侧；keep 表示"区域在界线的哪一侧"
-DIR_KEEP = {"北": "south", "南": "north", "东": "west", "西": "east"}
+# WP11 收敛：路名词表与方向语义单源于 territory_ir.roadsem（组织唯一事实源）。
+# 本模块只保留几何算法（切分/选块/闭合检测）；词表名在此再导出保持 API 兼容。
+from territory_ir.roadsem import (  # noqa: F401
+    DIR_KEEP,
+    RING_WORDS,
+    is_ring_name,
+)
 
 
 def is_ring(name: str, geom: list) -> bool:
     """判断是否环形/高速类：关键词命中，或闭合检测（首尾点距离<对角5%）。"""
-    if any(w in name for w in RING_WORDS):
+    if is_ring_name(name):
         return True
     pts = [p for seg in geom for p in seg]
     if len(pts) < 8:
