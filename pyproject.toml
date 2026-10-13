@@ -7,7 +7,7 @@ dependencies = [
     "shapely>=2.0",
     "numpy>=1.24",
     "coords-core @ git+https://github.com/topprismdata/coords-core.git@v0.1.0",
-    "market-partition @ git+https://github.com/topprismdata/market-partition.git@v0.1.0",
+    "market-partition @ git+https://github.com/topprismdata/market-partition.git@v0.1.1",
 ]
 
 [project.optional-dependencies]
