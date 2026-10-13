@@ -1,117 +1,50 @@
-# TerritoryIR: Bidirectional Compilation Between Human Geographic Descriptions and Executable Regions
+# SRAF · Sales Resource Allocation Framework
 
-**Bidirectional territory semantics** · **Finite Boolean region algebra** · **Executable IR** · **Round-trip verification**
+销售资源分配决策框架 —— TopPrism 片区规划（模块②）的**决策引擎与规范族**。Part of **TopPrism Decision Intelligence**.
 
-> **Decision question:** A sales manager draws a territory polygon on a digital map. A field rep describes the same territory in natural language: "凤凰街道 + 龙洞街道沿华南快速，西至龙洞街道—长兴街道界". Are they talking about the same place? TerritoryIR bridges these two representations through bidirectional compilation.
+> **决策问题**：经销商/拜访员的片区应该怎么划、划得好不好、要不要重划、怎么重划？
+> SRAF 把「世界模型 → 健康诊断 → 缺口分类 → 决策问题合同 → 调整算子 → 方案评估」做成可测试的闭环。
 
-Part of **TopPrism Decision Intelligence**. 
+## 仓库结构
 
----
-
-## Why this exists
-
-Chinese FMCG companies manage hundreds of dealer territories. These territories exist in two incompatible representations:
-
-- **In the field:** staff describe territories linguistically (street names, road segments, boundaries)
-- **In the system:** territories are stored as GIS polygons
-
-Bridging these two representations is a real operational problem. Contracts must be written in natural language but executed as geometric boundaries. Territory changes must be communicated to field staff as text but applied to the system as polygons. Neither representation alone suffices.
-
-**TerritoryIR solves this through bidirectional compilation:**
-
-```
-Human Description  ⟷  TerritoryIR  ⟷  Executable Region
-```
-
-The IR is the **canonical semantic contract** — neither the text nor the polygon is authoritative. Both are projections of the same IR.
-
----
-
-## Core contributions
-
-| # | Contribution | Description |
+| 目录 | 内容 | 状态 |
 |---|---|---|
-| 1 | **Bidirectional territory semantics** | Human geographic language ↔ executable region geometry through a shared semantic IR |
-| 2 | **Executable region algebra** | Finite Boolean algebra over heterogeneous geographic partitions, with typed AST and denotational semantics |
-| 3 | **Semantics-preserving compression** | Named expressions (street, road, boundary) are formal compressions of atomic expressions |
-| 4 | **Bidirectional evaluation** | 4-direction evaluation on 43 real-world territories |
+| `docs/sraf/` | **v1.2 规范族**（00 Charter → 08 Canonical Identity，18k 行，含 NORMATIVE_OWNERSHIP 与 SHA256SUMS 完整性清单） | 规范正典 |
+| `docs/territory/` | 片区设计（DESIGN / D14 多连通 / FOUR_BOUNDS 重建规范 / 边界匹配理论 / 本体） | 设计文档 |
+| `docs/paper/` | 学术论文草稿（bidirectional territory semantics 姊妹篇） | 写作中 |
+| `dealer_territory/` | 围栏分配引擎：fence_allocator（四至约束分配）· four_bounds · fence_split（道路/河流切分，基于 market-partition）· fence_from_text · fence_analysis · assignment | 可安装包 |
+| `intelligence/` | 分配智能层：world（世界模型）· adjust（迁移/选择算子）· health（健康诊断）· classify · impact · knowledge · roadsem · vision · geom · coords（coords-core shim） | 可安装包 |
+| `tools/` | 20+ 工程脚本（编译/评测/可视化/台账） | 脚本，不随包发布 |
+| `knowledge_base/` | 04 层的「IQ 源」：机器可读知识项 + 缺口台账 | 数据 |
+| `data/` | 数据包目录（发布仓仅含 README；真实围栏数据不随仓发布） | 见测试标记 |
 
-## Formal properties
-
-Five theorems establish the system's formal guarantees:
-
-- **Theorem 1:** Atomic Representational Completeness — every $T \subseteq U$ has an exact IR expression
-- **Theorem 2:** Semantic Compression — named clauses are semantics-preserving compressions
-- **Theorem 3:** Error Decomposition — all geometric error is bounded by atomic discretization
-- **Theorem 4:** R→L→R Round-trip — Region → Language → Region preserves semantics
-- **Theorem 5:** L→R→L Round-trip — Language → Region → Language preserves semantics
-
-## Results
-
-| Metric | Dealers (32) | Sales-rep zones (11) |
-|---|---|---|
-| J (representational exactness) | 1.0 (32/32) | 1.0 (10/11) |
-| IoU (geometric fidelity) | 0.992 | 0.971 |
-| Coverage | 99.81% | 99.17% |
-| R→L→R round-trip | 32/32 | 11/11 |
-| L→R→L round-trip | 32/32 | 11/11 |
-| Human sentences | 5–51 | 2–10 |
-
----
-
-## Repository layout
-
-| Path | Contents |
-|---|---|
-| `docs/paper/` | Paper (paper.md), outline, formal specification, screenshot |
-| `docs/territory/` | Method docs, ontology, design specs, validation checklists |
-| `docs/sraf/` | SRAF normative specs 00–08 |
-| `tools/` | `territory_compile.py` (compiler), `dealer_describe_all.py`, `yeidai_compile.py`, `territory_ir.py` |
-| `intelligence/` | World-model slice, GCJ⇄WGS boundary, road semantics |
-| `data/gz/` | Business data (excluded from git per `.gitignore`) |
-
-## Key tools
-
-| Tool | Purpose |
-|---|---|
-| `tools/territory_compile.py` | Main compiler: fence → IR → human terms + engine terms |
-| `tools/territory_ir.py` | IR schema, eval, verbalize, lower (pure functions) |
-| `tools/yeidai_compile.py` | 业代 (sales-rep) zone compiler |
-| `tools/dealer_describe_all.py` | Batch description generator for all dealers |
-
-## Demo
+## 安装
 
 ```bash
-# Static file server (for compare page)
-python3 -m http.server 8801 --directory data/gz/
-
-# Full recompile
-python3 tools/territory_compile.py
-
-# Compare page
-open http://127.0.0.1:8801/j_compare.html
+pip install "sraf @ git+https://github.com/topprismdata/sales-resource-allocation-framework.git@v0.1.0"
 ```
 
-## Paper
+依赖：`shapely` · `numpy` · `coords-core`（坐标帧纪律，组织唯一事实源）· `market-partition`（几何切分引擎）。
 
-A full paper is under development: `docs/paper/paper.md`. Target venues: IJGIS, ACM SIGSPATIAL, Transactions in GIS.
+## 测试
 
----
-
-## TopPrism metadata
-
-```yaml
-topprism:
-  purpose: decision-intelligence
-  capability: territory-description
-  platform_layer: business-world-model
-  maturity: applied-internal
-  evidence:
-    type: operational-data-validated
-    source: anonymized Guangzhou business snapshot + public OSM + Amap
-    validation: programmatic-plus-visual
+```bash
+python -m pytest tests -q          # hermetic 子集（CI 口径）
+python -m pytest tests -m local_data -q  # 需本地数据包（默认排除）
 ```
 
-## License
+`local_data` 标记 = 依赖未发布的区域数据包（如广州路网 pack）；CI 通过 `-m 'not local_data'` 排除，与 Territory-IR 同门禁纪律。
 
-MIT. No operational business data or credentials are distributed with this repository; `data/*` is excluded by `.gitignore`.
+## 核心不变量（测试锁定）
+
+1. **帧纪律**：所有坐标经 `coords_core.frames` 声明制处理，混帧 fail-closed（广州混帧实测 623m 偏差为金标）；
+2. **守恒**：调整算子（transfer）前后门店总数不变，同经销商守卫拒绝自迁；
+3. **多连通**：1:N 围栏索引（一经销商多不连续簇）为一级公民，切分/合并保持簇结构；
+4. **证据链**：诊断（health）→ 缺口（AllocationGap）→ 决策问题（DP01–DP07 合同）逐层可溯源，见 `docs/sraf/02–04`。
+
+## 治理
+
+- 组织元数据：[`topprism.yaml`](topprism.yaml)（maturity 四档制）
+- 规范完整性：`docs/sraf/SHA256SUMS.md`
+- 版本：git tag（`v0.1.0` 起）；历史 `RC2.0/RC3.0` 为拆仓前快照
+- 论文/研究层（analysis/）按白名单评审后入库，默认不发布

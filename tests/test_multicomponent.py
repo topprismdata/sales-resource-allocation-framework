@@ -7,6 +7,8 @@ same-dealer guard, density aggregation.
 """
 import sys
 import unittest
+
+import pytest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -71,6 +73,7 @@ class TestMultiComponent(unittest.TestCase):
         self.assertEqual(len(self.w.fences_of(f.dealer)), 2)
 
     # 4 select "全部" covers stores from BOTH components
+    @pytest.mark.local_data  # 依赖广州路网 pack（未发布），CI 排除
     def test_select_area_spans_components(self):
         src = _match_dealer(self.w, "经销商甲")
         p = build_proposal(self.w, FakeKB(), "把经销商甲的整个区域划给经销商乙",
@@ -80,6 +83,7 @@ class TestMultiComponent(unittest.TestCase):
         self.assertEqual(set(s.name[:2] for s in p.stores), {"甲西", "甲东"} if False else {"甲西", "甲东"})
 
     # 5 single-component transfer still works
+    @pytest.mark.local_data
     def test_transfer_single_component(self):
         p = parse_and_propose(self.w, FakeKB(), "把经销商乙的整个区域划给经销商甲")
         self.assertEqual(len(p.stores), 4)
@@ -90,6 +94,7 @@ class TestMultiComponent(unittest.TestCase):
 
     # 6 multi-component: after moving B into A, A's west cluster absorbs B
     #    (B is near A's west); east cluster stays separate → still 2 components
+    @pytest.mark.local_data
     def test_transfer_multi_component_preserves_clusters(self):
         p = parse_and_propose(self.w, FakeKB(), "把经销商乙的整个区域划给经销商甲")
         w2 = apply_proposal(self.w, p)
@@ -98,12 +103,14 @@ class TestMultiComponent(unittest.TestCase):
         self.assertEqual(len(w2.stores), 12)  # store count conserved
 
     # 7 zero-store removal
+    @pytest.mark.local_data
     def test_transfer_zero_store_removal(self):
         p = parse_and_propose(self.w, FakeKB(), "把经销商甲整体并入经销商乙")
         w2 = apply_proposal(self.w, p)
         self.assertEqual(w2.fences_of("经销商甲"), [])
 
     # 8 proposal sub_rings is a LIST (multi-ring safe)
+    @pytest.mark.local_data
     def test_proposal_multi_ring(self):
         src = _match_dealer(self.w, "经销商甲")
         p = build_proposal(self.w, FakeKB(), "把经销商甲的整个区域划给经销商乙",

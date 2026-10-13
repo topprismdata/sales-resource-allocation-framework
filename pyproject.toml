@@ -1,0 +1,27 @@
+[project]
+name = "sraf"
+version = "0.1.0"
+description = "SRAF — Sales Resource Allocation Framework：片区规划决策引擎（围栏分配/四至/多连通/调整算子/世界模型）+ v1.2 规范族"
+requires-python = ">=3.10"
+dependencies = [
+    "shapely>=2.0",
+    "numpy>=1.24",
+    "coords-core @ git+https://github.com/topprismdata/coords-core.git@v0.1.0",
+    "market-partition @ git+https://github.com/topprismdata/market-partition.git@v0.1.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["dealer_territory*", "intelligence*"]
+
+[tool.pytest.ini_options]
+markers = [
+    "local_data: 需要本地未发布数据包（广州路网 pack 等），CI 排除",
+]
+addopts = "-m 'not local_data'"

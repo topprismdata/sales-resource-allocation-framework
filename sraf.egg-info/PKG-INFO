@@ -1,0 +1,13 @@
+Metadata-Version: 2.4
+Name: sraf
+Version: 0.1.0
+Summary: SRAF — Sales Resource Allocation Framework：片区规划决策引擎（围栏分配/四至/多连通/调整算子/世界模型）+ v1.2 规范族
+Requires-Python: >=3.10
+License-File: LICENSE
+Requires-Dist: shapely>=2.0
+Requires-Dist: numpy>=1.24
+Requires-Dist: coords-core @ git+https://github.com/topprismdata/coords-core.git@v0.1.0
+Requires-Dist: market-partition @ git+https://github.com/topprismdata/market-partition.git@v0.1.0
+Provides-Extra: dev
+Requires-Dist: pytest>=8; extra == "dev"
+Dynamic: license-file
