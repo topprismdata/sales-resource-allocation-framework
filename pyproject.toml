@@ -1,6 +1,6 @@
 [project]
 name = "sraf"
-version = "0.1.0"
+version = "0.1.2"
 description = "SRAF — Sales Resource Allocation Framework：片区规划决策引擎（围栏分配/四至/多连通/调整算子/世界模型）+ v1.2 规范族"
 requires-python = ">=3.10"
 dependencies = [
