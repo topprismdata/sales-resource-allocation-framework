@@ -1,6 +1,6 @@
 [project]
 name = "sraf"
-version = "0.1.2"
+version = "0.1.3"
 description = "SRAF — Sales Resource Allocation Framework：片区规划决策引擎（围栏分配/四至/多连通/调整算子/世界模型）+ v1.2 规范族"
 requires-python = ">=3.10"
 dependencies = [
@@ -8,7 +8,7 @@ dependencies = [
     "numpy>=1.24",
     "coords-core @ git+https://github.com/topprismdata/coords-core.git@v0.1.0",
     "market-partition @ git+https://github.com/topprismdata/market-partition.git@v0.1.1",
-    "territory-ir @ git+https://github.com/topprismdata/Territory-IR.git@v0.3.1",
+    "territory-ir @ git+https://github.com/topprismdata/Territory-IR.git@v0.3.2",
 ]
 
 [project.optional-dependencies]
