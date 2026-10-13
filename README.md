@@ -48,3 +48,17 @@ python -m pytest tests -m local_data -q  # 需本地数据包（默认排除）
 - 规范完整性：`docs/sraf/SHA256SUMS.md`
 - 版本：git tag（`v0.1.0` 起）；历史 `RC2.0/RC3.0` 为拆仓前快照
 - 论文/研究层（analysis/）按白名单评审后入库，默认不发布
+
+## 编制测算与兜底（sraf_intel.sizing / .fallback，v0.2.0 · WP16）
+
+- **覆盖法 sizing**（Zoltners-Sinha 1983，书卡引用见模块 docstring）：
+  `RepCapacity`（年可用分钟）× `AccountWorkload`（calls×(duration+drive)）→
+  `required_reps` 向上取整；`balance_report` 出分辖区编制+总量编制+EQ+极差比
+- **EQ 均衡指数** = (Σx)²/(n·Σx²) ∈ [1/n,1]；零负载辖区计入 n（无主=失衡证据）
+- **迁转建议**：贪心确定性（平局全序），每步严格 EQ 增益才保留，
+  `MoveProposal.requires_approval` 恒 True——只建议不执行（WP05 纪律）
+- **nearby-containers 兜底**：未分配门店→最近可用片区候选（余量>0 硬条件、
+  半径、k 截断、(距离,id) 平局全序）；`requires_human_confirmation` 恒 True，
+  frozen 不可翻——**不自动合并**
+- ⚠️ 书内数值算例不在本地语料（书卡为索引卡）：单测为自洽手核算例锁算术，
+  双源逐位核对挂账待 PDF 页（计划 §71 风险预案如实登记）

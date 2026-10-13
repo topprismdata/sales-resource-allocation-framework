@@ -47,6 +47,18 @@ from .trigger import (
 
 __version__ = "0.1.0"
 
+from .sizing import (
+    AccountWorkload,
+    MoveProposal,
+    RepCapacity,
+    balance_report,
+    eq_index,
+    rebalance_suggestions,
+    required_reps,
+    territory_loads,
+)
+from .fallback import NearbyCandidate, TerritoryContainer, nearby_candidates
+
 __all__ = [
     # gaps（02 §9/§10/§21、04 §11A/§12）
     "AllocationGap", "GapType", "GapSubtype", "IDENTITY_SUBTYPES",
@@ -61,4 +73,10 @@ __all__ = [
     # router（04 §28/§36）
     "ProblemRouter", "DPCode", "NonDPRoute", "RouterOutput", "RouteResult",
     "DIAGNOSIS_ROUTES", "route_from_materiality",
+    # sizing（WP16：Zoltners 覆盖法 + EQ 均衡 + 迁转建议）
+    "AccountWorkload", "RepCapacity", "MoveProposal",
+    "territory_loads", "required_reps", "eq_index", "balance_report",
+    "rebalance_suggestions",
+    # fallback（WP16：nearby-containers 兜底，只建议不执行）
+    "NearbyCandidate", "TerritoryContainer", "nearby_candidates",
 ]

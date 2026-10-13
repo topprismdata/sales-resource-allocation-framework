@@ -8,7 +8,8 @@ topprism:
   evidence:
     type: automated-test-suite
     scope: >
-      CI 3.11+3.12; hermetic 子集全绿 (local_data 5 项经标记排除, 依赖未发布广州路网 pack);
+      CI 3.11+3.12; 95 tests incl. sizing 覆盖法/EQ/迁转确定性 + fallback 候选排序恒建议.
+CI 3.11+3.12; hermetic 子集全绿 (local_data 5 项经标记排除, 依赖未发布广州路网 pack);
       守恒/同主守卫/多连通不变量测试锁定; coords 收敛 coords-core v0.1.0 shim;
       切分引擎 pin market-partition v0.1.0; v1.2 规范族 18k 行含 SHA256SUMS。
   customer_data_in_repo: false
