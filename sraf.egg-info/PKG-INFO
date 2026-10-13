@@ -7,7 +7,8 @@ License-File: LICENSE
 Requires-Dist: shapely>=2.0
 Requires-Dist: numpy>=1.24
 Requires-Dist: coords-core @ git+https://github.com/topprismdata/coords-core.git@v0.1.0
-Requires-Dist: market-partition @ git+https://github.com/topprismdata/market-partition.git@v0.1.0
+Requires-Dist: market-partition @ git+https://github.com/topprismdata/market-partition.git@v0.1.1
+Requires-Dist: territory-ir @ git+https://github.com/topprismdata/Territory-IR.git@v0.3.1
 Provides-Extra: dev
 Requires-Dist: pytest>=8; extra == "dev"
 Dynamic: license-file

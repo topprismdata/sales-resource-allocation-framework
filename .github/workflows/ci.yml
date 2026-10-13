@@ -23,6 +23,9 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
 
+      - name: Spec hash gate (SHA256SUMS.md)
+        run: python tools/check_spec_hashes.py
+
       - name: Install (git-tag pinned deps)
         run: |
           python -m pip install --upgrade pip

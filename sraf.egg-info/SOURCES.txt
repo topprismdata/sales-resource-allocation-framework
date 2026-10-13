@@ -26,5 +26,12 @@ sraf.egg-info/SOURCES.txt
 sraf.egg-info/dependency_links.txt
 sraf.egg-info/requires.txt
 sraf.egg-info/top_level.txt
+sraf_intel/__init__.py
+sraf_intel/gaps.py
+sraf_intel/materiality.py
+sraf_intel/router.py
+sraf_intel/trigger.py
 tests/test_dealer_territory.py
+tests/test_engine_units.py
 tests/test_multicomponent.py
+tests/test_sraf_intel.py
